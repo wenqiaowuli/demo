@@ -7,6 +7,7 @@
     文件描述：板块运动演示（完整版）
     物理内容：展示物块 A 在板块 B 上的相对滑动、共速、滑出及摩擦生热等完整过程，
               双摩擦系数建模（μ₁ = A-B 之间，μ₂ = B-地面之间，μ₂ 默认 0）。
+              共速后按 μ_s=μ₁ 判断能否锁死：需 μ₁≥μ₂ 才能一起减速，否则继续相对滑动。
     适用场景：高中物理“板块模型”教学，板 B 固定静止（v₀B = 0），可调物块 A 初速度、
               双动摩擦因数与板长 L，实时显示 v-t 图、相对位移、摩擦生热等数据，
               支持物块滑出后继续运动的情景。
@@ -319,7 +320,9 @@
         // 滑动阶段：A 减速 aA = μ₁g；B 受 A 摩擦（向前 μ₁mA·g）与地面摩擦（向后 μ₂(mA+mB)·g）。
         //   μ₁mA > μ₂(mA+mB)：B 加速 aB = [μ₁mA − μ₂(mA+mB)]g/mB；
         //   否则 B 保持静止（A 在静止板上滑动）。
-        // 未滑出：共速后 μ₂=0 一起匀速；μ₂>0 一起匀减速 μ₂g 至停止（μ₂>0 时动量不守恒，用运动学）。
+        // 未滑出：共速后若 μ₁≥μ₂（静摩擦按 μ₁ 计）则锁死：μ₂=0 一起匀速，μ₂>0 一起匀减速 μ₂g。
+        //         若 μ₁<μ₂ 则不能锁死，共速后继续相对滑动（当前 mA、mB、v0B=0 时，
+        //         能带动 B 已蕴含 μ₁>μ₂(1+mB/mA)>μ₂，此分支为防守与教学展示）。
         // 滑出（S_rel 达 L）：A 在地面受 μ₂m_A·g、B 受 μ₂m_B·g 各自减速（μ₂=0 则各自匀速）。
         function physics() {
             const mu1 = P.mu, mu2 = P.mu2;
@@ -327,6 +330,8 @@
             const bMoved = mu1 * P.mA > mu2 * (P.mA + P.mB) + 1e-12; // B 能否被带动
             const aB = bMoved ? (mu1 * P.mA - mu2 * (P.mA + P.mB)) * g / P.mB : 0;
             const aRel = aA + aB;                                 // 相对减速度
+            // 共速后要一起按 μ₂g 减速，A 所需静摩擦 f=mA μ₂ g，上限 μ₁ mA g ⇒ μ₁≥μ₂
+            const canStick = mu1 + 1e-12 >= mu2;
 
             const t1 = P.v0A / aRel;                              // 滑动阶段时长（共速或 A 停止）
             const vCommon = aB * t1;                              // 共速速度（B 静止时为 0）
@@ -345,6 +350,11 @@
             const xB1 = willSlideOff ? 0.5 * aB * tOff * tOff : 0.5 * aB * t1 * t1;
             const xA1 = xB1 + (willSlideOff ? P.L : sRel1);
 
+            // 共速后不能锁死时的二次滑动加速度（A 仍受向后 f₁，B 受向前 f₁ 与向后地面摩擦）
+            const aA2 = mu1 * g;
+            const aB2 = (mu1 * P.mA - mu2 * (P.mA + P.mB)) * g / P.mB;
+            const slipAfter = !willSlideOff && bMoved && !canStick && mu2 > 0;
+
             // 总生热 = A-B 摩擦生热 + 地面摩擦生热
             const Q1 = mu1 * P.mA * g * Math.min(sRel1, P.L);
             let Q2 = 0;
@@ -354,11 +364,12 @@
                     Q2 += 0.5 * P.mB * vBOff * vBOff;             // 滑出后 B 滑行至停
                     Q2 += 0.5 * P.mA * vAOff * vAOff;             // 滑出后 A 在地面滑行至停
                 } else if (bMoved) {
-                    Q2 += 0.5 * (P.mA + P.mB) * vCommon * vCommon; // 共速后共同减速至停
+                    // 共速后无论锁死还是再次滑动，μ₂>0 时末动能均为 0，剩动能全部变热
+                    Q2 += 0.5 * (P.mA + P.mB) * vCommon * vCommon;
                 }
                 // B 静止且 A 停在板上：无相对地面滑移，无地面生热
             }
-            return { mu1, mu2, aA, aB, aRel, bMoved, t1, vCommon, sRel1, willSlideOff, tOff, vAOff, vBOff, xB1, xA1, heat: Q1 + Q2 };
+            return { mu1, mu2, aA, aB, aRel, bMoved, canStick, slipAfter, aA2, aB2, t1, vCommon, sRel1, willSlideOff, tOff, vAOff, vBOff, xB1, xA1, heat: Q1 + Q2 };
         }
 
         // 指定时刻 t 的速度
@@ -380,6 +391,13 @@
             if (!ph.bMoved) {
                 // B 静止且 A 停在板上
                 return { vA: 0, vB: 0, trans: true, off: false, stopped: 'plate' };
+            }
+            if (ph.slipAfter) {
+                // μ₁<μ₂：静摩擦不够，共速后不能锁死，继续相对滑动
+                const vA = Math.max(0, ph.vCommon - ph.aA2 * dt);
+                const vB = Math.max(0, ph.vCommon + ph.aB2 * dt);
+                const stopped = vA <= 0 && vB <= 0 ? 'slip-stop' : false;
+                return { vA, vB, trans: false, off: false, stopped, slipAfter: true };
             }
             const vNow = Math.max(0, ph.vCommon - dec * dt);
             return { vA: vNow, vB: vNow, trans: true, off: false, stopped: ph.mu2 > 0 && vNow <= 0 ? 'together' : false };
@@ -404,6 +422,14 @@
             }
             if (!ph.bMoved) {
                 return { bX: 0, aX: ph.xA1, onPlate: true };      // A 停在静止板上
+            }
+            if (ph.slipAfter) {
+                const tauA = ph.aA2 > 0 ? Math.min(dt, ph.vCommon / ph.aA2) : dt;
+                const tauB = ph.aB2 < 0 ? Math.min(dt, ph.vCommon / (-ph.aB2)) : dt;
+                const bX = ph.xB1 + ph.vCommon * tauB + 0.5 * ph.aB2 * tauB * tauB;
+                const aX = ph.xA1 + ph.vCommon * tauA - 0.5 * ph.aA2 * tauA * tauA;
+                const sRel = aX - bX;
+                return { bX, aX, onPlate: sRel < P.L - 1e-9 };
             }
             const tau = ph.mu2 > 0 ? Math.min(dt, ph.vCommon / dec) : dt;
             const bX = ph.xB1 + ph.vCommon * tau - 0.5 * dec * tau * tau;
@@ -648,7 +674,10 @@
                 gctx.fillStyle = ph.bMoved ? '#ffaa22' : '#33dd66';
                 gctx.font = '10px system-ui';
                 gctx.textAlign = 'center';
-                gctx.fillText(ph.bMoved ? '共速 ' + ph.vCommon.toFixed(1) : 'A 停', TX(ph.t1), padT + 10);
+                gctx.fillText(
+                    !ph.bMoved ? 'A 停' : (ph.slipAfter ? '共速后滑' : '共速 ' + ph.vCommon.toFixed(1)),
+                    TX(ph.t1), padT + 10
+                );
             } else if (ph.willSlideOff && ph.tOff <= tMax) {
                 gctx.strokeStyle = 'rgba(255,102,68,0.35)';
                 gctx.setLineDash([4, 4]);
@@ -774,6 +803,12 @@
             } else if (vel.stopped === 'together') {
                 elState.textContent = '共同停止';
                 elState.style.color = '#aab';
+            } else if (vel.stopped === 'slip-stop') {
+                elState.textContent = '再次滑动后停止';
+                elState.style.color = '#aab';
+            } else if (vel.slipAfter) {
+                elState.textContent = 'μ₁<μ₂，共速后再次滑动';
+                elState.style.color = '#ffdd57';
             } else if (vel.trans) {
                 elState.textContent = '共速一起运动';
                 elState.style.color = '#ffaa22';
@@ -811,9 +846,11 @@
                     ? `物块 A 于 t = ${ph.tOff.toFixed(2)} s 滑出板块，随后 A、B 均在地面摩擦下减速停止。`
                     : `物块 A 于 t = ${ph.tOff.toFixed(2)} s 滑出板块，A、B 分别以 ${ph.vAOff.toFixed(2)} m/s 与 ${ph.vBOff.toFixed(2)} m/s 匀速运动。`;
             } else if (!ph.bMoved) {
-                msg = `地面摩擦足够大，B 保持静止；物块 A 在板上滑行 ${ph.sRel1.toFixed(2)} m 后停下。`;
+                msg = `地面摩擦足够大（μ₁ mA ≤ μ₂(mA+mB)），B 保持静止；物块 A 在板上滑行 ${ph.sRel1.toFixed(2)} m 后停下。`;
+            } else if (ph.slipAfter) {
+                msg = `两者于 t = ${ph.t1.toFixed(2)} s 达到共同速度 ${ph.vCommon.toFixed(2)} m/s，但 μ₁ < μ₂，静摩擦不足以锁死，随后再次相对滑动。`;
             } else if (ph.mu2 > 0) {
-                msg = `两者于 t = ${ph.t1.toFixed(2)} s 达到共同速度 ${ph.vCommon.toFixed(2)} m/s，随后一起匀减速停止。`;
+                msg = `两者于 t = ${ph.t1.toFixed(2)} s 达到共同速度 ${ph.vCommon.toFixed(2)} m/s（μ₁≥μ₂，可锁死），随后一起匀减速停止。`;
             } else {
                 msg = `物块 A 与板块 B 达到共同速度 ${ph.vCommon.toFixed(2)} m/s，一起匀速运动。`;
             }
@@ -852,6 +889,17 @@
             elSlide.textContent = ph.willSlideOff ? '✓ 滑出' : '✗ 未滑出';
             elSlide.style.color = ph.willSlideOff ? '#ff6644' : '#33dd66';
             elHeat.textContent = ph.heat.toFixed(2) + ' J';
+            if (state === 'idle') {
+                if (!ph.bMoved) {
+                    elStatus.textContent = '当前参数：μ₁ mA ≤ μ₂(mA+mB)，板 B 不会被带动。';
+                } else if (!ph.canStick && ph.mu2 > 0) {
+                    elStatus.textContent = '当前参数：μ₁ < μ₂，共速后静摩擦不足以锁死，将再次相对滑动。';
+                } else {
+                    elStatus.textContent = ph.mu2 > 0
+                        ? '当前参数：μ₁≥μ₂ 且能带动 B，共速后将锁死并一起减速。'
+                        : '';
+                }
+            }
         }
 
         // ========== 控制 ==========
