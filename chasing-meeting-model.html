@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>追及相遇模型演示｜高中物理</title>
+<title>追及相遇模型演示｜高中物理直线运动</title>
 <style>
 :root{--cA:#2563eb;--cB:#f97316;--ink:#1f2937;--mut:#6b7280;--line:#e5e7eb}
 *{box-sizing:border-box}
@@ -26,12 +26,12 @@ button:hover{background:#eef2f7}
 #btnPlay{background:var(--cA);border-color:var(--cA);color:#fff;min-width:78px}
 #btnPlay:hover{background:#1d4ed8}
 select,input[type=number]{border:1px solid var(--line);border-radius:8px;padding:5px 8px;font-size:13px;background:#fff;color:var(--ink)}
-input[type=number]{width:70px;padding:4px 6px}
+input[type=number]{width:74px;padding:4px 6px}
 input[type=range]{flex:1;min-width:140px;accent-color:var(--cA)}
-.timeLabel{font-variant-numeric:tabular-nums;color:var(--mut);font-size:13px;min-width:96px;text-align:right}
-.bottom{display:grid;grid-template-columns:420px 1fr;gap:14px;align-items:start}
+.timeLabel{font-variant-numeric:tabular-nums;color:var(--mut);font-size:13px;min-width:110px;text-align:right}
+.bottom{display:grid;grid-template-columns:430px 1fr;gap:14px;align-items:start}
 @media(max-width:880px){.charts,.bottom{grid-template-columns:1fr}}
-.ctl{display:grid;grid-template-columns:100px 1fr 70px;align-items:center;gap:8px;margin:7px 0;font-size:13px}
+.ctl{display:grid;grid-template-columns:112px 1fr 74px;align-items:center;gap:8px;margin:7px 0;font-size:13px}
 .ctl label{color:var(--mut)}
 .radios{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:13px;margin:4px 0 2px}
 .radios label{cursor:pointer}
@@ -40,26 +40,27 @@ input[type=range]{flex:1;min-width:140px;accent-color:var(--cA)}
 table.data{width:100%;border-collapse:collapse;font-size:13px}
 table.data td{padding:5px 6px;border-bottom:1px solid var(--line)}
 table.data tr:last-child td{border-bottom:none}
-table.data td:first-child{color:var(--mut);width:46%}
+table.data td:first-child{color:var(--mut);width:52%}
 table.data td:last-child{text-align:right;font-variant-numeric:tabular-nums}
 .state-hot{background:#fef3c7 !important;font-weight:700;border-radius:4px}
 .result{margin-top:10px;padding:9px 12px;border-radius:8px;font-size:13px;line-height:1.7}
 .result.ok{background:#ecfdf5;border-left:4px solid #10b981}
 .result.no{background:#fef2f2;border-left:4px solid #ef4444}
 .formula{font-size:14px;line-height:2.05}
-.formula .tag{display:inline-block;width:92px;color:var(--mut);font-size:12px;vertical-align:top}
+.formula .tag{display:inline-block;width:100px;color:var(--mut);font-size:12px;vertical-align:top}
 .fx{font-family:Georgia,"Times New Roman",serif;font-style:italic}
 .fA{color:var(--cA)}.fB{color:var(--cB)}
 .fno{color:#dc2626}
 .fnote{color:var(--mut);font-size:12px;font-style:normal;font-family:inherit}
 sub{font-size:10px}
+sup{font-size:10px}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
-    <h1>追及相遇模型演示｜高中物理</h1>
-    <p>通过动画、公式和图像理解追及相遇问题 —— 匀速直线运动 · 同向追及 / 相向相遇 / 背向远离 · 支持 v-t 图与 x-t 图同步对照</p>
+    <h1>追及相遇模型演示｜高中物理直线运动</h1>
+    <p>匀速追匀速 · 匀速追匀变速 · 匀变速追匀速 —— 动画、v-t / x-t 图、判别式 Δ 与速度相等极值判据实时联动</p>
   </header>
 
   <section class="card">
@@ -72,6 +73,7 @@ sub{font-size:10px}
     <canvas id="animCanvas"></canvas>
     <div class="bar">
       <button id="btnPlay">▶ 开始</button>
+      <button id="btnStepB">单步 −0.1s</button>
       <button id="btnStep">单步 +0.1s</button>
       <button id="btnReplay">重播</button>
       <button id="btnReset">重置</button>
@@ -81,8 +83,8 @@ sub{font-size:10px}
         <option value="2">2×</option>
         <option value="4">4×</option>
       </select>
-      <input type="range" id="timeSlider" min="0" max="8" step="0.01" value="0">
-      <span class="timeLabel" id="timeLabel">0.0 s</span>
+      <input type="range" id="timeSlider" min="0" max="15" step="0.01" value="0">
+      <span class="timeLabel" id="timeLabel">0.00 s</span>
     </div>
   </section>
 
@@ -100,6 +102,7 @@ sub{font-size:10px}
   <section class="card">
     <h3><span class="dot" style="background:#10b981"></span>公式与判定（随参数实时更新）</h3>
     <div class="formula" id="formulaBox"></div>
+    <div class="result ok" id="resultBox"></div>
   </section>
 
   <section class="bottom">
@@ -107,12 +110,25 @@ sub{font-size:10px}
       <h3><span class="dot" style="background:#64748b"></span>参数控制</h3>
       <div class="ctl"><label>场景预设</label>
         <select id="presetSel" style="grid-column:2/4">
-          <option value="chase_ok">快车追慢车（能追上）</option>
-          <option value="chase_fail">慢车追快车（追不上）</option>
-          <option value="chase_equal">同速追及（距离不变 · 临界）</option>
-          <option value="chase_late">晚出发的追及（A 晚 2 s）</option>
-          <option value="meet_ok">相向而行（相遇）</option>
-          <option value="apart">背向而行（不可能相遇）</option>
+          <optgroup label="一、匀速追匀速">
+            <option value="p1">快车追慢车（能追上）</option>
+            <option value="p2">慢车追快车（追不上）</option>
+            <option value="p3">同速追及（间距恒定·临界）</option>
+            <option value="p4">晚出发的追及（A 晚 2 s）</option>
+            <option value="p5">相向而行（相遇）</option>
+            <option value="p6">背向而行（远离）</option>
+          </optgroup>
+          <optgroup label="二、匀速追匀变速">
+            <option value="p7">匀速追刹车（停前追上）</option>
+            <option value="p8">匀速追刹车（停后追上）</option>
+            <option value="p9">匀速追起步加速（两次相遇）</option>
+            <option value="p10">匀速追起步加速（追不上）</option>
+          </optgroup>
+          <optgroup label="三、匀变速追匀速">
+            <option value="p11">刹车追匀速（临界·刚好追上）</option>
+            <option value="p12">起步加速追匀速（经典追及）</option>
+            <option value="p13">刹车追匀速（追不上·最近距离）</option>
+          </optgroup>
           <option value="custom" disabled hidden>— 自定义 —</option>
         </select>
       </div>
@@ -121,11 +137,14 @@ sub{font-size:10px}
         <label><input type="radio" name="mode" value="toward"> 相向（A→右，B→左）</label>
         <label><input type="radio" name="mode" value="apart"> 背向（A→左，B→右）</label>
       </div>
-      <div class="ctl"><label>初始距离 d (m)</label><input type="range" id="d" min="1" max="60" step="1" value="20"><input type="number" id="dN" min="1" max="60" step="1" value="20"></div>
-      <div class="ctl"><label>A 的速度 (m/s)</label><input type="range" id="vA" min="0" max="20" step="0.5" value="10"><input type="number" id="vAn" min="0" max="20" step="0.5" value="10"></div>
-      <div class="ctl"><label>B 的速度 (m/s)</label><input type="range" id="vB" min="0" max="20" step="0.5" value="6"><input type="number" id="vBn" min="0" max="20" step="0.5" value="6"></div>
+      <div class="ctl"><label>初始距离 d (m)</label><input type="range" id="d" min="0" max="80" step="1" value="20"><input type="number" id="dN" min="0" max="80" step="1" value="20"></div>
+      <div class="ctl"><label>A 初速度 (m/s)</label><input type="range" id="vA" min="0" max="25" step="0.5" value="10"><input type="number" id="vAn" min="0" max="25" step="0.5" value="10"></div>
+      <div class="ctl"><label>B 初速度 (m/s)</label><input type="range" id="vB" min="0" max="25" step="0.5" value="6"><input type="number" id="vBn" min="0" max="25" step="0.5" value="6"></div>
+      <div class="ctl"><label>A 加速度 (m/s²)</label><input type="range" id="aA" min="-6" max="6" step="0.5" value="0"><input type="number" id="aAn" min="-6" max="6" step="0.5" value="0"></div>
+      <div class="ctl"><label>B 加速度 (m/s²)</label><input type="range" id="aB" min="-6" max="6" step="0.5" value="0"><input type="number" id="aBn" min="-6" max="6" step="0.5" value="0"></div>
       <div class="ctl"><label>出发时间差 Δt (s)<br><span style="font-size:11px">A 比 B 晚出发</span></label><input type="range" id="dt" min="0" max="5" step="0.5" value="0"><input type="number" id="dtN" min="0" max="5" step="0.5" value="0"></div>
       <div class="checks">
+        <label><input type="checkbox" id="ckBrake" checked> 刹车减速到 0 即停下（不倒车）</label>
         <label><input type="checkbox" id="ckDist" checked> 实时距离标注</label>
         <label><input type="checkbox" id="ckKey" checked> 显示关键点</label>
         <label><input type="checkbox" id="ckArea" checked> v-t 面积差提示</label>
@@ -142,70 +161,153 @@ sub{font-size:10px}
         <tr><td>B 的速度 v<sub>B</sub>（带方向）</td><td id="dVB" style="color:var(--cB)">—</td></tr>
         <tr><td>相对距离 |x<sub>B</sub> − x<sub>A</sub>|</td><td id="dGap">—</td></tr>
         <tr><td>相对速度 v<sub>A</sub> − v<sub>B</sub></td><td id="dVrel">—</td></tr>
+        <tr><td>速度相等时刻 t<sup>*</sup></td><td id="dTstar">—</td></tr>
+        <tr><td>间距极值预测</td><td id="dExt">—</td></tr>
         <tr><td>当前状态</td><td id="dState">—</td></tr>
       </table>
-      <div class="result ok" id="resultBox"></div>
     </div>
   </section>
 </div>
 
 <script>
 "use strict";
-/* ===================== 物理计算（与绘制分离；二期匀变速场景在此扩展） ===================== */
 const PRESETS = {
-  chase_ok:   {mode:'same',   d:20, vA:10, vB:6, dt:0},
-  chase_fail: {mode:'same',   d:20, vA:6,  vB:10, dt:0},
-  chase_equal:{mode:'same',   d:20, vA:6,  vB:6,  dt:0},
-  chase_late: {mode:'same',   d:15, vA:8,  vB:5,  dt:2},
-  meet_ok:    {mode:'toward', d:30, vA:8,  vB:7,  dt:0},
-  apart:      {mode:'apart',  d:20, vA:5,  vB:5,  dt:0}
+  p1:{mode:'same',d:20,vA:10,vB:6,aA:0,aB:0,dt:0},
+  p2:{mode:'same',d:20,vA:6,vB:10,aA:0,aB:0,dt:0},
+  p3:{mode:'same',d:20,vA:6,vB:6,aA:0,aB:0,dt:0},
+  p4:{mode:'same',d:15,vA:8,vB:5,aA:0,aB:0,dt:2},
+  p5:{mode:'toward',d:30,vA:8,vB:7,aA:0,aB:0,dt:0},
+  p6:{mode:'apart',d:20,vA:5,vB:5,aA:0,aB:0,dt:0},
+  p7:{mode:'same',d:15,vA:10,vB:8,aA:0,aB:-2,dt:0},
+  p8:{mode:'same',d:10,vA:6,vB:8,aA:0,aB:-2,dt:0},
+  p9:{mode:'same',d:20,vA:10,vB:0,aA:0,aB:2,dt:0},
+  p10:{mode:'same',d:30,vA:5,vB:0,aA:0,aB:2,dt:0},
+  p11:{mode:'same',d:4,vA:10,vB:6,aA:-2,aB:0,dt:0},
+  p12:{mode:'same',d:16,vA:0,vB:6,aA:2,aB:0,dt:0},
+  p13:{mode:'same',d:15,vA:10,vB:4,aA:-2,aB:0,dt:0}
 };
-const P = {mode:'same', d:20, vA:10, vB:6, dt:0};
+const P = {mode:'same', d:20, vA:10, vB:6, aA:0, aB:0, dt:0, brake:true};
 const EPS = 1e-9;
+const HORIZON = 400;
 
 function dirA(){ return P.mode === 'apart' ? -1 : 1; }
 function dirB(){ return P.mode === 'toward' ? -1 : 1; }
-function xA(t){ return t < P.dt ? 0 : dirA() * P.vA * (t - P.dt); }
-function xB(t){ return P.d + dirB() * P.vB * t; }
-function vAo(t){ return t < P.dt ? 0 : dirA() * P.vA; }
-function vBo(){ return dirB() * P.vB; }
+function brakeStopT(dt, v0, a){
+  if (!P.brake || a === 0 || v0 === 0 || v0 * a >= 0) return Infinity;
+  return dt + Math.abs(v0 / a);
+}
+let OA = null, OB = null;
+function mkA(){ const v0 = dirA()*P.vA, a = dirA()*P.aA; return {x0:0, v0, a, dt:P.dt, stop:brakeStopT(P.dt, v0, a)}; }
+function mkB(){ const v0 = dirB()*P.vB, a = dirB()*P.aB; return {x0:P.d, v0, a, dt:0, stop:brakeStopT(0, v0, a)}; }
+function st(o, t){
+  if (t < o.dt - EPS) return {x:o.x0, v:0, a:0, w:true};
+  const tau = Math.max(0, t - o.dt);
+  const sTau = o.stop === Infinity ? Infinity : o.stop - o.dt;
+  if (tau >= sTau - EPS){
+    return {x:o.x0 + o.v0*sTau + 0.5*o.a*sTau*sTau, v:0, a:0, s:true};
+  }
+  return {x:o.x0 + o.v0*tau + 0.5*o.a*tau*tau, v:o.v0 + o.a*tau, a:o.a, r:true};
+}
+function xA(t){ return st(OA, t).x; }
+function xB(t){ return st(OB, t).x; }
+function vAo(t){ return st(OA, t).v; }
+function vBo(t){ return st(OB, t).v; }
 
-/* 求解 xA(t) = xB(t)：返回 {meets, tMeet, xMeet, note, T, reason, reasonHot} */
+function bounds(T){
+  const bs = new Set([0, T]);
+  [OA, OB].forEach(o => {
+    if (o.dt > EPS && o.dt < T) bs.add(o.dt);
+    if (isFinite(o.stop) && o.stop < T) bs.add(o.stop);
+  });
+  return [...bs].sort((a, b) => a - b);
+}
+function quadRoots(a, b, c){
+  const out = [];
+  if (Math.abs(a) < EPS){
+    if (Math.abs(b) > EPS) out.push(-c/b);
+  } else {
+    const disc = b*b - 4*a*c;
+    if (disc >= 0){
+      const sq = Math.sqrt(disc);
+      out.push((-b - sq)/(2*a), (-b + sq)/(2*a));
+    }
+  }
+  return out;
+}
 function solve(){
-  const d = P.d, dt = P.dt;
-  let pre = null;
-  if (dt > 0 && P.mode === 'toward' && P.vB > 0){
-    const t1 = d / P.vB;
-    if (t1 < dt) pre = {t:t1, x:0, note:'B 在 A 出发前已到达 A 的出发点'};
+  OA = mkA(); OB = mkB();
+  const meetings = [];
+  const tCands = [];
+  const seen = new Set();
+  const bs = bounds(HORIZON);
+  for (let i = 0; i < bs.length - 1; i++){
+    const t1 = bs[i], t2 = bs[i+1];
+    const sa = st(OA, t1), sb = st(OB, t1);
+    const u2 = t2 - t1;
+    const c2 = 0.5*(sa.a - sb.a), c1 = sa.v - sb.v, c0 = sa.x - sb.x;
+    quadRoots(c2, c1, c0).forEach(u => {
+      if (u < -EPS || u > u2 + EPS) return;
+      const uu = Math.min(u2, Math.max(0, u));
+      const tm = t1 + uu;
+      const key = tm.toFixed(4);
+      if (seen.has(key)) return;
+      seen.add(key);
+      meetings.push({t:tm, x:xA(tm)});
+    });
+    const da = sa.a - sb.a;
+    if (Math.abs(da) > EPS){
+      const u = -(sa.v - sb.v)/da;
+      if (u > EPS && u < u2 - EPS){
+        const tm = t1 + u;
+        tCands.push({t:tm, gap:Math.abs(xA(tm) - xB(tm)), sign:da});
+      }
+    }
   }
-  let post = null;
-  if (P.mode === 'same'){
-    if (P.vA > P.vB){ const t = (d + P.vA * dt) / (P.vA - P.vB); post = {t, x:P.vA * (t - dt)}; }
-  } else if (P.mode === 'toward'){
-    if (P.vA + P.vB > 0){ const t = (d + P.vA * dt) / (P.vA + P.vB); post = {t, x:P.vA * (t - dt)}; }
+  meetings.sort((a, b) => a.t - b.t);
+  let tmin = null, tmax = null;
+  tCands.forEach(c => {
+    if (c.sign < 0){ if (!tmin || c.gap < tmin.gap) tmin = c; }
+    else { if (!tmax || c.gap > tmax.gap) tmax = c; }
+  });
+  const bothUniform = Math.abs(OA.a) < EPS && Math.abs(OB.a) < EPS;
+  const critical = bothUniform && Math.abs(OA.v0 - OB.v0) < EPS && meetings.length === 0;
+  let criticalGap = null;
+  if (critical) criticalGap = Math.abs(xB(OA.dt) - xA(OA.dt));
+  const tms = meetings.map(m => m.t);
+  let T;
+  if (tms.length) T = Math.max(...tms) + 3;
+  else if (tmin) T = Math.max(tmin.t + 3, 12);
+  else if (tmax) T = Math.max(tmax.t + 3, 12);
+  else T = 15;
+  if (critical) T = Math.max(T, 12);
+  T = Math.min(HORIZON, Math.max(6, +T.toFixed(2)));
+  const t1m = Math.max(OA.dt, OB.dt);
+  const bsm = bounds(T);
+  let segEnd = T;
+  for (let i = bsm.length - 1; i >= 0; i--){
+    if (bsm[i] <= t1m + EPS){ segEnd = (i + 1 < bsm.length) ? bsm[i+1] : T; break; }
   }
-  let sol = null;
-  if (pre && post) sol = pre.t <= post.t + EPS ? pre : post;
-  else sol = pre || post;
-  const meets = !!sol;
-  const T = meets ? sol.t + 3 : 15;
-  let reason = '', reasonHot = false;
-  if (!meets){
-    if (P.vA === 0 && P.vB === 0){ reason = '两物体速度均为 0，保持静止，不会相遇'; }
-    else if (P.mode === 'apart'){ reason = '背向而行，两者距离 d + (vA + vB)t 不断增大，不可能相遇'; }
-    else if (P.mode === 'toward'){ reason = '在观察区间内未相遇'; }
-    else if (P.vA === P.vB){ reason = `同速：A 出发后两者距离恒定（${f1(d + P.vA * dt)} m），永远追不上`; reasonHot = true; }
-    else { reason = 'B 的速度更大（vA < vB），距离不断增大，A 追不上 B'; }
-  }
-  return {meets, tMeet: meets ? sol.t : null, xMeet: meets ? sol.x : null,
-          note: sol && sol.note || '', T, reason, reasonHot};
+  const sma = st(OA, t1m), smb = st(OB, t1m);
+  const m2 = 0.5*(sma.a - smb.a), m1 = sma.v - smb.v, m0 = sma.x - smb.x;
+  const uEnd = segEnd - t1m;
+  const mainRoots = quadRoots(m2, m1, m0)
+    .filter(u => u > EPS && u <= uEnd + EPS)
+    .map(u => Math.min(uEnd, u) + t1m)
+    .sort((a, b) => a - b);
+  const mainSet = new Set(mainRoots.map(x => x.toFixed(4)));
+  const extra = meetings.filter(m => !mainSet.has(m.t.toFixed(4)));
+  return {T, meetings, tmin, tmax, critical, criticalGap,
+          main:{t0:t1m, A:m2, B:m1, C:m0, delta:m1*m1 - 4*m2*m0, roots:mainRoots, uEnd},
+          extra};
 }
 
 let sol = solve();
 let T = sol.T;
 let t = 0;
 
+function f2(x){ return (Math.round(x * 100) / 100).toFixed(2); }
 function f1(x){ return (Math.round(x * 10) / 10).toFixed(1); }
+function sgn(v){ return (v >= 0 ? '+' : '') + f2(v); }
 function niceStep(range, n){
   const raw = range / n;
   const p = Math.pow(10, Math.floor(Math.log10(raw)));
@@ -213,453 +315,579 @@ function niceStep(range, n){
   return (m < 1.5 ? 1 : m < 3.5 ? 2 : m < 7.5 ? 5 : 10) * p;
 }
 
-/* ===================== 状态与播放 ===================== */
-let playing = false, lastTs = null, speed = 1;
+function boot(){
+  const el = id => document.getElementById(id);
+  const btnPlay = el('btnPlay'), timeSlider = el('timeSlider'), timeLabel = el('timeLabel');
+  const ckKey = el('ckKey'), ckDist = el('ckDist'), ckArea = el('ckArea'), ckBrake = el('ckBrake');
+  const cA = getComputedStyle(document.documentElement).getPropertyValue('--cA').trim();
+  const cB = getComputedStyle(document.documentElement).getPropertyValue('--cB').trim();
 
-function setPlaying(p){
-  playing = p;
-  btnPlay.textContent = p ? '⏸ 暂停' : '▶ 开始';
-  if (p){ lastTs = null; requestAnimationFrame(loop); }
-}
-function loop(ts){
-  if (!playing){ lastTs = null; return; }
-  if (lastTs == null) lastTs = ts;
-  t = Math.min(T, t + (ts - lastTs) / 1000 * speed);
-  lastTs = ts;
-  syncTime(); render();
-  if (t >= T){ setPlaying(false); } else { requestAnimationFrame(loop); }
-}
-function syncTime(){
-  timeSlider.value = t;
-  timeLabel.textContent = `${f1(t)} s / ${f1(T)} s`;
-}
+  let playing = false, lastTs = null, speed = 1;
 
-/* ===================== 绘制 ===================== */
-const cA = getCss('--cA'), cB = getCss('--cB');
-function getCss(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
-
-function prep(cv){
-  const ctx = cv.getContext('2d');
-  const W = cv.clientWidth, H = cv.clientHeight;
-  ctx.clearRect(0, 0, W, H);
-  return {ctx, W, H};
-}
-function worldRange(){
-  let lo = 0, hi = P.d;
-  const N = 160;
-  for (let i = 0; i <= N; i++){
-    const tt = T * i / N;
-    const a = xA(tt), b = xB(tt);
-    if (a < lo) lo = a; if (a > hi) hi = a;
-    if (b < lo) lo = b; if (b > hi) hi = b;
+  function setPlaying(p){
+    playing = p;
+    btnPlay.textContent = p ? '⏸ 暂停' : '▶ 开始';
+    if (p){ lastTs = null; requestAnimationFrame(loop); }
   }
-  const pad = Math.max(2, (hi - lo) * 0.08);
-  return [lo - pad, hi + pad];
-}
-function drawAnim(){
-  const {ctx, W, H} = prep(el('animCanvas'));
-  const [wlo, whi] = worldRange();
-  const mL = 24, mR = 24;
-  const y0 = H - 52;
-  const X = x => mL + (x - wlo) / (whi - wlo) * (W - mL - mR);
-  ctx.font = '11px system-ui, sans-serif';
-
-  ctx.strokeStyle = '#9ca3af';
-  ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.moveTo(mL - 8, y0); ctx.lineTo(W - mR + 8, y0); ctx.stroke();
-
-  const step = niceStep(whi - wlo, 8);
-  const dec = step >= 1 ? 0 : 1;
-  ctx.fillStyle = '#9ca3af'; ctx.textAlign = 'center';
-  for (let x = Math.ceil(wlo / step) * step; x <= whi + EPS; x += step){
-    const sx = X(x);
-    ctx.strokeStyle = '#d1d5db'; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(sx, y0); ctx.lineTo(sx, y0 + 5); ctx.stroke();
-    ctx.fillText(x.toFixed(dec), sx, y0 + 17);
+  function loop(ts){
+    if (!playing){ lastTs = null; return; }
+    if (lastTs == null) lastTs = ts;
+    t = Math.min(T, t + (ts - lastTs) / 1000 * speed);
+    lastTs = ts;
+    syncTime(); render();
+    if (t >= T){ setPlaying(false); } else { requestAnimationFrame(loop); }
   }
-  ctx.textAlign = 'right';
-  ctx.fillText('x/m', W - 6, y0 + 17);
-
-  if (sol.meets){
-    const xm = X(sol.xMeet);
-    ctx.strokeStyle = '#92400e'; ctx.fillStyle = '#92400e'; ctx.lineWidth = 1.5;
-    ctx.beginPath(); ctx.moveTo(xm, y0); ctx.lineTo(xm, y0 - 56); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(xm, y0 - 56); ctx.lineTo(xm + 14, y0 - 50); ctx.lineTo(xm, y0 - 44); ctx.closePath(); ctx.fill();
-    if (ckKey.checked){ ctx.textAlign = 'center'; ctx.fillText(`相遇点 ${f1(sol.xMeet)} m`, xm, y0 - 62); }
+  function syncTime(){
+    timeSlider.value = t;
+    timeLabel.textContent = `${f2(t)} s / ${f2(T)} s`;
   }
-  const mark = (x, label) => {
-    const sx = X(x);
-    ctx.strokeStyle = '#c7cdd6'; ctx.setLineDash([4, 4]); ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(sx, y0 + 4); ctx.lineTo(sx, y0 - 46); ctx.stroke();
-    ctx.setLineDash([]);
+
+  function prep(cv){
+    const ctx = cv.getContext('2d');
+    const W = cv.clientWidth, H = cv.clientHeight;
+    ctx.clearRect(0, 0, W, H);
+    return {ctx, W, H};
+  }
+  function worldRange(){
+    let lo = 0, hi = P.d;
+    const N = 200;
+    for (let i = 0; i <= N; i++){
+      const tt = T * i / N;
+      const a = xA(tt), b = xB(tt);
+      if (a < lo) lo = a; if (a > hi) hi = a;
+      if (b < lo) lo = b; if (b > hi) hi = b;
+    }
+    const pad = Math.max(2, (hi - lo) * 0.08);
+    return [lo - pad, hi + pad];
+  }
+  function arrow(ctx, x1, y1, x2, y2, color, both){
+    ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+    const head = (x, y, s) => {
+      ctx.beginPath(); ctx.moveTo(x, y);
+      ctx.lineTo(x - s * (x2 >= x1 ? 1 : -1), y - s * 0.55);
+      ctx.lineTo(x - s * (x2 >= x1 ? 1 : -1), y + s * 0.55);
+      ctx.closePath(); ctx.fill();
+    };
+    head(x2, y2, 7);
+    if (both) head(x1, y1, 7);
+  }
+  function drawBall(ctx, x, y, r, ch, color, phase){
+    ctx.save();
+    if (phase === 'w') ctx.globalAlpha = 0.45;
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+    if (phase === 'w'){
+      ctx.strokeStyle = color; ctx.setLineDash([3, 3]); ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(x, y, r + 4, 0, Math.PI * 2); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+    ctx.restore();
+  }
+  function drawAnim(){
+    const {ctx, W, H} = prep(el('animCanvas'));
+    const [wlo, whi] = worldRange();
+    const mL = 24, mR = 24;
+    const y0 = H - 52;
+    const X = x => mL + (x - wlo) / (whi - wlo) * (W - mL - mR);
+    ctx.font = '11px system-ui, sans-serif';
+
+    ctx.strokeStyle = '#9ca3af'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(mL - 8, y0); ctx.lineTo(W - mR + 8, y0); ctx.stroke();
+
+    const step = niceStep(whi - wlo, 8);
+    const dec = step >= 1 ? 0 : 1;
     ctx.fillStyle = '#9ca3af'; ctx.textAlign = 'center';
-    ctx.fillText(label, sx, y0 - 50);
-  };
-  mark(0, 'A出发 0');
-  mark(P.d, `B出发 ${f1(P.d)}m`);
+    for (let x = Math.ceil(wlo / step) * step; x <= whi + EPS; x += step){
+      const sx = X(x);
+      ctx.strokeStyle = '#d1d5db'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(sx, y0); ctx.lineTo(sx, y0 + 5); ctx.stroke();
+      ctx.fillText(x.toFixed(dec), sx, y0 + 17);
+    }
+    ctx.textAlign = 'right';
+    ctx.fillText('x/m', W - 6, y0 + 17);
 
-  const cx = X(xA(t)), dx = X(xB(t));
-  const close = Math.abs(dx - cx) < 28;
-  const cy = y0 - 14;
-  const ay = close ? cy - 15 : cy, by = close ? cy + 1 : cy;
-  const r = 12;
+    if (sol.meetings.length){
+      sol.meetings.forEach((m, i) => {
+        const xm = X(m.x);
+        ctx.strokeStyle = '#92400e'; ctx.fillStyle = '#92400e'; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(xm, y0); ctx.lineTo(xm, y0 - 56); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(xm, y0 - 56); ctx.lineTo(xm + 14, y0 - 50); ctx.lineTo(xm, y0 - 44); ctx.closePath(); ctx.fill();
+        if (ckKey.checked){
+          ctx.textAlign = 'center';
+          ctx.fillText(sol.meetings.length > 1 ? `相遇${i+1} t=${f2(m.t)}s` : `相遇点 ${f2(m.x)} m`, xm, y0 - 62);
+        }
+      });
+    }
+    const mark = (x, label) => {
+      const sx = X(x);
+      ctx.strokeStyle = '#c7cdd6'; ctx.setLineDash([4, 4]); ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(sx, y0 + 4); ctx.lineTo(sx, y0 - 46); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#9ca3af'; ctx.textAlign = 'center';
+      ctx.fillText(label, sx, y0 - 50);
+    };
+    mark(0, 'A出发 0');
+    mark(P.d, `B出发 ${f1(P.d)}m`);
 
-  if (ckDist.checked && Math.abs(dx - cx) > 30){
-    const yy = y0 - 42;
-    arrow(ctx, Math.min(cx, dx) + r + 2, yy, Math.max(cx, dx) - r - 2, yy, '#6b7280', true);
-    ctx.fillStyle = '#4b5563'; ctx.textAlign = 'center';
-    ctx.fillText(`${f1(Math.abs(xB(t) - xA(t)))} m`, (cx + dx) / 2, yy - 6);
-  }
-  drawObj(ctx, cx, ay, r, 'A', cA, vAo(t), t < P.dt, dirA());
-  drawObj(ctx, dx, by, r, 'B', cB, vBo(), false, dirB());
+    const sa = st(OA, t), sb = st(OB, t);
+    const cx = X(sa.x), dx = X(sb.x);
+    const cy = y0 - 14;
+    const R = 12;
+    const sep = Math.abs(dx - cx);
+    const overlap = sep < R + 2;
 
-  if (sol.meets && t >= sol.tMeet && t <= sol.tMeet + 0.8){
-    const p = (t - sol.tMeet) / 0.8;
-    ctx.strokeStyle = `rgba(220,38,38,${1 - p})`; ctx.lineWidth = 3;
-    ctx.beginPath(); ctx.arc(X(sol.xMeet), cy - 6, 16 + 14 * p, 0, Math.PI * 2); ctx.stroke();
-    ctx.fillStyle = '#dc2626'; ctx.textAlign = 'center'; ctx.font = 'bold 13px system-ui, sans-serif';
-    ctx.fillText(P.mode === 'same' ? '追上了！' : '相遇！', X(sol.xMeet), y0 - 74);
-  }
-  ctx.font = '12px system-ui, sans-serif'; ctx.fillStyle = '#6b7280'; ctx.textAlign = 'right';
-  ctx.fillText(`t = ${f1(t)} s`, W - 10, 16);
-}
-function drawObj(ctx, x, y, r, ch, color, v, waiting, dir){
-  ctx.save();
-  ctx.globalAlpha = waiting ? 0.45 : 1;
-  ctx.fillStyle = color;
-  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
-  if (waiting){
-    ctx.strokeStyle = color; ctx.setLineDash([3, 3]); ctx.lineWidth = 1.5;
-    ctx.beginPath(); ctx.arc(x, y, r + 4, 0, Math.PI * 2); ctx.stroke();
-    ctx.setLineDash([]);
-  }
-  ctx.fillStyle = '#fff'; ctx.font = 'bold 12px system-ui, sans-serif';
-  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.fillText(ch, x, y + 0.5);
-  ctx.textBaseline = 'alphabetic';
-  if (Math.abs(v) > EPS){
-    const ax = x + (r + 7) * (dir > 0 ? 1 : -1);
-    arrow(ctx, x + dir * (r + 2), y, ax + dir * 8, y, color, false);
-  }
-  ctx.restore();
-  if (waiting){
-    ctx.fillStyle = '#9ca3af'; ctx.textAlign = 'center'; ctx.font = '11px system-ui, sans-serif';
-    ctx.fillText('未出发', x, y - r - 8);
-  }
-}
-function arrow(ctx, x1, y1, x2, y2, color, both){
-  ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = 1.4;
-  ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
-  const head = (x, y, s) => {
-    ctx.beginPath(); ctx.moveTo(x, y);
-    ctx.lineTo(x - s * (x2 >= x1 ? 1 : -1), y - s * 0.55);
-    ctx.lineTo(x - s * (x2 >= x1 ? 1 : -1), y + s * 0.55);
-    ctx.closePath(); ctx.fill();
-  };
-  head(x2, y2, 7);
-  if (both) head(x1, y1, 7);
-}
+    if (ckDist.checked && sep > 34){
+      const yy = y0 - 42;
+      arrow(ctx, Math.min(cx, dx) + R + 2, yy, Math.max(cx, dx) - R - 2, yy, '#6b7280', true);
+      ctx.fillStyle = '#4b5563'; ctx.textAlign = 'center';
+      ctx.fillText(`${f2(Math.abs(sb.x - sa.x))} m`, (cx + dx) / 2, yy - 6);
+    }
 
-function chartFrame(o){
-  const {ctx, W, H} = prep(o.cv);
-  const mL = 46, mR = 14, mT = 18, mB = 26;
-  const X = v => mL + (v - o.xlo) / (o.xhi - o.xlo) * (W - mL - mR);
-  const Y = v => H - mB - (v - o.ylo) / (o.yhi - o.ylo) * (H - mT - mB);
-  ctx.font = '10.5px system-ui, sans-serif';
-  const xs = niceStep(o.xhi - o.xlo, 6), ys = niceStep(o.yhi - o.ylo, 5);
-  ctx.strokeStyle = '#eef1f5'; ctx.lineWidth = 1; ctx.fillStyle = '#9ca3af';
-  for (let v = Math.ceil(o.xlo / xs) * xs; v <= o.xhi + EPS; v += xs){
-    ctx.beginPath(); ctx.moveTo(X(v), mT); ctx.lineTo(X(v), H - mB); ctx.stroke();
-    ctx.textAlign = 'center'; ctx.fillText(+v.toFixed(3), X(v), H - mB + 13);
-  }
-  for (let v = Math.ceil(o.ylo / ys) * ys; v <= o.yhi + EPS; v += ys){
-    ctx.beginPath(); ctx.moveTo(mL, Y(v)); ctx.lineTo(W - mR, Y(v)); ctx.stroke();
-    ctx.textAlign = 'right'; ctx.fillText(+v.toFixed(3), mL - 5, Y(v) + 3.5);
-  }
-  ctx.strokeStyle = '#d1d5db';
-  ctx.beginPath(); ctx.moveTo(mL, mT); ctx.lineTo(mL, H - mB); ctx.lineTo(W - mR, H - mB); ctx.stroke();
-  ctx.textAlign = 'left'; ctx.fillText(o.yLabel, mL + 4, mT - 5);
-  ctx.textAlign = 'right'; ctx.fillText('t/s', W - mR, H - mB + 13);
-  return {ctx, X, Y, mL, mR, mT, mB, W, H};
-}
-function legend(g){
-  g.ctx.font = '11px system-ui, sans-serif';
-  g.ctx.textAlign = 'right';
-  g.ctx.fillStyle = cA; g.ctx.fillText('— A', g.W - g.mR - 34, g.mT + 8);
-  g.ctx.fillStyle = cB; g.ctx.fillText('— B', g.W - g.mR, g.mT + 8);
-}
-function playhead(g, yA, yB){
-  const x = g.X(t);
-  g.ctx.strokeStyle = '#374151'; g.ctx.lineWidth = 1.2;
-  g.ctx.beginPath(); g.ctx.moveTo(x, g.mT); g.ctx.lineTo(x, g.H - g.mB); g.ctx.stroke();
-  dot(g, x, yA, cA); dot(g, x, yB, cB);
-}
-function dot(g, x, y, c){
-  g.ctx.fillStyle = c;
-  g.ctx.beginPath(); g.ctx.arc(x, y, 3.5, 0, Math.PI * 2); g.ctx.fill();
-  g.ctx.strokeStyle = '#fff'; g.ctx.lineWidth = 1; g.ctx.stroke();
-}
-function vline(g, tt, label){
-  const x = g.X(tt);
-  g.ctx.strokeStyle = '#b0b7c3'; g.ctx.setLineDash([5, 4]); g.ctx.lineWidth = 1;
-  g.ctx.beginPath(); g.ctx.moveTo(x, g.mT); g.ctx.lineTo(x, g.H - g.mB); g.ctx.stroke();
-  g.ctx.setLineDash([]);
-  if (label && ckKey.checked){
-    g.ctx.fillStyle = '#92400e'; g.ctx.textAlign = 'center'; g.ctx.font = '10.5px system-ui, sans-serif';
-    g.ctx.fillText(label, x, g.mT + 9);
-  }
-}
+    drawBall(ctx, cx, cy, R, 'A', cA, sa.w ? 'w' : sa.s ? 's' : 'r');
+    if (sa.w){
+      ctx.fillStyle = '#9ca3af'; ctx.textAlign = 'center'; ctx.font = '11px system-ui, sans-serif';
+      ctx.fillText('未出发', cx, cy - R - 8);
+    }
+    if (sa.s){
+      ctx.fillStyle = '#9ca3af'; ctx.textAlign = 'center'; ctx.font = '11px system-ui, sans-serif';
+      ctx.fillText('已停', cx, cy + R + 12);
+    }
+    if (Math.abs(sa.v) > EPS){
+      const dir = sa.v > 0 ? 1 : -1;
+      const len = Math.min(8 + Math.abs(sa.v) * 1.8, 26);
+      arrow(ctx, cx + dir * (R + 2), cy, cx + dir * (R + 2 + len), cy, cA, false);
+    }
 
-function drawVT(){
-  const vals = [0, dirA() * P.vA, dirB() * P.vB];
-  let lo = Math.min(...vals), hi = Math.max(...vals);
-  if (hi - lo < 1e-9){ lo -= 1; hi += 1; } else { const p = (hi - lo) * 0.18; lo -= p; hi += p; }
-  const g = chartFrame({cv: el('vtCanvas'), xlo: 0, xhi: T, ylo: lo, yhi: hi, yLabel: 'v/(m/s)'});
+    if (overlap){
+      const coreR = sep < R ? R * 0.58 : R;
+      drawBall(ctx, dx, cy, coreR, 'B', cB, sb.w ? 'w' : sb.s ? 's' : 'r');
+      ctx.fillStyle = cA; ctx.textAlign = 'center'; ctx.font = 'bold 11px system-ui, sans-serif';
+      ctx.fillText('A', cx, cy - R - 5);
+      ctx.fillStyle = '#fff';
+      ctx.fillText('B', dx, cy + 4);
+    } else {
+      drawBall(ctx, dx, cy, R, 'B', cB, sb.w ? 'w' : sb.s ? 's' : 'r');
+      ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.font = 'bold 11px system-ui, sans-serif';
+      ctx.fillText('B', dx, cy + 4);
+    }
+    if (sb.w){
+      ctx.fillStyle = '#9ca3af'; ctx.textAlign = 'center'; ctx.font = '11px system-ui, sans-serif';
+      ctx.fillText('未出发', dx, cy - R - 8);
+    }
+    if (sb.s){
+      ctx.fillStyle = '#9ca3af'; ctx.textAlign = 'center'; ctx.font = '11px system-ui, sans-serif';
+      ctx.fillText('已停', dx, cy + R + 12);
+    }
+    if (Math.abs(sb.v) > EPS){
+      const dir = sb.v > 0 ? 1 : -1;
+      const len = Math.min(8 + Math.abs(sb.v) * 1.8, 26);
+      arrow(ctx, dx + dir * (R + 2), cy, dx + dir * (R + 2 + len), cy, cB, false);
+    }
 
-  if (ckArea.checked){
-    const tE = sol.meets ? sol.tMeet : T;
-    const bps = [...new Set([0, Math.min(P.dt, tE), tE])].sort((a, b) => a - b);
-    g.ctx.fillStyle = 'rgba(139,92,246,0.14)';
-    g.ctx.beginPath();
-    bps.forEach((tt, i) => { const y = g.Y(vAo(tt)); i ? g.ctx.lineTo(g.X(tt), y) : g.ctx.moveTo(g.X(tt), y); });
-    for (let i = bps.length - 1; i >= 0; i--) g.ctx.lineTo(g.X(bps[i]), g.Y(vBo(bps[i])));
-    g.ctx.closePath(); g.ctx.fill();
-    if (tE > 0.3){
-      const midT = tE / 2;
-      const yMid = (vAo(midT) + vBo(midT)) / 2;
-      if (Math.abs(g.Y(vAo(midT)) - g.Y(vBo(midT))) > 15 && g.Y(yMid) > g.mT + 14){
-        g.ctx.fillStyle = '#7c3aed'; g.ctx.textAlign = 'center'; g.ctx.font = '10.5px system-ui, sans-serif';
-        g.ctx.fillText('面积差＝位移差', g.X(midT), g.Y(yMid) + 3.5);
+    if (sol.meetings.length){
+      sol.meetings.forEach((m, i) => {
+        const dd = t - m.t;
+        if (dd >= 0 && dd <= 0.8){
+          const p = dd / 0.8;
+          ctx.strokeStyle = `rgba(220,38,38,${1 - p})`; ctx.lineWidth = 3;
+          ctx.beginPath(); ctx.arc(X(m.x), cy - 6, 16 + 14 * p, 0, Math.PI * 2); ctx.stroke();
+          ctx.fillStyle = '#dc2626'; ctx.textAlign = 'center'; ctx.font = 'bold 13px system-ui, sans-serif';
+          const word = P.mode === 'same' ? (i === 0 ? '追上了！' : '再次相遇！') : '相遇！';
+          ctx.fillText(word, X(m.x), y0 - 74);
+        }
+      });
+    }
+    ctx.font = '12px system-ui, sans-serif'; ctx.fillStyle = '#6b7280'; ctx.textAlign = 'right';
+    ctx.fillText(`t = ${f2(t)} s`, W - 10, 16);
+  }
+
+  function chartFrame(o){
+    const {ctx, W, H} = prep(o.cv);
+    const mL = 46, mR = 14, mT = 18, mB = 26;
+    const X = v => mL + (v - o.xlo) / (o.xhi - o.xlo) * (W - mL - mR);
+    const Y = v => H - mB - (v - o.ylo) / (o.yhi - o.ylo) * (H - mT - mB);
+    ctx.font = '10.5px system-ui, sans-serif';
+    const xs = niceStep(o.xhi - o.xlo, 6), ys = niceStep(o.yhi - o.ylo, 5);
+    ctx.strokeStyle = '#eef1f5'; ctx.lineWidth = 1; ctx.fillStyle = '#9ca3af';
+    for (let v = Math.ceil(o.xlo / xs) * xs; v <= o.xhi + EPS; v += xs){
+      ctx.beginPath(); ctx.moveTo(X(v), mT); ctx.lineTo(X(v), H - mB); ctx.stroke();
+      ctx.textAlign = 'center'; ctx.fillText(+v.toFixed(3), X(v), H - mB + 13);
+    }
+    for (let v = Math.ceil(o.ylo / ys) * ys; v <= o.yhi + EPS; v += ys){
+      ctx.beginPath(); ctx.moveTo(mL, Y(v)); ctx.lineTo(W - mR, Y(v)); ctx.stroke();
+      ctx.textAlign = 'right'; ctx.fillText(+v.toFixed(3), mL - 5, Y(v) + 3.5);
+    }
+    ctx.strokeStyle = '#d1d5db';
+    ctx.beginPath(); ctx.moveTo(mL, mT); ctx.lineTo(mL, H - mB); ctx.lineTo(W - mR, H - mB); ctx.stroke();
+    ctx.textAlign = 'left'; ctx.fillText(o.yLabel, mL + 4, mT - 5);
+    ctx.textAlign = 'right'; ctx.fillText('t/s', W - mR, H - mB + 13);
+    return {ctx, X, Y, mL, mR, mT, mB, W, H};
+  }
+  function legend(g){
+    g.ctx.font = '11px system-ui, sans-serif';
+    g.ctx.textAlign = 'right';
+    g.ctx.fillStyle = cA; g.ctx.fillText('— A', g.W - g.mR - 34, g.mT + 8);
+    g.ctx.fillStyle = cB; g.ctx.fillText('— B', g.W - g.mR, g.mT + 8);
+  }
+  function playhead(g, yA, yB){
+    const x = g.X(t);
+    g.ctx.strokeStyle = '#374151'; g.ctx.lineWidth = 1.2;
+    g.ctx.beginPath(); g.ctx.moveTo(x, g.mT); g.ctx.lineTo(x, g.H - g.mB); g.ctx.stroke();
+    dot(g, x, yA, cA); dot(g, x, yB, cB);
+  }
+  function dot(g, x, y, c){
+    if (!isFinite(y)) return;
+    g.ctx.fillStyle = c;
+    g.ctx.beginPath(); g.ctx.arc(x, y, 3.5, 0, Math.PI * 2); g.ctx.fill();
+    g.ctx.strokeStyle = '#fff'; g.ctx.lineWidth = 1; g.ctx.stroke();
+  }
+  function vline(g, tt, label){
+    const x = g.X(tt);
+    g.ctx.strokeStyle = '#b0b7c3'; g.ctx.setLineDash([5, 4]); g.ctx.lineWidth = 1;
+    g.ctx.beginPath(); g.ctx.moveTo(x, g.mT); g.ctx.lineTo(x, g.H - g.mB); g.ctx.stroke();
+    g.ctx.setLineDash([]);
+    if (label && ckKey.checked){
+      g.ctx.fillStyle = '#92400e'; g.ctx.textAlign = 'center'; g.ctx.font = '10.5px system-ui, sans-serif';
+      g.ctx.fillText(label, x, g.mT + 9);
+    }
+  }
+  function chartBounds(){
+    const set = new Set([0, T]);
+    bounds(T).forEach(b => { if (b > EPS && b < T) set.add(b); });
+    if (sol.tmin) set.add(sol.tmin.t);
+    if (sol.tmax) set.add(sol.tmax.t);
+    sol.meetings.forEach(m => set.add(m.t));
+    return [...set].sort((a, b) => a - b);
+  }
+  function vAfter(o, tt){ return st(o, tt + 1e-6).v; }
+
+  function drawVT(){
+    const N = 240;
+    let lo = 0, hi = 0;
+    const pts = {A:[], B:[]};
+    for (let i = 0; i <= N; i++){
+      const tt = T * i / N;
+      const va = vAo(tt), vb = vBo(tt);
+      pts.A.push([tt, va]); pts.B.push([tt, vb]);
+      lo = Math.min(lo, va, vb); hi = Math.max(hi, va, vb);
+    }
+    if (hi - lo < 1e-9){ lo -= 1; hi += 1; } else { const p = (hi - lo) * 0.18; lo -= p; hi += p; }
+    const g = chartFrame({cv: el('vtCanvas'), xlo: 0, xhi: T, ylo: lo, yhi: hi, yLabel: 'v/(m/s)'});
+
+    if (ckArea.checked){
+      const tE = sol.meetings.length ? sol.meetings[0].t : T;
+      const times = chartBounds().filter(tt => tt < tE - EPS).concat([tE]);
+      if (tE > 0.05){
+        g.ctx.fillStyle = 'rgba(139,92,246,0.14)';
+        g.ctx.beginPath();
+        times.forEach((tt, i) => { const y = g.Y(vAo(tt)); i ? g.ctx.lineTo(g.X(tt), y) : g.ctx.moveTo(g.X(tt), y); });
+        for (let i = times.length - 1; i >= 0; i--) g.ctx.lineTo(g.X(times[i]), g.Y(vBo(times[i])));
+        g.ctx.closePath(); g.ctx.fill();
+        if (tE > 0.6){
+          const midT = tE / 2;
+          const yMid = (vAo(midT) + vBo(midT)) / 2;
+          if (Math.abs(g.Y(vAo(midT)) - g.Y(vBo(midT))) > 15 && g.Y(yMid) > g.mT + 14){
+            g.ctx.fillStyle = '#7c3aed'; g.ctx.textAlign = 'center'; g.ctx.font = '10.5px system-ui, sans-serif';
+            g.ctx.fillText('面积差＝位移差', g.X(midT), g.Y(yMid) + 3.5);
+          }
+        }
       }
     }
+
+    const tStar = sol.tmin ? sol.tmin : sol.tmax;
+    if (tStar) vline(g, tStar.t, `v相等(间距极值) t=${f2(tStar.t)}s`);
+    sol.meetings.forEach(m => {
+      if (tStar && Math.abs(m.t - tStar.t) < 1e-6) return;
+      vline(g, m.t, `${P.mode === 'same' ? '追及' : '相遇'} t=${f2(m.t)}s`);
+    });
+
+    [pts.A, pts.B].forEach((arr, idx) => {
+      g.ctx.strokeStyle = idx === 0 ? cA : cB; g.ctx.lineWidth = 2.2;
+      g.ctx.beginPath();
+      arr.forEach((p, i) => { i ? g.ctx.lineTo(g.X(p[0]), g.Y(p[1])) : g.ctx.moveTo(g.X(p[0]), g.Y(p[1])); });
+      g.ctx.stroke();
+    });
+
+    playhead(g, g.Y(vAo(t)), g.Y(vBo(t)));
+    legend(g);
   }
-  if (P.dt > 0){
-    g.ctx.strokeStyle = '#cbd5e1'; g.ctx.setLineDash([3, 3]);
-    g.ctx.beginPath(); g.ctx.moveTo(g.X(P.dt), g.Y(0)); g.ctx.lineTo(g.X(P.dt), g.Y(dirA() * P.vA)); g.ctx.stroke();
-    g.ctx.setLineDash([]);
-  }
-  if (sol.meets) vline(g, sol.tMeet, `${P.mode === 'same' ? '追及' : '相遇'} t=${f1(sol.tMeet)}s`);
 
-  g.ctx.strokeStyle = cA; g.ctx.lineWidth = 2.2;
-  g.ctx.beginPath();
-  if (P.dt > 0){
-    g.ctx.moveTo(g.X(0), g.Y(0)); g.ctx.lineTo(g.X(P.dt), g.Y(0));
-    g.ctx.lineTo(g.X(P.dt), g.Y(dirA() * P.vA));
-  } else {
-    g.ctx.moveTo(g.X(0), g.Y(dirA() * P.vA));
-  }
-  g.ctx.lineTo(g.X(T), g.Y(dirA() * P.vA));
-  g.ctx.stroke();
-  g.ctx.strokeStyle = cB;
-  g.ctx.beginPath(); g.ctx.moveTo(g.X(0), g.Y(vBo())); g.ctx.lineTo(g.X(T), g.Y(vBo())); g.ctx.stroke();
-
-  playhead(g, g.Y(vAo(t)), g.Y(vBo()));
-  legend(g);
-}
-
-function drawXT(){
-  let lo = 0, hi = 0;
-  const N = 160;
-  for (let i = 0; i <= N; i++){
-    const tt = T * i / N;
-    lo = Math.min(lo, xA(tt), xB(tt)); hi = Math.max(hi, xA(tt), xB(tt));
-  }
-  if (hi - lo < 1e-9){ lo -= 1; hi += 1; } else { const p = (hi - lo) * 0.12; lo -= p; hi += p; }
-  const g = chartFrame({cv: el('xtCanvas'), xlo: 0, xhi: T, ylo: lo, yhi: hi, yLabel: 'x/m'});
-
-  if (sol.meets) vline(g, sol.tMeet, `${P.mode === 'same' ? '追及' : '相遇'} t=${f1(sol.tMeet)}s`);
-
-  g.ctx.strokeStyle = cA; g.ctx.lineWidth = 2.2;
-  g.ctx.beginPath();
-  if (P.dt > 0){ g.ctx.moveTo(g.X(0), g.Y(0)); g.ctx.lineTo(g.X(P.dt), g.Y(0)); }
-  g.ctx.lineTo(g.X(T), g.Y(xA(T)));
-  g.ctx.stroke();
-  g.ctx.strokeStyle = cB;
-  g.ctx.beginPath(); g.ctx.moveTo(g.X(0), g.Y(xB(0))); g.ctx.lineTo(g.X(T), g.Y(xB(T))); g.ctx.stroke();
-
-  if (sol.meets && ckKey.checked){
-    const px = g.X(sol.tMeet), py = g.Y(sol.xMeet);
-    g.ctx.fillStyle = '#fff'; g.ctx.strokeStyle = '#92400e'; g.ctx.lineWidth = 2;
-    g.ctx.beginPath(); g.ctx.arc(px, py, 4.5, 0, Math.PI * 2); g.ctx.fill(); g.ctx.stroke();
-    g.ctx.fillStyle = '#92400e'; g.ctx.textAlign = 'left'; g.ctx.font = '10.5px system-ui, sans-serif';
-    const tx = px + 8 > g.W - 90 ? px - 88 : px + 8;
-    g.ctx.fillText(`(${f1(sol.tMeet)}, ${f1(sol.xMeet)})`, tx, py - 7);
-  }
-  playhead(g, g.Y(xA(t)), g.Y(xB(t)));
-  legend(g);
-}
-
-/* ===================== 数据与结论 ===================== */
-function currentState(){
-  if (sol.meets && t >= sol.tMeet - EPS){
-    return {text: (P.mode === 'same' ? '已追上' : '已相遇') + (P.dt > 0 && t < P.dt ? '（A 未出发）' : ''), hot: true};
-  }
-  const rate = vBo() - vAo(t);
-  let s = Math.abs(rate) < EPS ? '距离保持不变' : (rate < 0 ? '接近中' : '远离中');
-  if (P.dt > 0 && t < P.dt) s += '（A 未出发）';
-  return {text: s, hot: false};
-}
-function updateData(){
-  el('dT').textContent = `${f1(t)} s`;
-  el('dXA').textContent = `${f1(xA(t))} m`;
-  el('dXB').textContent = `${f1(xB(t))} m`;
-  const va = vAo(t), vb = vBo();
-  el('dVA').textContent = sgn(va) + ' m/s';
-  el('dVB').textContent = sgn(vb) + ' m/s';
-  el('dGap').textContent = `${f1(Math.abs(xB(t) - xA(t)))} m`;
-  el('dVrel').textContent = sgn(va - vb) + ' m/s';
-  const st = currentState();
-  const cell = el('dState');
-  cell.textContent = st.text;
-  cell.className = st.hot ? 'state-hot' : '';
-}
-function sgn(v){ return (v >= 0 ? '+' : '') + f1(v); }
-
-function updateResult(){
-  const box = el('resultBox');
-  if (sol.meets){
-    box.className = 'result ok';
-    const act = P.mode === 'same' ? 'A 能追上 B' : '两物体相遇';
-    box.innerHTML = `✔ <b>${act}</b>：${P.mode === 'same' ? '追及' : '相遇'}时刻 t = <b>${f1(sol.tMeet)} s</b>，位置 x = <b>${f1(sol.xMeet)} m</b>` +
-      (sol.note ? `<br><span style="color:#6b7280">（${sol.note}）</span>` : '');
-  } else {
-    box.className = 'result no';
-    const act = P.mode === 'same' ? 'A 追不上 B' : '两物体不会相遇';
-    box.innerHTML = `✘ <b>${act}</b>：${sol.reason}` +
-      (sol.reasonHot ? '<br><span style="color:#6b7280">临界情形：vA = vB 时相对速度为零，间距不再变化。</span>' : '');
-  }
-}
-
-function buildFormula(){
-  const dt = P.dt, d = P.d;
-  const vaT = P.mode === 'apart' ? `−${f1(P.vA)}` : f1(P.vA);
-  const vbS = P.mode === 'toward' ? '−' : '+';
-  const xAe = dt > 0 ? `${vaT}(t − ${f1(dt)})` : `${vaT} t`;
-  const xBe = `${f1(d)} ${vbS} ${f1(P.vB)} t`;
-  const sub = c => `<span class="fx f${c}">x<sub>${c}</sub></span>`;
-  const subP = c => `<span class="fx f${c}">v<sub>${c}</sub></span>`;
-  let solveLine;
-  if (sol.meets){
-    if (sol.note){
-      solveLine = `B 先到达 A 的出发点：<span class="fx">t = d / v<sub>B</sub> = ${f1(d)} / ${f1(P.vB)} = <b>${f1(sol.tMeet)} s</b>（x = 0）</span>`;
-    } else if (P.mode === 'same'){
-      const l = dt > 0 ? `${f1(P.vA)}(t − ${f1(dt)}) = ${f1(d)} + ${f1(P.vB)}t` : `${f1(P.vA)}t = ${f1(d)} + ${f1(P.vB)}t`;
-      solveLine = `${l}　→　<span class="fx">(${f1(P.vA)} − ${f1(P.vB)})t = ${f1(d + P.vA * dt)}</span>　→　t = <b>${f1(sol.tMeet)} s</b>，x = <b>${f1(sol.xMeet)} m</b>`;
-    } else {
-      const l = dt > 0 ? `${f1(P.vA)}(t − ${f1(dt)}) = ${f1(d)} − ${f1(P.vB)}t` : `${f1(P.vA)}t = ${f1(d)} − ${f1(P.vB)}t`;
-      solveLine = `${l}　→　<span class="fx">(${f1(P.vA)} + ${f1(P.vB)})t = ${f1(d + P.vA * dt)}</span>　→　t = <b>${f1(sol.tMeet)} s</b>，x = <b>${f1(sol.xMeet)} m</b>`;
+  function drawXT(){
+    let lo = 0, hi = 0;
+    const N = 240;
+    for (let i = 0; i <= N; i++){
+      const tt = T * i / N;
+      lo = Math.min(lo, xA(tt), xB(tt)); hi = Math.max(hi, xA(tt), xB(tt));
     }
-  } else {
-    solveLine = `<span class="fno">无解：${sol.reason}</span>`;
+    if (hi - lo < 1e-9){ lo -= 1; hi += 1; } else { const p = (hi - lo) * 0.12; lo -= p; hi += p; }
+    const g = chartFrame({cv: el('xtCanvas'), xlo: 0, xhi: T, ylo: lo, yhi: hi, yLabel: 'x/m'});
+
+    const tStar = sol.tmin ? sol.tmin : sol.tmax;
+    if (tStar) vline(g, tStar.t, `v相等(间距极值) t=${f2(tStar.t)}s`);
+    sol.meetings.forEach(m => {
+      if (tStar && Math.abs(m.t - tStar.t) < 1e-6) return;
+      vline(g, m.t, `${P.mode === 'same' ? '追及' : '相遇'} t=${f2(m.t)}s`);
+    });
+
+    [[OA, cA], [OB, cB]].forEach(([o, col]) => {
+      g.ctx.strokeStyle = col; g.ctx.lineWidth = 2.2;
+      g.ctx.beginPath();
+      for (let i = 0; i <= N; i++){
+        const tt = T * i / N;
+        const px = g.X(tt), py = g.Y(st(o, tt).x);
+        i ? g.ctx.lineTo(px, py) : g.ctx.moveTo(px, py);
+      }
+      g.ctx.stroke();
+    });
+
+    if (sol.meetings.length && ckKey.checked){
+      sol.meetings.forEach(m => {
+        const px = g.X(m.t), py = g.Y(m.x);
+        g.ctx.fillStyle = '#fff'; g.ctx.strokeStyle = '#92400e'; g.ctx.lineWidth = 2;
+        g.ctx.beginPath(); g.ctx.arc(px, py, 4.5, 0, Math.PI * 2); g.ctx.fill(); g.ctx.stroke();
+        g.ctx.fillStyle = '#92400e'; g.ctx.textAlign = 'left'; g.ctx.font = '10.5px system-ui, sans-serif';
+        const tx = px + 8 > g.W - 92 ? px - 90 : px + 8;
+        g.ctx.fillText(`(${f2(m.t)}, ${f2(m.x)})`, tx, py - 7);
+      });
+    }
+    playhead(g, g.Y(xA(t)), g.Y(xB(t)));
+    legend(g);
   }
-  let judge;
-  if (P.mode === 'same'){
-    const dv = P.vA - P.vB;
-    judge = `${subP('A')} − ${subP('B')} = ${sgn(dv)} m/s：` +
-      (dv > EPS ? '大于 0，A 比 B 快，<b>一定能追上</b>'
-       : Math.abs(dv) < EPS ? '等于 0（临界），A 出发后间距恒定，<b>永远追不上</b>'
-       : '小于 0，B 更快，<b>追不上</b>');
-  } else if (P.mode === 'toward'){
-    const sv = P.vA + P.vB;
-    judge = `${subP('A')} + ${subP('B')} = ${f1(sv)} m/s` +
-      (sv > EPS ? '，两者相互接近，<b>一定能相遇</b>' : '，双方静止，<b>不会相遇</b>');
-  } else {
-    judge = `背向而行：间距 = d + (${f1(P.vA)} + ${f1(P.vB)})t 只增不减，<b>不可能相遇</b>`;
+
+  function phaseNote(o, name){
+    const s = st(o, t);
+    if (s.w) return `（${name} 未出发）`;
+    if (s.s) return `（${name} 已停）`;
+    return '';
   }
-  const dirNoteA = dt > 0 ? ` <span class="fnote">（A 晚 ${f1(dt)} s 出发，t &lt; ${f1(dt)} s 时静止于原点）</span>` : '';
-  const dirNoteB = P.mode === 'toward' ? ' <span class="fnote">（B 向左，速度取负）</span>' : '';
-  el('formulaBox').innerHTML =
-    `<div><span class="tag">位置表达式</span>${sub('A')} = ${xAe}${dirNoteA}　　${sub('B')} = ${xBe}${dirNoteB}</div>` +
-    `<div><span class="tag">追及/相遇条件</span>令 ${sub('A')} = ${sub('B')}</div>` +
-    `<div><span class="tag">代入求解</span>${solveLine}</div>` +
-    `<div><span class="tag">判定依据</span>${judge}</div>`;
-}
+  function updateData(){
+    el('dT').textContent = `${f2(t)} s`;
+    el('dXA').textContent = `${f2(xA(t))} m`;
+    el('dXB').textContent = `${f2(xB(t))} m`;
+    const va = vAo(t), vb = vBo();
+    el('dVA').textContent = sgn(va) + ' m/s';
+    el('dVB').textContent = sgn(vb) + ' m/s';
+    el('dGap').textContent = `${f2(Math.abs(xB(t) - xA(t)))} m`;
+    el('dVrel').textContent = sgn(va - vb) + ' m/s';
+    const ts = sol.tmin ? sol.tmin : sol.tmax;
+    el('dTstar').textContent = ts ? `t = ${f2(ts.t)} s` : '—';
+    if (sol.critical) el('dExt').textContent = `间距恒定 ${f2(sol.criticalGap)} m`;
+    else if (sol.tmin) el('dExt').textContent = `最近 ${f2(sol.tmin.gap)} m @ t=${f2(sol.tmin.t)} s`;
+    else if (sol.tmax) el('dExt').textContent = `最远 ${f2(sol.tmax.gap)} m @ t=${f2(sol.tmax.t)} s`;
+    else el('dExt').textContent = '—';
+    const cell = el('dState');
+    const stt = stateText();
+    cell.textContent = stt.text;
+    cell.className = stt.hot ? 'state-hot' : '';
+  }
+  function stateText(){
+    const passed = sol.meetings.filter(m => t >= m.t - EPS);
+    if (passed.length){
+      const last = passed.length;
+      return {text: (P.mode === 'same' ? '已追上' : '已相遇') + (last > 1 ? `（第 ${last} 次）` : '') + phaseNote(OA, 'A') + phaseNote(OB, 'B'), hot: true};
+    }
+    const rel = xB(t) - xA(t);
+    const rate = (vAo(t) - vBo(t)) * Math.sign(rel || 1);
+    let s;
+    if (Math.abs(rate) < EPS) s = '距离保持不变';
+    else s = rate > 0 ? '接近中' : '远离中';
+    s += phaseNote(OA, 'A') + phaseNote(OB, 'B');
+    return {text: s, hot: false};
+  }
 
-/* ===================== 渲染总入口 ===================== */
-function render(){ drawAnim(); drawVT(); drawXT(); updateData(); }
-function apply(){
-  sol = solve(); T = sol.T;
-  if (t > T) t = T;
-  timeSlider.max = T;
-  buildFormula(); updateResult(); syncTime(); render();
-}
+  function exprTerm(o){
+    const tau = o.dt > 0 ? `(t − ${f2(o.dt)})` : 't';
+    let parts = [];
+    if (Math.abs(o.v0) > EPS) parts.push(`${o.v0 > 0 ? '' : '− '}${f2(Math.abs(o.v0))}${tau}`);
+    if (Math.abs(o.a) > EPS) parts.push(`${o.a > 0 ? '+' : '−'} ${f2(Math.abs(o.a) / 2)}${tau}²`);
+    let s = o.x0 !== 0 ? f2(o.x0) : '0';
+    if (parts.length) s += ' ' + parts.join(' ');
+    if (o.dt > 0) s += ` <span class="fnote">（t &lt; ${f2(o.dt)} s 时静止于 x=${f2(o.x0)} m）</span>`;
+    if (isFinite(o.stop)){
+      const sTau = o.stop - o.dt;
+      const xs = o.x0 + o.v0 * sTau + 0.5 * o.a * sTau * sTau;
+      s += ` <span class="fnote">（t ≥ ${f2(o.stop)} s 刹车停止于 x=${f2(xs)} m）</span>`;
+    }
+    return s;
+  }
+  function noMeetReason(){
+    if (P.mode === 'apart') return '背向而行，间距 = d + (vA + vB)t 只增不减，不可能相遇';
+    if (Math.abs(P.vA) < EPS && Math.abs(P.vB) < EPS) return '两物体速度均为 0，保持静止，不会相遇';
+    if (sol.critical) return `同速：A 出发后两者间距恒定（${f2(sol.criticalGap)} m），永远追不上`;
+    const bothUniform = Math.abs(OA.a) < EPS && Math.abs(OB.a) < EPS;
+    if (bothUniform && P.mode === 'same') return 'B 的速度更大（vA < vB），距离不断增大，A 追不上 B';
+    if (bothUniform && P.mode === 'toward') return '在观察区间内未相遇';
+    if (sol.tmin) return `速度相等（t = ${f2(sol.tmin.t)} s）时仍相距 ${f2(sol.tmin.gap)} m，此后间距增大，追不上`;
+    return '在观察区间内未相遇';
+  }
+  function buildFormula(){
+    const sub = c => `<span class="fx f${c}">x<sub>${c}</sub></span>`;
+    const subP = c => `<span class="fx f${c}">v<sub>${c}</sub></span>`;
+    const posLine = `<div><span class="tag">位置表达式</span>${sub('A')} = ${exprTerm(OA)}　　${sub('B')} = ${exprTerm(OB)}</div>`;
 
-/* ===================== 控件绑定 ===================== */
-function el(id){ return document.getElementById(id); }
-const btnPlay = el('btnPlay'), timeSlider = el('timeSlider'), timeLabel = el('timeLabel');
-const ckKey = el('ckKey'), ckDist = el('ckDist'), ckArea = el('ckArea');
+    let starLine;
+    if (sol.critical){
+      starLine = `<div><span class="tag">速度相等</span><span class="fx fno">v<sub>A</sub> ≡ v<sub>B</sub>（临界）：相对速度恒为 0，间距恒定 ${f2(sol.criticalGap)} m</span></div>`;
+    } else if (sol.tmin){
+      starLine = `<div><span class="tag">速度相等</span>令 ${subP('A')} = ${subP('B')} → t<sup>*</sup> = <b>${f2(sol.tmin.t)} s</b>，此刻间距最小 = <b>${f2(sol.tmin.gap)} m</b>（速度相等即间距极值）</div>`;
+    } else if (sol.tmax){
+      starLine = `<div><span class="tag">速度相等</span>令 ${subP('A')} = ${subP('B')} → t<sup>*</sup> = <b>${f2(sol.tmax.t)} s</b>，此刻间距最大 = <b>${f2(sol.tmax.gap)} m</b>（速度相等即间距极值）</div>`;
+    } else {
+      starLine = `<div><span class="tag">速度相等</span><span class="fnote">匀速模型下相对速度恒定，不存在速度相等时刻（除临界外）</span></div>`;
+    }
 
-function markCustom(){ el('presetSel').value = 'custom'; }
-function bindPair(rid, nid, key){
-  const r = el(rid), n = el(nid);
-  const set = v => {
-    v = Math.min(+r.max, Math.max(+r.min, +v || 0));
-    P[key] = v; r.value = v; n.value = v;
-    markCustom(); apply();
-  };
-  r.addEventListener('input', () => set(r.value));
-  n.addEventListener('change', () => set(n.value));
-}
-bindPair('d', 'dN', 'd');
-bindPair('vA', 'vAn', 'vA');
-bindPair('vB', 'vBn', 'vB');
-bindPair('dt', 'dtN', 'dt');
+    const m = sol.main;
+    const tau0 = m.t0 > EPS ? `(t − ${f2(m.t0)})` : 't';
+    let eqStr, solveStr;
+    const meetMain = m.roots.map(rt => `${f2(rt)} s`);
+    if (Math.abs(m.A) < EPS){
+      eqStr = `${sub('A')} = ${sub('B')} → ${f2(m.B)}${tau0} ${m.C >= 0 ? '+' : '−'} ${f2(Math.abs(m.C))} = 0`;
+      solveStr = meetMain.length ? `→ t = <b>${meetMain.join(' s 或 ')}</b>` : '<span class="fno">该段无有效解</span>';
+    } else {
+      eqStr = `${sub('A')} = ${sub('B')} → ${f2(m.A)}${tau0}² ${m.B >= 0 ? '+' : '−'} ${f2(Math.abs(m.B))}${tau0} ${m.C >= 0 ? '+' : '−'} ${f2(Math.abs(m.C))} = 0`;
+      const dv = m.delta;
+      let rootTxt;
+      if (m.roots.length === 2) rootTxt = `Δ = ${f2(dv)} &gt; 0，两个解 t₁ = ${f2(m.roots[0])} s，t₂ = ${f2(m.roots[1])} s（相遇两次，追上后反超）`;
+      else if (m.roots.length === 1) rootTxt = `Δ = ${f2(dv)} ${Math.abs(dv) < 1e-6 ? '= 0（相切，临界）' : '&gt; 0'}，有效解 t = <b>${f2(m.roots[0])} s</b>`;
+      else rootTxt = `Δ = ${f2(dv)} ${dv < 0 ? '&lt; 0，无实根' : '&gt; 0 但解不在有效区间'}，该段无有效解`;
+      solveStr = rootTxt;
+    }
+    let extraTxt = '';
+    if (sol.extra.length){
+      extraTxt = '；' + sol.extra.map(x => `${x.t > (isFinite(OB.stop) ? OB.stop : Infinity) - EPS || st(OB, x.t).s ? 'B 停止后' : '后段'}于 t = ${f2(x.t)} s 相遇（x = ${f2(x.x)} m）`).join('；');
+    }
+    const solveLine = `<div><span class="tag">联立求解</span>${eqStr}　→　${solveStr}${extraTxt}</div>`;
 
-document.querySelectorAll('input[name=mode]').forEach(r =>
-  r.addEventListener('change', () => { P.mode = r.value; markCustom(); apply(); }));
-[ckDist, ckKey, ckArea].forEach(c => c.addEventListener('change', render));
+    let judge;
+    if (sol.meetings.length){
+      const n = sol.meetings.length;
+      const act = P.mode === 'same' ? (n > 1 ? `A 能追上 B（共 ${n} 次相遇）` : 'A 能追上 B') : '两物体相遇';
+      judge = `<b>${act}</b>：${sol.meetings.map(mm => `t = ${f2(mm.t)} s（x = ${f2(mm.x)} m）`).join('；')}`;
+    } else {
+      judge = `<span class="fno">无解：${noMeetReason()}</span>` +
+        (sol.critical ? '<br><span class="fnote">临界情形：vA = vB 时相对速度为零，间距不再变化。</span>' : '');
+    }
+    const judgeLine = `<div><span class="tag">判定依据</span>${judge}</div>`;
 
-el('presetSel').addEventListener('change', e => {
-  if (PRESETS[e.target.value]) loadPreset(e.target.value);
-});
-function loadPreset(key){
-  const p = PRESETS[key];
-  P.mode = p.mode; P.d = p.d; P.vA = p.vA; P.vB = p.vB; P.dt = p.dt;
-  el('d').value = p.d; el('dN').value = p.d;
-  el('vA').value = p.vA; el('vAn').value = p.vA;
-  el('vB').value = p.vB; el('vBn').value = p.vB;
-  el('dt').value = p.dt; el('dtN').value = p.dt;
-  document.querySelectorAll('input[name=mode]').forEach(r => r.checked = r.value === p.mode);
-  el('presetSel').value = key;
-  t = 0; setPlaying(false); apply();
-}
+    el('formulaBox').innerHTML = posLine + starLine + solveLine + judgeLine;
+  }
+  function updateResult(){
+    const box = el('resultBox');
+    if (sol.meetings.length){
+      box.className = 'result ok';
+      const n = sol.meetings.length;
+      const act = P.mode === 'same' ? (n > 1 ? `A 能追上 B（共 ${n} 次相遇）` : 'A 能追上 B') : '两物体相遇';
+      box.innerHTML = `✔ <b>${act}</b>：${sol.meetings.map(mm => `t = <b>${f2(mm.t)} s</b>，x = <b>${f2(mm.x)} m</b>`).join('；')}`;
+    } else {
+      box.className = 'result no';
+      const act = P.mode === 'same' ? 'A 追不上 B' : '两物体不会相遇';
+      let extra = '';
+      if (sol.tmin) extra = `<br>最近距离 ${f2(sol.tmin.gap)} m（t = ${f2(sol.tmin.t)} s，速度相等时刻）`;
+      if (sol.critical) extra = '<br><span style="color:#6b7280">临界情形：vA = vB 时相对速度为零，间距不再变化。</span>';
+      box.innerHTML = `✘ <b>${act}</b>：${noMeetReason()}${extra}`;
+    }
+  }
 
-btnPlay.addEventListener('click', () => {
-  if (!playing && t >= T - EPS) t = 0;
-  setPlaying(!playing);
-});
-el('btnStep').addEventListener('click', () => {
-  setPlaying(false);
-  t = Math.min(T, t + 0.1);
-  syncTime(); render();
-});
-el('btnReplay').addEventListener('click', () => { t = 0; setPlaying(true); });
-el('btnReset').addEventListener('click', () => {
-  setPlaying(false);
-  if (PRESETS[el('presetSel').value]) loadPreset(el('presetSel').value);
-  else { t = 0; syncTime(); render(); }
-});
-timeSlider.addEventListener('input', () => {
-  t = Math.min(T, Math.max(0, parseFloat(timeSlider.value) || 0));
-  syncTime(); render();
-});
-el('speedSel').addEventListener('change', e => { speed = parseFloat(e.target.value); });
+  function render(){ drawAnim(); drawVT(); drawXT(); updateData(); }
+  function apply(){
+    sol = solve(); T = sol.T;
+    if (t > T) t = T;
+    timeSlider.max = T;
+    buildFormula(); updateResult(); syncTime(); render();
+  }
 
-function resizeAll(){
-  ['animCanvas', 'vtCanvas', 'xtCanvas'].forEach(id => {
-    const cv = el(id);
-    const dpr = window.devicePixelRatio || 1;
-    const w = cv.clientWidth, h = cv.clientHeight;
-    cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
-    cv.getContext('2d').setTransform(dpr, 0, 0, dpr, 0, 0);
+  function markCustom(){ el('presetSel').value = 'custom'; }
+  function bindPair(rid, nid, key){
+    const r = el(rid), n = el(nid);
+    const set = v => {
+      v = Math.min(+r.max, Math.max(+r.min, +v || 0));
+      P[key] = v; r.value = v; n.value = v;
+      markCustom(); apply();
+    };
+    r.addEventListener('input', () => set(r.value));
+    n.addEventListener('change', () => set(n.value));
+  }
+  bindPair('d', 'dN', 'd');
+  bindPair('vA', 'vAn', 'vA');
+  bindPair('vB', 'vBn', 'vB');
+  bindPair('aA', 'aAn', 'aA');
+  bindPair('aB', 'aBn', 'aB');
+  bindPair('dt', 'dtN', 'dt');
+
+  document.querySelectorAll('input[name=mode]').forEach(r =>
+    r.addEventListener('change', () => { P.mode = r.value; markCustom(); apply(); }));
+  [ckDist, ckKey, ckArea, ckBrake].forEach(c => c.addEventListener('change', () => { markCustom(); apply(); }));
+
+  el('presetSel').addEventListener('change', e => {
+    if (PRESETS[e.target.value]) loadPreset(e.target.value);
   });
-}
-window.addEventListener('resize', () => { resizeAll(); render(); });
+  function loadPreset(key){
+    const p = PRESETS[key];
+    P.mode = p.mode; P.d = p.d; P.vA = p.vA; P.vB = p.vB; P.aA = p.aA; P.aB = p.aB; P.dt = p.dt; P.brake = true;
+    el('d').value = p.d; el('dN').value = p.d;
+    el('vA').value = p.vA; el('vAn').value = p.vA;
+    el('vB').value = p.vB; el('vBn').value = p.vB;
+    el('aA').value = p.aA; el('aAn').value = p.aA;
+    el('aB').value = p.aB; el('aBn').value = p.aB;
+    el('dt').value = p.dt; el('dtN').value = p.dt;
+    el('ckBrake').checked = true;
+    document.querySelectorAll('input[name=mode]').forEach(r => r.checked = r.value === p.mode);
+    el('presetSel').value = key;
+    t = 0; setPlaying(false); apply();
+  }
 
-/* 初始化 */
-loadPreset('chase_ok');
-resizeAll();
-apply();
+  btnPlay.addEventListener('click', () => {
+    if (!playing && t >= T - EPS) t = 0;
+    setPlaying(!playing);
+  });
+  el('btnStep').addEventListener('click', () => {
+    setPlaying(false);
+    t = Math.min(T, t + 0.1);
+    syncTime(); render();
+  });
+  el('btnStepB').addEventListener('click', () => {
+    setPlaying(false);
+    t = Math.max(0, t - 0.1);
+    syncTime(); render();
+  });
+  el('btnReplay').addEventListener('click', () => { t = 0; setPlaying(true); });
+  el('btnReset').addEventListener('click', () => {
+    setPlaying(false);
+    if (PRESETS[el('presetSel').value]) loadPreset(el('presetSel').value);
+    else { t = 0; syncTime(); render(); }
+  });
+  timeSlider.addEventListener('input', () => {
+    setPlaying(false);
+    t = Math.min(T, Math.max(0, parseFloat(timeSlider.value) || 0));
+    syncTime(); render();
+  });
+  el('speedSel').addEventListener('change', e => { speed = parseFloat(e.target.value); });
+  document.addEventListener('keydown', e => {
+    if (e.code === 'Space' && !/INPUT|SELECT|TEXTAREA|BUTTON/.test(e.target.tagName)){
+      e.preventDefault();
+      if (!playing && t >= T - EPS) t = 0;
+      setPlaying(!playing);
+    }
+  });
+
+  function resizeAll(){
+    ['animCanvas', 'vtCanvas', 'xtCanvas'].forEach(id => {
+      const cv = el(id);
+      const dpr = window.devicePixelRatio || 1;
+      const w = cv.clientWidth, h = cv.clientHeight;
+      cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
+      cv.getContext('2d').setTransform(dpr, 0, 0, dpr, 0, 0);
+    });
+  }
+  window.addEventListener('resize', () => { resizeAll(); render(); });
+
+  loadPreset('p1');
+  resizeAll();
+  apply();
+}
+
+if (typeof document !== 'undefined') boot();
 </script>
 </body>
 </html>
