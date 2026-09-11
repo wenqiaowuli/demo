@@ -7,15 +7,15 @@
 <!-- 
 文件描述：水平传送带模型演示
 物理内容：物块（默认放上传送带左端）在水平传送带上的相对运动、摩擦力方向变化及共速过程；
-          相对滑动距离 s相对 与摩擦生热 Q = μmg·s相对。
-视觉结构：两端滚筒（8 辐条 + 双轮缘 + 轴钉 + 旋转亮斑，随带速旋转）+ 环形带面（上承载/下回程）
-         + 机架支腿与地面 + 带长刻度（0 / L m）/ 放上点 / 出料箭头；
-         物块相对带滑动时带面留下红色擦痕（长度 = s相对，共速后停止增长）。
+           相对滑动距离 s相对 与摩擦生热 Q = μmg·s相对。
+视觉结构：两端滚筒（8 辐条 + 双轮缘 + 空心轮毂 + 旋转亮斑，随带速旋转）+ 环形带面（上承载/下回程）
+          + 机架支腿与地面 + 带长刻度（0 / L m）/ 放上点 / 出料箭头；
+          物块相对带滑动时带面留下红色擦痕（长度 = s相对，共速后停止增长）。
 图表：主画布下方 v-t 与 s-t 双图并排——
-     v-t：物块 v（橙）/ 带速 v带（青虚线）/ 两线间阴影=相对位移 / 共速竖线；
-     s-t：物块位移（橙）/ 带位移 v带·t（青虚线）/ 两线间距=相对位移 / 共速竖线。
-交互：轻放情景落下动画；滑出带端匀速离带；暂停/继续；空格（开始/暂停/继续）与 R（重置）；
-     播放速度（0.25–4×）与带长 L（5–40 m）可调；运行中滑条禁用；g 默认 10。
+      v-t：物块 v（橙）/ 带速 v带（青虚线）/ 两线间阴影=相对位移 / 共速竖线；
+      s-t：物块位移（橙）/ 带位移 v带·t（青虚线）/ 两线间距=相对位移 / 共速竖线 / 零线高亮。
+交互：物块直接出现（无落下动画）；滑出带端匀速离带；暂停/继续；空格（开始/暂停/继续）与 R（重置）；
+      运动方向（←/·/→）与初速度 v₀ 可调；播放速度（0.25–4×）与带长 L（5–40 m）可调；运行中滑条禁用；g 默认 10。
 -->
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -271,13 +271,21 @@ footer {
     <div class="card">
       <div class="card-title">传送带</div>
       <div class="row">
-        <label>带速 v带</label>
-        <input id="vb" type="range" min="-6" max="6" step="0.1" value="3">
-        <span class="val" id="vbv">+3.0 m/s</span>
+        <label>初速度 v₀</label>
+        <input id="v0" type="range" min="-6" max="6" step="0.1" value="0">
+        <span class="val" id="v0v">+0.0 m/s</span>
       </div>
       <div class="row">
-        <label>方向</label>
-        <span class="val" id="vbdir" style="flex:1; text-align:left;">→ 向右</span>
+        <label>运动方向</label>
+        <span class="btn-group" style="flex:0 0 auto; display:flex; gap:6px; margin-left:4px;">
+          <button id="vbLeft" class="alt" title="向左（负向）">← 向左</button>
+          <button id="vbStill" class="alt" title="静止">· 静止</button>
+          <button id="vbRight" class="alt" title="向右（正向）">→ 向右</button>
+        </span>
+      </div>
+      <div class="row">
+        <label>带速 v带</label>
+        <span class="val" id="vbv" style="flex:1; text-align:left;">+3.0 m/s</span>
       </div>
       <div class="row">
         <label>带长 L</label>
@@ -294,11 +302,16 @@ footer {
         <button id="bPause" disabled>⏸ 暂停</button>
         <button id="bContinue" disabled>▶ 继续</button>
         <button id="bReset">⟲ 重置</button>
-        <button id="bScenario1" class="alt">轻放情景</button>
-        <button id="bScenario2" class="alt">刹停情景</button>
-        <button id="bScenario3" class="alt">反向放上</button>
+        <button id="bScenario1" class="alt">起点左端</button>
+        <button id="bScenario2" class="alt">起点右端</button>
       </div>
-      <div class="note">空格：开始 / 暂停 / 继续 · R：重置 · 物块默认放在带左端（v₀&lt;0 时放中央）</div>
+      <div class="note">空格：开始 / 暂停 / 继续 · R：重置 · g = 10 m/s²</div>
+      <div class="note" style="border-top:1px solid rgba(255,255,255,0.08); padding-top:6px; margin-top:6px;">
+        <strong style="color:#ffaa44;">公式</strong>（地面参考系，向右为正）：<br>
+        滑动：<em>f = μmg</em> · <em>a = μg</em>（方向与相对速度相反）<br>
+        相对位移：<em>s相对 = (v₀ − v带)² / (2μg)</em> · 摩擦生热：<em>Q = μmg · s相对</em><br>
+        共速后：<em>v = v带</em>，<em>a = 0</em>，匀速运动 · s相对 停止增长
+      </div>
     </div>
   </div>
 
@@ -371,7 +384,8 @@ footer {
   const v0El  = $('v0'),  v0v  = $('v0v');
   const muEl  = $('mu'),  muv  = $('muv');
   const gEl   = $('g'),   gv   = $('gv');
-  const vbEl  = $('vb'),  vbv  = $('vbv'), vbdir = $('vbdir');
+  const vbLeft  = $('vbLeft'),  vbStill = $('vbStill'),  vbRight = $('vbRight');
+  const vbv = $('vbv');
   const lenEl = $('len'), lenVal = $('lenVal');
   const speedEl = $('speed'), speedVal = $('speedVal');
   const vNum  = $('vNum'), vrel = $('vrel'), fNum = $('fNum'), aNum = $('aNum'), tNum = $('tNum');
@@ -379,7 +393,7 @@ footer {
   const hudRow = $('hudRow');
   const phaseEl = $('phase');
   const bStart = $('bStart'), bReset = $('bReset'), bPause = $('bPause'), bContinue = $('bContinue');
-  const s1 = $('bScenario1'), s2 = $('bScenario2'), s3 = $('bScenario3');
+  const s1 = $('bScenario1'), s2 = $('bScenario2');
 
   // ===== 状态机：idle | run | pause | done =====
   let phase = 'idle';
@@ -387,15 +401,16 @@ footer {
     v0: 0, vBelt: 3, mu: 0.30, g: 10,
     L: 24,            // 带长 m（滑条可调）
     speed: 1,         // 播放倍速
-    x0: 0,            // 放上位置（米，带中心为原点）：默认左端，v0<0 时中央
+    dir: 'right',     // 'left' | 'still' | 'right'
+    startSide: 'left',// 'left' | 'right'：物块固定起点（default left）
+    x0: 0,            // 放上位置（米，带中心为原点）：左端 = -(L/2-1)，右端 = +(L/2-1)
     x: 0,             // 物块位置（米，地面系）
     v: 0,             // 物块速度 m/s
-    t: 0,             // 物理时间 s（触带后才开始累计）
-    beltClock: 0,     // 皮带动画时钟（运行中持续累计，含落下阶段）
+    t: 0,             // 物理时间 s
+    beltClock: 0,     // 皮带动画时钟
     slip: 0,          // 相对滑动距离 ∫|v-v带|dt
     tSync: null,      // 共速时刻
     offbelt: false,   // 已滑出带端
-    dropP: null,      // 轻放落下进度 0..1，null=不在落下
     scratches: [],    // 擦痕区间（带参考系坐标 q = x - v带·t）
     prevQ: 0,         // 上一帧的带参考系位置（用于扫掠记录）
     trace: []         // [t, v, 物块位移] 采样
@@ -506,7 +521,7 @@ footer {
 
   function drawRoller(G, cx) {
     const cy = G.yC, R = G.R;
-    // 金属渐变
+    // 金属渐变（轮面）
     const grad = ctx.createRadialGradient(cx - 5, cy - 5, 2, cx, cy, R);
     grad.addColorStop(0, '#aebfcd');
     grad.addColorStop(0.55, '#5d707f');
@@ -522,12 +537,8 @@ footer {
     // 双轮缘
     ctx.strokeStyle = 'rgba(13,20,27,0.4)';
     ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.arc(cx, cy, R - 1, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.arc(cx, cy, R - 4, 0, Math.PI * 2);
-    ctx.stroke();
+    ctx.beginPath(); ctx.arc(cx, cy, R - 1, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(cx, cy, R - 4, 0, Math.PI * 2); ctx.stroke();
     // 8 根辐条
     ctx.strokeStyle = 'rgba(13,20,27,0.55)';
     ctx.lineWidth = 2;
@@ -543,18 +554,19 @@ footer {
     ctx.arc(cx + Math.cos(ang0) * (R - 2.5), cy + Math.sin(ang0) * (R - 2.5), 2.5, 0, Math.PI * 2);
     ctx.fillStyle = '#e8f4ff';
     ctx.fill();
-    // 轴钉
-    ctx.beginPath();
-    ctx.arc(cx, cy, 5, 0, Math.PI * 2);
-    ctx.fillStyle = '#0d141b';
-    ctx.fill();
-    ctx.lineWidth = 1;
-    ctx.strokeStyle = '#778899';
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.arc(cx - 1, cy - 1, 1.8, 0, Math.PI * 2);
-    ctx.fillStyle = '#cfe0ee';
-    ctx.fill();
+    // ---- 空心轮毂：外圈 rim + 暗环（空心感）----
+    ctx.beginPath(); ctx.arc(cx, cy, R - 6, 0, Math.PI * 2);
+    ctx.fillStyle = '#1e2e3e'; ctx.fill();   // 暗色填充（看起来像空腔）
+    ctx.strokeStyle = 'rgba(100,140,180,0.5)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(cx, cy, R - 6, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(cx, cy, R - 8.5, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(13,20,27,0.5)'; ctx.lineWidth = 1; ctx.stroke();
+    // ---- 中心细轴 ----
+    ctx.beginPath(); ctx.arc(cx, cy, 3, 0, Math.PI * 2);
+    ctx.fillStyle = '#aebfcd'; ctx.fill();
+    ctx.strokeStyle = '#778899'; ctx.lineWidth = 1; ctx.stroke();
+    ctx.beginPath(); ctx.arc(cx - 0.5, cy - 0.5, 1, 0, Math.PI * 2);
+    ctx.fillStyle = '#e8f4ff'; ctx.fill();
   }
 
   function drawScene() {
@@ -711,12 +723,9 @@ footer {
     const G = geom();
     const blockW = 50, blockH = 50;
     const drawX = G.xL + (state.L / 2 + state.x) * G.pix;
-    let drawY = G.topY - blockH;
-    if (state.dropP !== null) {
-      drawY -= (1 - state.dropP * state.dropP) * 70;   // 自由落体感
-    }
-    // 阴影（接触带面才有）
-    if (state.dropP === null && !state.offbelt) {
+    const drawY = G.topY - blockH;
+    // 阴影（物块在带上时有）
+    if (!state.offbelt) {
       ctx.fillStyle = 'rgba(0,0,0,0.4)';
       ctx.fillRect(drawX - blockW / 2 + 3, G.topY - 2, blockW - 6, 4);
     }
@@ -757,7 +766,7 @@ footer {
       ctx.font = '11px system-ui';
       ctx.textAlign = 'center';
       ctx.fillText('已离开传送带（匀速）', drawX, drawY - 10);
-    } else if (state.dropP === null && Math.abs(vR) > 1e-3) {
+    } else if (Math.abs(vR) > 1e-3) {
       // 摩擦力箭头（贴带面）
       const fDir = -Math.sign(vR);
       const fMag = state.mu * MASS * state.g;
@@ -795,7 +804,7 @@ footer {
       ctx.font = '10px system-ui';
       ctx.textAlign = 'center';
       ctx.fillText(`v相对 = ${vR.toFixed(2)}`, rx0, ry - 4);
-    } else if (state.dropP === null) {
+    } else {
       ctx.fillStyle = '#aaff66';
       ctx.font = '10px system-ui';
       ctx.textAlign = 'center';
@@ -835,14 +844,11 @@ footer {
     ctx2.fillStyle = '#8899aa';
     for (let i = Math.ceil(yMin / yStep - 1e-9); i <= Math.floor(yMax / yStep + 1e-9); i++) {
       const y = py(i * yStep);
-      ctx2.strokeStyle = Math.abs(i) < 1e-9 ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.06)';
-      ctx2.lineWidth = 1;
-      ctx2.beginPath();
-      ctx2.moveTo(padL, y);
-      ctx2.lineTo(padL + gW, y);
-      ctx2.stroke();
-      ctx2.textAlign = 'right';
-      ctx2.fillText((i * yStep).toFixed(yDec), padL - 6, y + 3);
+      const onZero = Math.abs(i * yStep) < yStep * 0.15;
+      ctx2.strokeStyle = onZero ? 'rgba(255,255,255,0.55)' : 'rgba(255,255,255,0.06)';
+      ctx2.lineWidth = onZero ? 1.5 : 1;
+      ctx2.beginPath(); ctx2.moveTo(padL, y); ctx2.lineTo(padL + gW, y); ctx2.stroke();
+      ctx2.textAlign = 'right'; ctx2.fillText((i * yStep).toFixed(yDec), padL - 6, y + 3);
     }
     // t 网格（对齐偶数秒）
     ctx2.textAlign = 'center';
@@ -933,12 +939,17 @@ footer {
 
   function drawST() {
     const tEnd = Math.max(10, state.t);
+    // 动态 Y 轴：从 0 起算，上界取 s物 最大值（保证两线间距可见）
+    let sMax = 1;
+    state.trace.forEach(([, , x]) => { if (x > sMax) sMax = x; });
+    sMax = Math.max(sMax, state.vBelt * tEnd);
+    const yMin = 0, yMax = Math.max(sMax * 1.2, 1);
     drawTimeChart(stCv, stCtx, {
       series: [
-        { pts: state.trace.map(([t, , x]) => [t, x]), color: '#ffaa44' },
+        { pts: state.trace.map(([t, , x]) => [t, x]), color: '#ffaa44', width: 2 },
         { pts: [[0, 0], [tEnd, state.vBelt * tEnd]], color: 'rgba(68,221,255,0.7)', dash: [5, 4] }
       ],
-      yLabel: 's/m', curY: state.x - state.x0
+      yMin, yMax, yLabel: 's/m', curY: state.x - state.x0
     });
   }
 
@@ -954,22 +965,20 @@ footer {
   function updateHud() {
     const vR = state.v - state.vBelt;
     let f = 0, a = 0, phaseTxt = '';
-    if (state.dropP !== null) {
-      phaseTxt = '物块落下中：尚未接触带面，<strong>无摩擦力</strong>';
-    } else if (state.offbelt) {
-      phaseTxt = '<strong>已离开传送带</strong>：无摩擦力，物块做<strong>匀速直线运动</strong>';
+    if (state.offbelt) {
+      phaseTxt = '<strong>已离带</strong>：匀速直线运动，无摩擦力';
     } else if (Math.abs(vR) > 1e-3) {
       f = state.mu * MASS * state.g;
       a = -Math.sign(vR) * state.mu * state.g;
       const dir = vR > 0 ? '向右' : '向左';
       const fdir = vR > 0 ? '向左' : '向右';
       if (Math.abs(state.v) < 0.01 && Math.abs(state.vBelt) > 0.01) {
-        phaseTxt = `物块<strong>相对传送带向${dir}滑</strong>，受动摩擦<strong>${fdir}</strong>，开始加速`;
+        phaseTxt = `物块<strong>相对传送带${dir}滑</strong>，受动摩擦<strong>${fdir}</strong>，开始加速`;
       } else {
-        phaseTxt = `物块<strong>相对传送带向${dir}滑</strong>，动摩擦<strong>${fdir}</strong>，a = ${a.toFixed(2)} m/s²`;
+        phaseTxt = `物块<strong>相对传送带${dir}滑</strong>，动摩擦<strong>${fdir}</strong>，a = ${a.toFixed(2)} m/s²`;
       }
     } else {
-      phaseTxt = '<strong>共速</strong>：物块与传送带同速，<strong>无摩擦力</strong>，做匀速直线运动';
+      phaseTxt = '<strong>共速</strong>：与传送带同速，<strong>无摩擦力</strong>，匀速直线运动';
     }
     vNum.textContent  = state.v.toFixed(2) + ' m/s';
     vrel.textContent  = state.offbelt ? '—' : vR.toFixed(2) + ' m/s';
@@ -989,11 +998,7 @@ footer {
     const dt = Math.min(0.033, (ts - lastTs) / 1000) * state.speed;
     lastTs = ts;
     state.beltClock += dt;
-    if (state.dropP !== null) {
-      // 落下阶段：皮带已在转，物块尚未触带（不积分、不算滑动）
-      state.dropP += dt / 0.3;
-      if (state.dropP >= 1) state.dropP = null;
-    } else {
+    {
       const vRbefore = state.v - state.vBelt;
       const sub = 4;
       for (let i = 0; i < sub; i++) step(dt / sub);
@@ -1030,30 +1035,36 @@ footer {
 
   // ===== 控件 =====
   function setSliders(dis) {
-    [v0El, muEl, gEl, vbEl, lenEl].forEach(el => { el.disabled = dis; });
+    [v0El, muEl, gEl, lenEl].forEach(el => { el.disabled = dis; });
   }
 
   function readControls() {
     state.v0    = parseFloat(v0El.value);
-    state.vBelt = parseFloat(vbEl.value);
     state.mu    = parseFloat(muEl.value);
     state.g     = parseFloat(gEl.value);
     state.L     = parseFloat(lenEl.value);
     state.speed = parseFloat(speedEl.value);
-    v0v.textContent  = (state.v0 >= 0 ? '+' : '') + state.v0.toFixed(1) + ' m/s';
-    muv.textContent  = state.mu.toFixed(2);
-    gv.textContent   = state.g.toFixed(1) + ' m/s²';
-    vbv.textContent  = (state.vBelt >= 0 ? '+' : '') + state.vBelt.toFixed(1) + ' m/s';
-    vbdir.textContent = state.vBelt > 0.01 ? '→ 向右' : (state.vBelt < -0.01 ? '← 向左' : '· 静止');
+    v0v.textContent   = (state.v0 >= 0 ? '+' : '') + state.v0.toFixed(1) + ' m/s';
+    muv.textContent   = state.mu.toFixed(2);
+    gv.textContent    = state.g.toFixed(1) + ' m/s²';
+    vbv.textContent   = (state.vBelt >= 0 ? '+' : '') + state.vBelt.toFixed(1) + ' m/s';
     lenVal.textContent  = state.L + ' m';
     speedVal.textContent = String(+state.speed.toFixed(2)) + '×';
+  }
+
+  function setDirBtn(dir) {
+    state.vBelt = dir === 'left' ? -3 : dir === 'right' ? 3 : 0;
+    vbLeft.disabled  = dir === 'left';
+    vbStill.disabled = dir === 'still';
+    vbRight.disabled = dir === 'right';
+    readControls();
   }
 
   function reset() {
     readControls();
     phase = 'idle';
-    // 放上位置：默认带左端内 1 m；v₀<0（反向放上）时放中央，避免立即滑出左端
-    state.x0 = state.v0 < -0.01 ? 0 : -(state.L / 2 - 1);
+    // 放上位置：由 startSide 决定（左端/右端）
+    state.x0 = state.startSide === 'right' ? (state.L / 2 - 1) : -(state.L / 2 - 1);
     state.x = state.x0;
     state.v = state.v0;
     state.t = 0;
@@ -1061,7 +1072,6 @@ footer {
     state.slip = 0;
     state.tSync = null;
     state.offbelt = false;
-    state.dropP = null;
     state.scratches = [];
     state.prevQ = state.x0;
     state.trace = [[0, state.v0, 0]];
@@ -1071,6 +1081,10 @@ footer {
     bPause.disabled = true;
     bContinue.disabled = true;
     setSliders(false);
+    // 方向按钮：默认右向（起点左端情景），起点右端情景由 s2 设置
+    vbLeft.disabled  = false;
+    vbStill.disabled = false;
+    vbRight.disabled = false;
     hudRow.setAttribute('aria-live', 'polite');
     drawAll();
     updateHud();
@@ -1080,8 +1094,6 @@ footer {
     if (phase === 'run' || phase === 'pause' || phase === 'done') return;
     phase = 'run';
     lastTs = 0;
-    // 轻放：物块从带上方落下（v₀=0 且带有速度时）
-    if (Math.abs(state.v0) < 1e-9 && Math.abs(state.vBelt) > 0.01) state.dropP = 0;
     bStart.disabled = true;
     bStart.textContent = '运行中…';
     bPause.disabled = false;
@@ -1116,7 +1128,7 @@ footer {
   }
 
   // 绑定
-  [v0El, vbEl, muEl, gEl, lenEl].forEach(el => {
+  [v0El, muEl, gEl, lenEl].forEach(el => {
     el.addEventListener('input', () => { if (phase === 'idle' || phase === 'done') reset(); });
   });
   speedEl.addEventListener('input', readControls);
@@ -1124,6 +1136,9 @@ footer {
   bPause.addEventListener('click', pause);
   bContinue.addEventListener('click', resume);
   bReset.addEventListener('click', reset);
+  vbLeft.addEventListener('click',  () => setDirBtn('left'));
+  vbStill.addEventListener('click', () => setDirBtn('still'));
+  vbRight.addEventListener('click', () => setDirBtn('right'));
   document.addEventListener('keydown', (e) => {
     const tag = e.target && e.target.tagName;
     if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA' || tag === 'BUTTON') return;
@@ -1131,20 +1146,16 @@ footer {
     else if (e.code === 'KeyR') { e.preventDefault(); reset(); }
   });
 
-  // 三个情景
+  // 情景
   s1.addEventListener('click', () => {
-    v0El.value = 0; vbEl.value = 3; muEl.value = 0.30; gEl.value = 10; lenEl.value = 24;
-    reset();
+    v0El.value = 0; muEl.value = 0.30; gEl.value = 10; lenEl.value = 24;
+    state.vBelt = 3; state.startSide = 'left';
+    setDirBtn('right');   // 左端起点：带向右
   });
   s2.addEventListener('click', () => {
-    // 物块以 +3 从带左端起，传送带静止 → 相对向前滑，摩擦向左，减速到共速（双双静止）
-    v0El.value = 3; vbEl.value = 0; muEl.value = 0.30; gEl.value = 10; lenEl.value = 24;
-    reset();
-  });
-  s3.addEventListener('click', () => {
-    // 物块向左 -4（放带中央），传送带向右 +3 → 相对带向左滑，摩擦向右，减速后反向加速到共速
-    v0El.value = -4; vbEl.value = 3; muEl.value = 0.30; gEl.value = 10; lenEl.value = 24;
-    reset();
+    v0El.value = 0; muEl.value = 0.30; gEl.value = 10; lenEl.value = 24;
+    state.vBelt = -3; state.startSide = 'right';
+    setDirBtn('left');    // 右端起点：带向左
   });
 
   // 初始
