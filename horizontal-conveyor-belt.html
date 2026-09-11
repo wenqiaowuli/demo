@@ -84,13 +84,6 @@ canvas { display: block; width: 100%; }
   border-radius: 10px;
   background: #0b1828;
 }
-.panel-row {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  width: 100%;
-  justify-content: center;
-}
 .control-panel {
   width: 100%;
   display: grid;
@@ -179,23 +172,6 @@ canvas { display: block; width: 100%; }
   letter-spacing: 0.4px;
   text-transform: uppercase;
 }
-.row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  color: #aab;
-  margin-bottom: 6px;
-}
-.row label { flex: 0 0 92px; color: #c0c8d4; }
-.row input[type=range] { flex: 1; accent-color: #3388dd; }
-.row .val {
-  flex: 0 0 54px;
-  text-align: right;
-  color: #fff;
-  font-variant-numeric: tabular-nums;
-  font-size: 12px;
-}
 .note {
   font-size: 11px;
   color: #667788;
@@ -224,34 +200,6 @@ button:hover { background: #4499ee; }
 button.alt { background: #445566; }
 button.alt:hover { background: #556677; }
 button:disabled { opacity: 0.45; cursor: not-allowed; }
-.data-row {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  width: 100%;
-  justify-content: center;
-}
-.data-card {
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 8px;
-  padding: 8px 14px;
-  font-size: 12px;
-  color: #aab;
-  text-align: center;
-  flex: 1;
-  min-width: 104px;
-}
-.data-card .label { color: #8899aa; font-size: 11px; }
-.data-card .num {
-  font-size: 18px;
-  font-weight: 600;
-  color: #fff;
-  font-variant-numeric: tabular-nums;
-  margin-top: 2px;
-}
-.data-card .num.accent { color: #ffaa44; }
-.data-card .num.green { color: #44dd88; }
 .legend {
   display: flex;
   gap: 14px;
@@ -460,6 +408,7 @@ footer {
     return factor * magnitude;
   }
   function niceStep(maxValue) {
+    if (!isFinite(maxValue) || maxValue <= 0) return 1;
     const rawStep = maxValue / 5;
     const magnitude = Math.pow(10, Math.floor(Math.log10(rawStep)));
     const normalized = rawStep / magnitude;
@@ -473,7 +422,8 @@ footer {
 
   // 场景几何（主画布）
   function geom() {
-    const w = cv.clientWidth, h = cv.clientHeight;
+    const w = cv.clientWidth || cv.width || 880;
+    const h = cv.clientHeight || cv.height || 240;
     const xL = 44, xR = w - 44;
     const R = 18;                 // 滚筒半径
     const yC = h - 78;            // 滚筒中心线
@@ -687,38 +637,41 @@ footer {
       ctx.beginPath();
       const beltOffset = state.vBelt * state.beltClock;
       state.scratches.forEach(([qa, qb]) => {
-        const x1 = G.xL + (state.L / 2 + qa + beltOffset) * G.pix;
-        const x2 = G.xL + (state.L / 2 + qb + beltOffset) * G.pix;
-        ctx.moveTo(x1, G.topY + 6);
-        ctx.lineTo(Math.max(x2, x1 + 1.5), G.topY + 6);
+        const rawX1 = G.xL + (state.L / 2 + qa + beltOffset) * G.pix;
+        const rawX2 = G.xL + (state.L / 2 + qb + beltOffset) * G.pix;
+        const x1 = Math.max(G.xL, Math.min(G.xR, rawX1));
+        const x2 = Math.max(G.xL, Math.min(G.xR, rawX2));
+        if (x2 > x1) {
+          ctx.moveTo(x1, G.topY + 6);
+          ctx.lineTo(Math.max(x2, x1 + 1.5), G.topY + 6);
+        }
       });
       ctx.stroke();
     }
     // ---- 滚筒 ----
     drawRoller(G, G.xL);
     drawRoller(G, G.xR);
-    // ---- 带速箭头（环内）----
-    const ax = G.xL + span * 0.26;
+    // ---- 带速指示（环内居中）----
+    const cx = (G.xL + G.xR) / 2;
     ctx.font = '12px system-ui';
+    ctx.fillStyle = '#44ddff';
+    ctx.textAlign = 'center';
     if (Math.abs(state.vBelt) > 0.01) {
-      const len = Math.sign(state.vBelt) * 30;
+      const sign = Math.sign(state.vBelt);
+      const len = sign * 28;
+      ctx.fillText(`v带 = ${state.vBelt.toFixed(2)} m/s`, cx, G.yC - 2);
       ctx.beginPath();
-      ctx.moveTo(ax, G.yC);
-      ctx.lineTo(ax + len, G.yC);
+      ctx.moveTo(cx - len / 2, G.yC + 7);
+      ctx.lineTo(cx + len / 2, G.yC + 7);
       ctx.strokeStyle = '#44ddff'; ctx.lineWidth = 2; ctx.stroke();
       ctx.beginPath();
-      ctx.moveTo(ax + len, G.yC);
-      ctx.lineTo(ax + len - Math.sign(len) * 7, G.yC - 4);
-      ctx.lineTo(ax + len - Math.sign(len) * 7, G.yC + 4);
+      ctx.moveTo(cx + len / 2, G.yC + 7);
+      ctx.lineTo(cx + len / 2 - sign * 6, G.yC + 3);
+      ctx.lineTo(cx + len / 2 - sign * 6, G.yC + 11);
       ctx.closePath();
-      ctx.fillStyle = '#44ddff'; ctx.fill();
-      ctx.fillStyle = '#44ddff';
-      ctx.textAlign = 'left';
-      ctx.fillText(`v带 = ${state.vBelt.toFixed(2)} m/s`, ax + len + (len > 0 ? 6 : -96), G.yC + 4);
+      ctx.fill();
     } else {
-      ctx.fillStyle = '#44ddff';
-      ctx.textAlign = 'left';
-      ctx.fillText('v带 = 0（带静止）', ax, G.yC + 4);
+      ctx.fillText('v带 = 0（带静止）', cx, G.yC + 4);
     }
     // ---- 带长刻度 / 放上点 / 出料 ----
     ctx.font = '10px system-ui';
@@ -736,22 +689,27 @@ footer {
     ctx.closePath();
     ctx.fill();
     ctx.fillText('放上点', x0s, G.ground - 13);
-    // 出料箭头（右端）
-    const axx = G.xR + G.R + 4;
-    ctx.strokeStyle = '#44ddff';
-    ctx.fillStyle = '#44ddff';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(axx, G.topY + 6);
-    ctx.lineTo(axx + 12, G.topY + 6);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(axx + 12, G.topY + 6);
-    ctx.lineTo(axx + 6, G.topY + 2);
-    ctx.lineTo(axx + 6, G.topY + 10);
-    ctx.closePath();
-    ctx.fill();
-    ctx.fillText('出料', axx + 6, G.topY - 6);
+    // 出料箭头（随带速方向在对应滚筒外侧标注）
+    if (Math.abs(state.vBelt) > 0.01) {
+      const isRight = state.vBelt > 0;
+      const axx = isRight ? (G.xR + G.R + 4) : (G.xL - G.R - 4);
+      const dir = isRight ? 1 : -1;
+      ctx.strokeStyle = '#44ddff';
+      ctx.fillStyle = '#44ddff';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(axx, G.topY + 6);
+      ctx.lineTo(axx + dir * 12, G.topY + 6);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(axx + dir * 12, G.topY + 6);
+      ctx.lineTo(axx + dir * 6, G.topY + 2);
+      ctx.lineTo(axx + dir * 6, G.topY + 10);
+      ctx.closePath();
+      ctx.fill();
+      ctx.textAlign = isRight ? 'left' : 'right';
+      ctx.fillText('出料', axx + dir * 16, G.topY + 10);
+    }
   }
 
   function drawBlock() {
@@ -838,7 +796,7 @@ footer {
       ctx.fillStyle = '#aaff66';
       ctx.font = '10px system-ui';
       ctx.textAlign = 'center';
-      ctx.fillText(`v相对 = ${vR.toFixed(2)}`, rx0, ry - 4);
+      ctx.fillText(`v相对 = ${vR.toFixed(2)} m/s`, rx0, ry - 4);
     } else {
       ctx.fillStyle = '#aaff66';
       ctx.font = '10px system-ui';
@@ -911,8 +869,20 @@ footer {
     ctx2.beginPath();
     ctx2.rect(padL, padT, gW, gH);
     ctx2.clip();
-    // 阴影：series[0] 与 series[1] 之间（面积/间距 = 相对位移）
-    if (cfg.series.length > 1) {
+    // 阴影：series[0] 与 shadePts 之间（面积/间距 = 相对位移，仅含已发生时间 [0, state.t]）
+    const shadePts = cfg.shadePts;
+    if (shadePts && cfg.series[0].pts.length >= 2) {
+      const a = cfg.series[0].pts;
+      ctx2.beginPath();
+      a.forEach(([t, y], i) => {
+        const X = px(t), Y = py(y);
+        if (i === 0) ctx2.moveTo(X, Y); else ctx2.lineTo(X, Y);
+      });
+      shadePts.forEach(([t, y]) => ctx2.lineTo(px(t), py(y)));
+      ctx2.closePath();
+      ctx2.fillStyle = 'rgba(170,255,102,0.10)';
+      ctx2.fill();
+    } else if (cfg.series.length > 1) {
       const a = cfg.series[0].pts, b = cfg.series[1].pts;
       ctx2.beginPath();
       a.forEach(([t, y], i) => {
@@ -937,6 +907,12 @@ footer {
       ctx2.stroke();
       if (s.dash) ctx2.setLineDash([]);
     });
+
+    // 当前点（限制在绘图区内）
+    ctx2.fillStyle = '#ffaa44';
+    ctx2.beginPath();
+    ctx2.arc(px(state.t), py(cfg.curY), 3.5, 0, Math.PI * 2);
+    ctx2.fill();
     ctx2.restore();
 
     // 共速时刻标注
@@ -955,36 +931,36 @@ footer {
       ctx2.textAlign = 'center';
       ctx2.fillText(`共速 t=${state.tSync.toFixed(2)}s`, x, padT - 5);
     }
-    // 当前点
-    ctx2.fillStyle = '#ffaa44';
-    ctx2.beginPath();
-    ctx2.arc(px(state.t), py(cfg.curY), 3.5, 0, Math.PI * 2);
-    ctx2.fill();
   }
 
   function drawVT() {
     const sign = state.vBelt < 0 ? -1 : 1;
+    const absV = Math.abs(state.vBelt);
+    const tEnd = Math.max(10, state.t);
     drawTimeChart(vtCv, vtCtx, {
       series: [
         { pts: state.trace.map(([t, v]) => [t, v * sign]), color: '#ffaa44', width: 2 },
-        { pts: [[0, Math.abs(state.vBelt)], [Math.max(10, state.t), Math.abs(state.vBelt)]], color: '#44ddff', width: 2 }
+        { pts: [[0, absV], [tEnd, absV]], color: '#44ddff', width: 2 }
       ],
+      shadePts: [[state.t, absV], [0, absV]],
       yMin: -7, yMax: 7, yLabel: 'v/(m/s)', curY: state.v * sign
     });
   }
 
   function drawST() {
     const sign = state.vBelt < 0 ? -1 : 1;
+    const absV = Math.abs(state.vBelt);
     const tEnd = Math.max(10, state.t);
     let sMax = 1;
     state.trace.forEach(([, , x]) => { if (x * sign > sMax) sMax = x * sign; });
-    sMax = Math.max(sMax, Math.abs(state.vBelt) * tEnd);
+    sMax = Math.max(sMax, absV * tEnd);
     const yMin = 0, yMax = Math.max(sMax * 1.2, 1);
     drawTimeChart(stCv, stCtx, {
       series: [
         { pts: state.trace.map(([t, , x]) => [t, x * sign]), color: '#ffaa44', width: 2 },
-        { pts: [[0, 0], [tEnd, Math.abs(state.vBelt) * tEnd]], color: '#44ddff', width: 2 }
+        { pts: [[0, 0], [tEnd, absV * tEnd]], color: '#44ddff', width: 2 }
       ],
+      shadePts: [[state.t, absV * state.t], [0, 0]],
       yMin, yMax, yLabel: 's/m', curY: (state.x - state.x0) * sign
     });
   }
@@ -1007,11 +983,14 @@ footer {
       f = state.mu * MASS * state.g;
       a = -Math.sign(vR) * state.mu * state.g;
     }
+    const safeV = Math.abs(state.v) < 1e-4 ? 0 : state.v;
+    const safeVR = Math.abs(vR) < 1e-4 ? 0 : vR;
+    const safeA = Math.abs(a) < 1e-4 ? 0 : a;
     const dirLabel = state.vBelt > 0.01 ? '→ 向右' : (state.vBelt < -0.01 ? '← 向左' : '· 静止');
-    vNum.textContent   = state.v.toFixed(2) + ' m/s';
-    vrel.textContent   = state.offbelt ? '—' : vR.toFixed(2) + ' m/s';
+    vNum.textContent   = safeV.toFixed(2) + ' m/s';
+    vrel.textContent   = state.offbelt ? '—' : safeVR.toFixed(2) + ' m/s';
     fNum.textContent   = f.toFixed(2) + ' N';
-    aNum.textContent   = a.toFixed(2) + ' m/s²';
+    aNum.textContent   = safeA.toFixed(2) + ' m/s²';
     tNum.textContent   = state.t.toFixed(2) + ' s';
     sNum.textContent   = state.slip.toFixed(2) + ' m';
     qNum.textContent   = (state.mu * MASS * state.g * state.slip).toFixed(2) + ' J';
