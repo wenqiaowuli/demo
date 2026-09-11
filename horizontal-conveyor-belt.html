@@ -12,8 +12,8 @@
           + 机架支腿与地面 + 带长刻度（0 / L m）/ 放上点 / 出料箭头；
           物块相对带滑动时带面留下红色擦痕（长度 = s相对，共速后停止增长）。
 图表：主画布下方 v-t 与 s-t 双图并排——
-      v-t：物块 v（橙）/ 带速 v带（青虚线）/ 两线间阴影=相对位移 / 共速竖线；
-      s-t：物块位移（橙）/ 带位移 v带·t（青虚线）/ 两线间距=相对位移 / 共速竖线 / 零线高亮。
+      v-t：物块 v（橙）/ 带速 v带（青实线）/ 两线间阴影=相对位移 / 共速竖线；
+      s-t：物块位移（橙）/ 带位移 v带·t（青实线）/ 两线间距=相对位移 / 共速竖线 / 零线高亮。
 交互：物块直接出现（无落下动画）；滑出带端匀速离带；暂停/继续；空格（开始/暂停/继续）与 R（重置）；
       运动方向（←/·/→）与初速度 v₀ 可调；播放速度（0.25–4×）与带长 L（5–40 m）可调；运行中滑条禁用；g 默认 10。
 -->
@@ -293,11 +293,11 @@ footer {
 
   <div class="charts-row">
     <section class="chart-panel">
-      <div class="chart-title">速度-时间图 (v-t) · 橙:物块 v / 青虚线:带速 v带 / 阴影:相对位移 / 竖线:共速</div>
+      <div class="chart-title">速度-时间图 (v-t) · 橙:物块 v / 青实线:带速 v带 / 阴影:相对位移 / 竖线:共速</div>
       <canvas id="vtCv" width="430" height="200" role="img" aria-label="物块速度与传送带速度随时间变化图像：两线间阴影为相对位移，竖线标注共速时刻"></canvas>
     </section>
     <section class="chart-panel">
-      <div class="chart-title">位移-时间图 (s-t) · 橙:物块位移 / 青虚线:带位移 v带·t / 两线间距 = 相对位移</div>
+      <div class="chart-title">位移-时间图 (s-t) · 橙:物块位移 / 青实线:带位移 v带·t / 两线间距 = 相对位移</div>
       <canvas id="stCv" width="430" height="200" role="img" aria-label="物块位移与传送带位移随时间变化图像：两线间距等于相对滑动距离，竖线标注共速时刻"></canvas>
     </section>
   </div>
@@ -317,7 +317,10 @@ footer {
           <button id="vbStill" class="alt" title="静止">· 静止</button>
           <button id="vbRight" class="alt" title="向右（正向）">→ 向右</button>
         </span>
-        <span class="val" id="dirText" style="flex:0 0 70px; text-align:right;">→ 向右</span>
+      </div>
+      <div class="param-row">
+        <label>带速 v带</label>
+        <span class="val" id="vbv" style="flex:1; text-align:left;">+3.0 m/s</span>
       </div>
       <div class="param-row">
         <label>带速大小</label>
@@ -1114,9 +1117,9 @@ footer {
     bPause.disabled = true;
     bContinue.disabled = true;
     setSliders(false);
-    vbLeft.disabled = false;
-    vbStill.disabled = false;
-    vbRight.disabled = false;
+    vbLeft.disabled = state.dir === 'left';
+    vbStill.disabled = state.dir === 'still';
+    vbRight.disabled = state.dir === 'right';
     hudRow.setAttribute('aria-live', 'polite');
     drawAll();
     updateHud();
@@ -1166,6 +1169,14 @@ footer {
     state.x0 = state.startSide === 'right' ? (state.L / 2 - 1) : -(state.L / 2 - 1);
     state.x = state.x0;
     state.v = state.v0;
+    state.t = 0;
+    state.slip = 0;
+    state.tSync = null;
+    state.offbelt = false;
+    state.scratches = [];
+    state.prevQ = state.x0;
+    state.beltClock = 0;
+    lastTs = 0;
     state.trace = [[0, state.v0, 0]];
     drawAll();
     updateHud();
@@ -1195,11 +1206,13 @@ footer {
     v0El.value = 0; muEl.value = 0.30; gEl.value = 10; lenEl.value = 24;
     state.vBelt = 3; state.startSide = 'left';
     setDirBtn('right');   // 左端起点：带向右
+    reset();
   });
   s2.addEventListener('click', () => {
     v0El.value = 0; muEl.value = 0.30; gEl.value = 10; lenEl.value = 24;
     state.vBelt = -3; state.startSide = 'right';
     setDirBtn('left');    // 右端起点：带向左
+    reset();
   });
 
   // 初始
