@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>水平直线运动演示｜高中物理</title>
+    <meta name="description" content="水平直线运动（匀变速）教学演示：单一加速度滑条切换加速、匀速、减速，支持正负初速度与往返运动，实时绘制 v-t 与 s-t 图像，并显示速度为零时刻与转向点位移。">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            font-family: system-ui, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 12px 32px;
+        }
+        main {
+            width: 100%;
+            max-width: 880px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1 {
+            font-size: 22px;
+            margin-bottom: 12px;
+            text-align: center;
+        }
+        .canvas-wrap { width: 100%; }
+        canvas#scene {
+            display: block;
+            width: 100%;
+            aspect-ratio: 880 / 440;
+            border: 2px solid #3388dd;
+            border-radius: 10px;
+            background-color: #0b1828;
+        }
+        .control-panel {
+            margin-top: 14px;
+            width: 100%;
+            display: grid;
+            grid-template-columns: minmax(240px, 1fr) minmax(280px, 1.25fr);
+            gap: 14px;
+        }
+        @media (max-width: 720px) {
+            .control-panel { grid-template-columns: 1fr; }
+        }
+        .param-group,
+        .data-group,
+        .chart-panel {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 14px 16px;
+        }
+        .group-title {
+            font-size: 12px;
+            color: #8899aa;
+            margin-bottom: 10px;
+            letter-spacing: 0.5px;
+        }
+        .param-row {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            margin-bottom: 10px;
+        }
+        .param-row label {
+            font-size: 13px;
+            color: #ccd;
+            white-space: nowrap;
+            min-width: 82px;
+        }
+        .param-row input[type=range] { flex: 1; }
+        .param-row .val {
+            min-width: 70px;
+            text-align: right;
+            font-size: 13px;
+            font-variant-numeric: tabular-nums;
+            color: #ccd;
+        }
+        .fixed-note {
+            margin-top: 4px;
+            font-size: 12px;
+            color: #8899aa;
+            line-height: 1.7;
+        }
+        .fixed-note b { color: #ff9933; font-weight: 600; }
+        .data-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 9px;
+        }
+        @media (max-width: 560px) {
+            .data-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+        .data-item {
+            background: rgba(255, 255, 255, 0.035);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            padding: 8px 10px;
+        }
+        .data-item.span-full { grid-column: 1 / -1; }
+        .data-item span {
+            display: block;
+            font-size: 11px;
+            color: #8899aa;
+            margin-bottom: 4px;
+        }
+        .data-item b {
+            display: block;
+            font-size: 14px;
+            color: #ffffff;
+            font-variant-numeric: tabular-nums;
+        }
+        .charts-row {
+            margin-top: 16px;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+        @media (max-width: 720px) {
+            .charts-row { grid-template-columns: 1fr; }
+        }
+        .chart-panel canvas {
+            display: block;
+            width: 100%;
+            aspect-ratio: 20 / 9;
+            background: #0b1828;
+            border: 2px solid #3388dd;
+            border-radius: 10px;
+        }
+        .actions {
+            margin-top: 16px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        button {
+            background: #3388dd;
+            border: none;
+            color: white;
+            padding: 9px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.15s ease, transform 0.15s ease;
+        }
+        button:hover:not(:disabled) { background: #2f7cc8; }
+        button:active:not(:disabled) { transform: translateY(1px); }
+        button:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+        .legend {
+            margin-top: 12px;
+            font-size: 12px;
+            color: #aab;
+            text-align: center;
+            line-height: 1.8;
+        }
+        .legend span { margin: 0 6px; }
+    </style>
+</head>
+<body>
+    <main>
+        <h1>水平直线运动演示</h1>
+        <div class="canvas-wrap">
+            <canvas id="scene" role="img" aria-label="水平直线运动演示"></canvas>
+        </div>
+        <div class="charts-row">
+            <section class="chart-panel">
+                <div class="group-title">速度-时间图 (v-t)</div>
+                <canvas id="vtChart" role="img" aria-label="速度-时间图像，斜率为加速度 a"></canvas>
+            </section>
+            <section class="chart-panel">
+                <div class="group-title">位移-时间图 (s-t)</div>
+                <canvas id="stChart" role="img" aria-label="位移-时间图像，s = v₀t + ½at²"></canvas>
+            </section>
+        </div>
+        <div class="control-panel">
+            <section class="param-group" aria-labelledby="parameterTitle">
+                <div class="group-title" id="parameterTitle">参数设定</div>
+                <div class="param-row">
+                    <label for="acc">加速度 a</label>
+                    <input id="acc" type="range" min="-6" max="6" value="0" step="0.1">
+                    <div class="val" id="aVal">+0.0 m/s²</div>
+                </div>
+                <div class="param-row">
+                    <label for="v0">初速度 v₀</label>
+                    <input id="v0" type="range" min="-10" max="10" value="0" step="0.5">
+                    <div class="val" id="v0Val">+0.0 m/s</div>
+                </div>
+                <div class="param-row">
+                    <label for="speed">播放速度</label>
+                    <input id="speed" type="range" min="0.1" max="2" value="0.5" step="0.1">
+                    <div class="val" id="speedVal">0.5×</div>
+                </div>
+                <div class="fixed-note">
+                    匀变速公式：<b>v = v₀ + at</b> ，<b>s = v₀t + ½at²</b><br>
+                    正方向约定：<b>向右为正</b>；a 与 v 同向 → 加速，反向 → 减速<br>
+                    速度为零时刻：t₀ = −v₀/a（a ≠ 0 且 a 与 v₀ 反向时）<br>
+                    转向点位移：s₀ = −v₀²/(2a)，大小 |s₀| = v₀²/(2|a|)
+                </div>
+            </section>
+            <section class="data-group" aria-labelledby="dataTitle" aria-live="polite">
+                <div class="group-title" id="dataTitle">实时数值</div>
+                <div class="data-grid">
+                    <div class="data-item"><span>时间 t</span><b id="time">0.00 s</b></div>
+                    <div class="data-item"><span>位移 s（向右为正）</span><b id="pos">0.00 m</b></div>
+                    <div class="data-item"><span>速度 v</span><b id="vel">0.00 m/s</b></div>
+                    <div class="data-item"><span>加速度 a</span><b id="accVal">+0.0 m/s²</b></div>
+                    <div class="data-item"><span>运动状态</span><b id="motion">静止</b></div>
+                    <div class="data-item"><span>速度为零时刻 t₀ = −v₀/a</span><b id="tZero">—</b></div>
+                    <div class="data-item span-full"><span>转向点位移 s₀ = −v₀²/(2a)（v = 0 处，保留正负方向）</span><b id="turnS">—</b></div>
+                </div>
+            </section>
+        </div>
+        <div class="actions">
+            <button id="btnStart" type="button">开始</button>
+            <button id="btnPause" type="button" disabled>暂停</button>
+            <button id="btnContinue" type="button" disabled>继续</button>
+            <button id="btnReset" type="button">重置</button>
+        </div>
+        <div class="legend">
+            <span>⚪ 小球（从原点出发）</span>
+            <span style="color:#ff5555">→ 速度 v</span>
+            <span style="color:#ff9933">→ 加速度 a</span>
+            <span style="color:#66aaff">● 运动轨迹（最近 6 秒）</span>
+            <span style="color:#ff5555">● 图中当前点</span>
+            <span>虚线：越界边界 ±20 m</span>
+        </div>
+    </main>
+    <script>
+        const X_HALF = 20;
+        const BASE_WIDTH = 880;
+        const BASE_HEIGHT = 440;
+        const CHART_ASPECT = 20 / 9;
+        const sceneView = { width: BASE_WIDTH, height: BASE_HEIGHT };
+        const vtView = { width: 400, height: 180 };
+        const stView = { width: 400, height: 180 };
+
+        const sceneCanvas = document.getElementById('scene');
+        const sctx = sceneCanvas.getContext('2d');
+        const vtCanvas = document.getElementById('vtChart');
+        const vtCtx = vtCanvas.getContext('2d');
+        const stCanvas = document.getElementById('stChart');
+        const stCtx = stCanvas.getContext('2d');
+        const inputV0 = document.getElementById('v0');
+        const inputAcc = document.getElementById('acc');
+        const inputSpeed = document.getElementById('speed');
+        const v0Val = document.getElementById('v0Val');
+        const aVal = document.getElementById('aVal');
+        const speedVal = document.getElementById('speedVal');
+        const elTime = document.getElementById('time');
+        const elPos = document.getElementById('pos');
+        const elVel = document.getElementById('vel');
+        const elAcc = document.getElementById('accVal');
+        const elMotion = document.getElementById('motion');
+        const elTZero = document.getElementById('tZero');
+        const elTurnS = document.getElementById('turnS');
+        const btnStart = document.getElementById('btnStart');
+        const btnPause = document.getElementById('btnPause');
+        const btnContinue = document.getElementById('btnContinue');
+        const btnReset = document.getElementById('btnReset');
+
+        let state = 'idle';
+        let t = 0;
+        let lastTs = null;
+        let raf = null;
+        let trail = [];
+        let flight = null;
+
+        function aOf() { return Number(inputAcc.value); }
+        function v0Of() { return Number(inputV0.value); }
+        function speedOf() { return Number(inputSpeed.value); }
+        function vOf(time) { return v0Of() + aOf() * time; }
+        function sOf(time) { return v0Of() * time + 0.5 * aOf() * time * time; }
+        function tZeroOf() {
+            const a = aOf();
+            if (Math.abs(a) < 1e-9) return Infinity;
+            const t0 = -v0Of() / a;
+            return t0 > 1e-9 ? t0 : Infinity;
+        }
+        function turnSOf() {
+            const a = aOf(), v0 = v0Of();
+            return (a * v0 < -1e-9) ? -v0 * v0 / (2 * a) : null;
+        }
+        function exitTimeFor(sVal) {
+            const a = aOf(), v0 = v0Of();
+            if (Math.abs(a) < 1e-9) {
+                if (Math.abs(v0) < 1e-9) return Infinity;
+                const tt = sVal / v0;
+                return tt > 1e-9 ? tt : Infinity;
+            }
+            const D = v0 * v0 + 2 * a * sVal;
+            if (D < 0) return Infinity;
+            const sq = Math.sqrt(D);
+            let best = Infinity;
+            const roots = [(-v0 - sq) / a, (-v0 + sq) / a];
+            for (let i = 0; i < 2; i++) {
+                if (roots[i] > 1e-9 && roots[i] < best) best = roots[i];
+            }
+            return best;
+        }
+        function computeFlight() {
+            const tEnd = Math.min(exitTimeFor(X_HALF), exitTimeFor(-X_HALF));
+            const finite = isFinite(tEnd);
+            const vEnd = finite ? vOf(tEnd) : 0;
+            const vLo = Math.min(0, v0Of(), vEnd);
+            let vHi = Math.max(0, v0Of(), vEnd);
+            const cand = [0];
+            if (finite) cand.push(sOf(tEnd));
+            const a = aOf(), v0 = v0Of();
+            if (Math.abs(a) > 1e-9) {
+                const ts = -v0 / a;
+                if (ts > 1e-9 && (!finite || ts < tEnd)) cand.push(sOf(ts));
+            }
+            let sLo = cand[0], sHi = cand[0];
+            for (let i = 0; i < cand.length; i++) {
+                if (cand[i] < sLo) sLo = cand[i];
+                if (cand[i] > sHi) sHi = cand[i];
+            }
+            if (vHi - vLo < 1) vHi = vLo + 1;
+            if (sHi - sLo < 1) sHi = sLo + 1;
+            return { tEnd, vLo, vHi, sLo, sHi };
+        }
+
+        function niceStep(maxValue) {
+            if (!isFinite(maxValue) || maxValue <= 0) return 1;
+            const rawStep = maxValue / 5;
+            const magnitude = Math.pow(10, Math.floor(Math.log10(rawStep)));
+            const normalized = rawStep / magnitude;
+            const factor = normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10;
+            return factor * magnitude;
+        }
+        function tickDecimals(step) {
+            if (step >= 1) return 0;
+            return Math.min(6, Math.ceil(-Math.log10(step) + 1e-9));
+        }
+
+        function sceneGeometry() {
+            const plotL = 48, plotR = sceneView.width - 48;
+            const axisY = Math.round(sceneView.height * 0.56);
+            const pix = (plotR - plotL) / (2 * X_HALF);
+            const xToScreen = x => (plotL + plotR) / 2 + x * pix;
+            return { plotL, plotR, axisY, pix, xToScreen };
+        }
+
+        function drawAxis(g) {
+            sctx.strokeStyle = '#7b8ea3';
+            sctx.lineWidth = 2;
+            sctx.beginPath();
+            sctx.moveTo(g.plotL - 6, g.axisY);
+            sctx.lineTo(g.plotR + 10, g.axisY);
+            sctx.stroke();
+            sctx.fillStyle = '#7b8ea3';
+            sctx.beginPath();
+            sctx.moveTo(g.plotR + 16, g.axisY);
+            sctx.lineTo(g.plotR + 6, g.axisY - 5);
+            sctx.lineTo(g.plotR + 6, g.axisY + 5);
+            sctx.closePath();
+            sctx.fill();
+            sctx.font = '12px system-ui, sans-serif';
+            sctx.fillStyle = '#8899aa';
+            sctx.textAlign = 'right';
+            sctx.fillText('x/m', g.plotR + 16, g.axisY - 12);
+            sctx.textAlign = 'center';
+            for (let m = -X_HALF; m <= X_HALF; m += 2) {
+                const px = g.xToScreen(m);
+                const major = (m % 4 === 0);
+                sctx.strokeStyle = '#7b8ea3';
+                sctx.lineWidth = 1;
+                sctx.beginPath();
+                sctx.moveTo(px, g.axisY);
+                sctx.lineTo(px, g.axisY + (major ? 8 : 5));
+                sctx.stroke();
+                if (major) {
+                    sctx.fillStyle = m === 0 ? '#dde6f0' : '#8899aa';
+                    sctx.fillText(String(m), px, g.axisY + 22);
+                }
+            }
+            sctx.save();
+            sctx.strokeStyle = 'rgba(102, 170, 255, 0.45)';
+            sctx.lineWidth = 1;
+            sctx.setLineDash([5, 5]);
+            for (const m of [-X_HALF, X_HALF]) {
+                const px = g.xToScreen(m);
+                sctx.beginPath();
+                sctx.moveTo(px, g.axisY - 40);
+                sctx.lineTo(px, g.axisY + 30);
+                sctx.stroke();
+            }
+            sctx.restore();
+            sctx.fillStyle = 'rgba(102, 170, 255, 0.8)';
+            sctx.font = '11px system-ui, sans-serif';
+            sctx.textAlign = 'center';
+            sctx.fillText('+20 m', g.xToScreen(X_HALF) - 6, g.axisY - 46);
+            sctx.fillText('-20 m', g.xToScreen(-X_HALF) + 6, g.axisY - 46);
+            sctx.fillStyle = '#667788';
+            sctx.font = '12px system-ui, sans-serif';
+            sctx.textAlign = 'left';
+            sctx.fillText('x 轴 · 向右为正', 18, 22);
+        }
+
+        function drawTrail(g) {
+            while (trail.length && trail[0][0] < t - 6) trail.shift();
+            for (let i = 0; i < trail.length; i++) {
+                const age = t - trail[i][0];
+                const alpha = Math.max(0, 0.55 * (1 - age / 6));
+                if (alpha <= 0.02) continue;
+                sctx.fillStyle = 'rgba(102, 170, 255, ' + alpha.toFixed(3) + ')';
+                sctx.beginPath();
+                sctx.arc(g.xToScreen(trail[i][1]), g.axisY, 2.5, 0, Math.PI * 2);
+                sctx.fill();
+            }
+        }
+
+        function drawArrowH(fromX, y, dx, color) {
+            if (Math.abs(dx) < 2) return null;
+            const sign = Math.sign(dx);
+            const tipX = fromX + dx;
+            sctx.strokeStyle = color;
+            sctx.lineWidth = 3;
+            sctx.beginPath();
+            sctx.moveTo(fromX, y);
+            sctx.lineTo(tipX, y);
+            sctx.stroke();
+            sctx.fillStyle = color;
+            sctx.beginPath();
+            sctx.moveTo(tipX + sign * 4, y);
+            sctx.lineTo(tipX - sign * 6, y - 4.5);
+            sctx.lineTo(tipX - sign * 6, y + 4.5);
+            sctx.closePath();
+            sctx.fill();
+            return { x: tipX, y: y };
+        }
+
+        function drawVectors(g, bx, by) {
+            const v = vOf(t), a = aOf();
+            sctx.font = '12px system-ui, sans-serif';
+            if (Math.abs(v) >= 0.05) {
+                let dx = v * 7;
+                dx = Math.sign(dx) * Math.min(Math.abs(dx), 90);
+                const tip = drawArrowH(bx, by, dx, '#ff5555');
+                if (tip) {
+                    sctx.fillStyle = '#ff5555';
+                    sctx.textAlign = dx > 0 ? 'left' : 'right';
+                    sctx.fillText('v = ' + v.toFixed(1) + ' m/s', tip.x + (dx > 0 ? 8 : -8), tip.y + 4);
+                }
+            } else {
+                sctx.fillStyle = '#ff5555';
+                sctx.textAlign = 'left';
+                sctx.fillText('v = 0', bx + 12, by + 4);
+            }
+            if (Math.abs(a) >= 0.05) {
+                let dx = a * 10;
+                dx = Math.sign(dx) * Math.min(Math.abs(dx), 60);
+                const tip = drawArrowH(bx, by + 24, dx, '#ff9933');
+                if (tip) {
+                    sctx.fillStyle = '#ff9933';
+                    sctx.textAlign = dx > 0 ? 'left' : 'right';
+                    sctx.fillText('a = ' + a.toFixed(1) + ' m/s²', tip.x + (dx > 0 ? 8 : -8), tip.y + 4);
+                }
+            } else {
+                sctx.fillStyle = '#ff9933';
+                sctx.textAlign = 'center';
+                sctx.fillText('a = 0', bx, by + 28);
+            }
+        }
+
+        function drawBall(bx, by) {
+            sctx.fillStyle = '#ffffff';
+            sctx.beginPath();
+            sctx.arc(bx, by, 7, 0, Math.PI * 2);
+            sctx.fill();
+            sctx.strokeStyle = '#123';
+            sctx.lineWidth = 2;
+            sctx.stroke();
+        }
+
+        function drawScene() {
+            const g = sceneGeometry();
+            sctx.fillStyle = '#0b1828';
+            sctx.fillRect(0, 0, sceneView.width, sceneView.height);
+            drawAxis(g);
+            drawTrail(g);
+            const s = sOf(t);
+            const bx = g.xToScreen(s);
+            const by = g.axisY;
+            drawVectors(g, bx, by);
+            drawBall(bx, by);
+            sctx.fillStyle = '#dde6f0';
+            sctx.font = '12px system-ui, sans-serif';
+            sctx.textAlign = 'center';
+            sctx.fillText('x = ' + s.toFixed(2) + ' m', bx, by - 48);
+            if (state === 'ended') {
+                sctx.fillStyle = '#ff9933';
+                sctx.fillText('已越界停止', bx, by - 26);
+            }
+        }
+
+        function drawChart(view, ctx, fn, yLo, yHi, unit, yLabel) {
+            const padL = 48, padR = 16, padT = 16, padB = 30;
+            const plotW = view.width - padL - padR;
+            const plotH = view.height - padT - padB;
+            const tWin = 10;
+            const tAxEnd = Math.max(tWin, t);
+            const tStart = tAxEnd - tWin;
+            const xOfTime = time => padL + (time - tStart) / tWin * plotW;
+            const yOfVal = val => {
+                const p = padT + plotH - (val - yLo) / (yHi - yLo) * plotH;
+                return Math.max(padT, Math.min(padT + plotH, p));
+            };
+            ctx.clearRect(0, 0, view.width, view.height);
+
+            const yStep = niceStep(yHi - yLo);
+            const yDecimals = tickDecimals(yStep);
+            ctx.font = '10px system-ui, sans-serif';
+            const iStart = Math.ceil(yLo / yStep - 1e-9);
+            const iEnd = Math.floor(yHi / yStep + 1e-9);
+            for (let i = iStart; i <= iEnd; i++) {
+                const val = i * yStep;
+                const py = yOfVal(val);
+                ctx.strokeStyle = '#1f2d3d';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(padL, py);
+                ctx.lineTo(padL + plotW, py);
+                ctx.stroke();
+                ctx.fillStyle = '#8899aa';
+                ctx.textAlign = 'right';
+                ctx.fillText(val.toFixed(yDecimals), padL - 6, py + 3);
+            }
+            if (yLo < 0 && yHi > 0) {
+                const py0 = yOfVal(0);
+                ctx.strokeStyle = '#7b8ea3';
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.moveTo(padL, py0);
+                ctx.lineTo(padL + plotW, py0);
+                ctx.stroke();
+            }
+
+            ctx.textAlign = 'center';
+            for (let tt = Math.ceil(tStart / 2) * 2; tt <= tAxEnd + 1e-9; tt += 2) {
+                const px = xOfTime(tt);
+                ctx.strokeStyle = '#1f2d3d';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(px, padT);
+                ctx.lineTo(px, padT + plotH);
+                ctx.stroke();
+                ctx.fillStyle = '#8899aa';
+                ctx.fillText(tt.toFixed(0), px, padT + plotH + 16);
+            }
+
+            ctx.strokeStyle = '#7b8ea3';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(padL, padT);
+            ctx.lineTo(padL, padT + plotH);
+            ctx.lineTo(padL + plotW, padT + plotH);
+            ctx.stroke();
+
+            ctx.fillStyle = '#8899aa';
+            ctx.textAlign = 'left';
+            ctx.fillText(yLabel, padL + 6, padT + 12);
+            ctx.textAlign = 'right';
+            ctx.fillText('t/s', padL + plotW, view.height - 8);
+
+            const tCurveEnd = Math.min(t, tAxEnd);
+            if (tCurveEnd > tStart + 1e-6) {
+                ctx.strokeStyle = '#3388dd';
+                ctx.lineWidth = 2.5;
+                ctx.lineJoin = 'round';
+                ctx.beginPath();
+                const samples = 120;
+                for (let i = 0; i <= samples; i++) {
+                    const time = tStart + (i / samples) * (tCurveEnd - tStart);
+                    const px = xOfTime(time);
+                    const py = yOfVal(fn(time));
+                    if (i === 0) ctx.moveTo(px, py);
+                    else ctx.lineTo(px, py);
+                }
+                ctx.stroke();
+            }
+
+            const pxNow = xOfTime(t);
+            const pyNow = yOfVal(fn(t));
+            ctx.strokeStyle = 'rgba(51, 136, 221, 0.4)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(pxNow, padT);
+            ctx.lineTo(pxNow, padT + plotH);
+            ctx.stroke();
+            ctx.fillStyle = '#ff5555';
+            ctx.beginPath();
+            ctx.arc(pxNow, pyNow, 4.5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.font = '10px system-ui, sans-serif';
+            const valText = fn(t).toFixed(1) + unit;
+            let lx = pxNow + 7, ly = pyNow - 7;
+            if (lx > padL + plotW - 44) lx = pxNow - 48;
+            if (ly < padT + 10) ly = pyNow + 16;
+            ctx.textAlign = 'left';
+            ctx.fillStyle = '#dde6f0';
+            ctx.fillText(valText, lx, ly);
+        }
+
+        function drawCharts() {
+            const vPad = (flight.vHi - flight.vLo) * 0.08;
+            drawChart(vtView, vtCtx, vOf, flight.vLo - vPad, flight.vHi + vPad, ' m/s', 'v (m/s)');
+            const sPad = (flight.sHi - flight.sLo) * 0.08;
+            drawChart(stView, stCtx, sOf, flight.sLo - sPad, flight.sHi + sPad, ' m', 's (m)');
+        }
+
+        function renderAll() {
+            drawScene();
+            drawCharts();
+        }
+
+        function motionLabel() {
+            const v = vOf(t), a = aOf();
+            if (Math.abs(a) < 1e-9) return Math.abs(v) < 1e-9 ? '静止' : '匀速';
+            if (Math.abs(v) < 1e-9) return '从静止加速';
+            return a * v > 0 ? '加速' : '减速';
+        }
+
+        function updateReadouts() {
+            const v = vOf(t), s = sOf(t), a = aOf();
+            elTime.textContent = t.toFixed(2) + ' s';
+            elPos.textContent = s.toFixed(2) + ' m';
+            elVel.textContent = v.toFixed(2) + ' m/s';
+            elAcc.textContent = (a >= 0 ? '+' : '') + a.toFixed(1) + ' m/s²';
+            elMotion.textContent = motionLabel();
+            const t0 = tZeroOf();
+            elTZero.textContent = isFinite(t0) ? t0.toFixed(2) + ' s' : '—';
+            const s0 = turnSOf();
+            elTurnS.textContent = s0 === null ? '—' : s0.toFixed(2) + ' m（v = 0 处）';
+            sceneCanvas.setAttribute('aria-label',
+                '水平直线运动演示：时间' + t.toFixed(2) + '秒，位移' + s.toFixed(2) + '米，速度' + v.toFixed(2) + '米每秒，' + motionLabel());
+        }
+
+        function setupCanvas(canvas, view, aspect) {
+            const cssWidth = canvas.clientWidth || 400;
+            const cssHeight = cssWidth / aspect;
+            const devicePixelRatio = window.devicePixelRatio || 1;
+            canvas.width = Math.round(cssWidth * devicePixelRatio);
+            canvas.height = Math.round(cssHeight * devicePixelRatio);
+            canvas.getContext('2d').setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+            view.width = cssWidth;
+            view.height = cssHeight;
+        }
+        function resizeAll() {
+            setupCanvas(sceneCanvas, sceneView, BASE_WIDTH / BASE_HEIGHT);
+            setupCanvas(vtCanvas, vtView, CHART_ASPECT);
+            setupCanvas(stCanvas, stView, CHART_ASPECT);
+            renderAll();
+        }
+
+        function endRun() {
+            state = 'ended';
+            btnStart.disabled = false;
+            btnStart.textContent = '重新开始';
+            btnPause.disabled = true;
+            btnContinue.disabled = true;
+            inputV0.disabled = false;
+            inputAcc.disabled = false;
+        }
+
+        function frame(timestamp) {
+            if (state !== 'running') return;
+            if (lastTs === null) lastTs = timestamp;
+            const dt = Math.min((timestamp - lastTs) / 1000, 0.05) * speedOf();
+            lastTs = timestamp;
+            const tNew = t + dt;
+            const sNew = sOf(tNew);
+            if (sNew >= X_HALF || sNew <= -X_HALF) {
+                t = exitTimeFor(sNew >= X_HALF ? X_HALF : -X_HALF);
+                trail.push([t, sOf(t)]);
+                renderAll();
+                updateReadouts();
+                endRun();
+                return;
+            }
+            t = tNew;
+            trail.push([t, sOf(t)]);
+            if (trail.length > 900) trail.splice(0, trail.length - 700);
+            renderAll();
+            updateReadouts();
+            raf = requestAnimationFrame(frame);
+        }
+
+        function start() {
+            if (state === 'running' || state === 'paused') return;
+            t = 0;
+            lastTs = null;
+            trail = [];
+            state = 'running';
+            btnStart.disabled = true;
+            btnStart.textContent = '运行中…';
+            btnPause.disabled = false;
+            btnContinue.disabled = true;
+            inputV0.disabled = true;
+            inputAcc.disabled = true;
+            updateReadouts();
+            renderAll();
+            raf = requestAnimationFrame(frame);
+        }
+
+        function pause() {
+            if (state !== 'running') return;
+            state = 'paused';
+            if (raf) cancelAnimationFrame(raf);
+            btnPause.disabled = true;
+            btnContinue.disabled = false;
+        }
+
+        function resume() {
+            if (state !== 'paused') return;
+            state = 'running';
+            lastTs = null;
+            btnPause.disabled = false;
+            btnContinue.disabled = true;
+            raf = requestAnimationFrame(frame);
+        }
+
+        function reset() {
+            if (raf) cancelAnimationFrame(raf);
+            state = 'idle';
+            t = 0;
+            lastTs = null;
+            trail = [];
+            flight = computeFlight();
+            inputV0.disabled = false;
+            inputAcc.disabled = false;
+            btnStart.disabled = false;
+            btnStart.textContent = '开始';
+            btnPause.disabled = true;
+            btnContinue.disabled = true;
+            updateParameterLabels();
+            updateReadouts();
+            renderAll();
+        }
+
+        function updateParameterLabels() {
+            v0Val.textContent = (v0Of() >= 0 ? '+' : '') + v0Of().toFixed(1) + ' m/s';
+            aVal.textContent = (aOf() >= 0 ? '+' : '') + aOf().toFixed(1) + ' m/s²';
+            speedVal.textContent = Number(inputSpeed.value).toFixed(1) + '×';
+        }
+
+        btnStart.addEventListener('click', start);
+        btnPause.addEventListener('click', pause);
+        btnContinue.addEventListener('click', resume);
+        btnReset.addEventListener('click', reset);
+        inputV0.addEventListener('input', () => {
+            updateParameterLabels();
+            if (state === 'idle' || state === 'ended') reset();
+        });
+        inputAcc.addEventListener('input', () => {
+            updateParameterLabels();
+            if (state === 'idle' || state === 'ended') reset();
+        });
+        inputSpeed.addEventListener('input', updateParameterLabels);
+        window.addEventListener('resize', resizeAll);
+        if (typeof ResizeObserver !== 'undefined') {
+            const observer = new ResizeObserver(resizeAll);
+            observer.observe(sceneCanvas);
+            observer.observe(vtCanvas);
+            observer.observe(stCanvas);
+        }
+
+        updateParameterLabels();
+        flight = computeFlight();
+        resizeAll();
+        reset();
+    </script>
+</body>
+</html>
