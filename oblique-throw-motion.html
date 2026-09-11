@@ -74,12 +74,16 @@
         @media (max-width: 720px) {
             .control-panel { grid-template-columns: 1fr; }
         }
-        .param-group,
-        .data-group {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            padding: 14px 16px;
+        .fixed-note {
+            margin-top: 8px;
+            font-size: 12px;
+            color: #8899aa;
+            line-height: 1.6;
+        }
+        .fixed-note b { color: #ff9933; font-weight: 600; }
+        input[type=range]:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
         }
         .group-title {
             font-size: 12px;
@@ -206,6 +210,11 @@
                     <input id="angle" type="range" min="1" max="89" value="45" step="1">
                     <div class="val" id="angleVal">45°</div>
                 </div>
+                <div class="param-row">
+                    <label for="speed">播放速度</label>
+                    <input id="speed" type="range" min="0.1" max="4" value="0.5" step="0.1">
+                    <div class="val" id="speedVal">0.5×</div>
+                </div>
                 <label class="toggle" for="showPreview">
                     <input id="showPreview" type="checkbox" checked>
                     显示理论轨迹
@@ -218,8 +227,14 @@
                     <input id="showApex" type="checkbox" checked>
                     显示最高点标记
                 </label>
+                <div class="fixed-note">
+                    重力加速度 <b>g = 10 m/s²</b>（固定值）。水平方向匀速直线，竖直方向竖直上抛。<br>
+                    正方向：水平向右为 +x，竖直<b>向上</b>为 +y（过最高点后 vᵧ、γ 为负）。<br>
+                    公式：vₓ = v₀cosθ，vᵧ = v₀sinθ − gt，x = vₓt，y = v₀y t − ½gt²<br>
+                    射程 X = v₀²sin2θ/g：<b>θ 与 90°−θ 射程相同</b>（如 30° 与 60°），<b>θ = 45° 时射程最大</b>。
+                </div>
             </section>
-            <section class="data-group" aria-labelledby="dataTitle" aria-live="polite">
+            <section class="data-group" id="dataGroup" aria-labelledby="dataTitle" aria-live="polite">
                 <div class="group-title" id="dataTitle">实时数值</div>
                 <div class="data-grid">
                     <div class="data-item"><span>时间 t</span><b id="time">0.00 s</b></div>
@@ -228,10 +243,10 @@
                     <div class="data-item"><span>水平速度 vₓ</span><b id="vx">14.14 m/s</b></div>
                     <div class="data-item"><span>竖直速度 vᵧ（向上为正）</span><b id="vy">14.14 m/s</b></div>
                     <div class="data-item"><span>合速度 v</span><b id="vv">20.00 m/s</b></div>
-                    <div class="data-item"><span>方向角 γ</span><b id="vt">45.0°</b></div>
-                    <div class="data-item"><span>飞行时间 T</span><b id="flightTime">2.89 s</b></div>
-                    <div class="data-item"><span>水平射程 X</span><b id="range">40.82 m</b></div>
-                    <div class="data-item span-full"><span>最大高度 H（最高点处 vᵧ = 0）</span><b id="maxHeight">10.20 m</b></div>
+                    <div class="data-item"><span>方向角 γ</span><b id="gamma">45.0°</b></div>
+                    <div class="data-item"><span>飞行时间 T</span><b id="flightTime">2.83 s</b></div>
+                    <div class="data-item"><span>水平射程 X</span><b id="range">40.00 m</b></div>
+                    <div class="data-item span-full"><span>最大高度 H（最高点处 vᵧ = 0）</span><b id="maxHeight">10.00 m</b></div>
                 </div>
             </section>
         </div>
@@ -269,10 +284,13 @@
         const elVx = document.getElementById('vx');
         const elVy = document.getElementById('vy');
         const elVv = document.getElementById('vv');
-        const elVt = document.getElementById('vt');
+        const elGamma = document.getElementById('gamma');
         const elFlightTime = document.getElementById('flightTime');
         const elRange = document.getElementById('range');
         const elMaxHeight = document.getElementById('maxHeight');
+        const dataGroup = document.getElementById('dataGroup');
+        const inputSpeed = document.getElementById('speed');
+        const speedVal = document.getElementById('speedVal');
         const btnStart = document.getElementById('btnStart');
         const btnPause = document.getElementById('btnPause');
         const btnContinue = document.getElementById('btnContinue');
@@ -282,7 +300,7 @@
         const stCanvas = document.getElementById('stChart');
         const stCtx = stCanvas.getContext('2d');
 
-        const g = 9.8;
+        const g = 10;
         const CHART_ASPECT = 20 / 9;
         const vtView = { width: 400, height: 180 };
         const stView = { width: 400, height: 180 };
@@ -298,13 +316,13 @@
 
         function v0Meters() { return Number(inputV0.value); }
         function angleRad() { return Number(inputAngle.value) * Math.PI / 180; }
+        function speedOf() { return Number(inputSpeed.value); }
         function v0xOf() { return v0Meters() * Math.cos(angleRad()); }
         function v0yOf() { return v0Meters() * Math.sin(angleRad()); }
         function xOf(time) { return v0xOf() * time; }
         function yOf(time) { return v0yOf() * time - 0.5 * g * time * time; }
         function tEnd() { return 2 * v0yOf() / g; }
         function rangeMeters() { return v0xOf() * tEnd(); }
-        function apexTime() { return v0yOf() / g; }
         function apexHeight() { return v0yOf() * v0yOf() / (2 * g); }
         function velocityOf(time) { return { vx: v0xOf(), vy: v0yOf() - g * time }; }
         function currentPosition() { return { x: xOf(t), y: yOf(t) }; }
@@ -350,12 +368,6 @@
                 x: geometry.originX + x * geometry.scale,
                 y: geometry.originY - y * geometry.scale
             };
-        }
-
-        function formatValue(value, unit) {
-            const abs = Math.abs(value);
-            const text = abs >= 100 ? value.toFixed(0) : abs >= 1 ? value.toFixed(1) : value.toFixed(2);
-            return `${text} ${unit}`;
         }
 
         function drawGridAndAxes(geometry) {
@@ -546,14 +558,15 @@
             ctx.fillText('落地', point.x, point.y - 14);
         }
 
-        function drawChart(view, chartCtx, seriesList, yMin, yMax, xLabel, yLabel) {
+        function drawChart(view, chartCtx, seriesList, yMin, yMax, xLabel, yLabel, note) {
             const padL = 48, padR = 16, padT = 16, padB = 30;
             const plotW = view.width - padL - padR;
             const plotH = view.height - padT - padB;
             const tMax = tEnd();
             const xOfTime = (time) => padL + (tMax > 0 ? time / tMax : 0) * plotW;
-            const yOfVal = (val) => {
-                const p = padT + plotH - (val - yMin) / (yMax - yMin) * plotH;
+            const yOfVal = (val, series) => {
+                const hi = series && series.ownMax !== undefined ? series.ownMax : yMax;
+                const p = padT + plotH - (val - yMin) / (hi - yMin) * plotH;
                 return Math.max(padT, Math.min(padT + plotH, p));
             };
             chartCtx.clearRect(0, 0, view.width, view.height);
@@ -616,11 +629,17 @@
             chartCtx.fillText(yLabel, padL + 6, padT + 12);
             chartCtx.textAlign = 'right';
             chartCtx.fillText(xLabel, padL + plotW, view.height - 8);
+            if (note) {
+                chartCtx.fillStyle = '#667788';
+                chartCtx.font = '10px system-ui, sans-serif';
+                chartCtx.textAlign = 'right';
+                chartCtx.fillText(note, padL + plotW, padT + 12);
+            }
 
             const samples = 120;
-            function pointAt(fn, i) {
+            function pointAt(series, fn, i) {
                 const time = (i / samples) * tMax;
-                return { x: xOfTime(time), y: yOfVal(fn(time)) };
+                return { x: xOfTime(time), y: yOfVal(fn(time), series) };
             }
 
             const currentIndex = Math.min(samples, Math.floor(samples * (tMax > 0 ? t / tMax : 0)));
@@ -636,7 +655,7 @@
                 chartCtx.setLineDash([7, 7]);
                 chartCtx.beginPath();
                 for (let i = 0; i <= samples; i++) {
-                    const p = pointAt(fn, i);
+                    const p = pointAt(series, fn, i);
                     if (i === 0) chartCtx.moveTo(p.x, p.y);
                     else chartCtx.lineTo(p.x, p.y);
                 }
@@ -649,18 +668,18 @@
                 chartCtx.lineJoin = 'round';
                 chartCtx.beginPath();
                 for (let i = 0; i <= currentIndex; i++) {
-                    const p = pointAt(fn, i);
+                    const p = pointAt(series, fn, i);
                     if (i === 0) chartCtx.moveTo(p.x, p.y);
                     else chartCtx.lineTo(p.x, p.y);
                 }
                 if (currentIndex < samples && tMax > 0) {
-                    const pNow = { x: pxNow, y: yOfVal(fn(t)) };
+                    const pNow = { x: pxNow, y: yOfVal(fn(t), series) };
                     chartCtx.lineTo(pNow.x, pNow.y);
                 }
                 chartCtx.stroke();
 
                 // 当前点
-                const pyNow = yOfVal(fn(t));
+                const pyNow = yOfVal(fn(t), series);
                 chartCtx.fillStyle = color;
                 chartCtx.beginPath();
                 chartCtx.arc(pxNow, pyNow, 4.5, 0, Math.PI * 2);
@@ -687,15 +706,16 @@
 
         function drawCharts() {
             const vMax = Math.max(5, Math.ceil(Math.max(v0xOf(), Math.abs(v0yOf())) * 1.05 / 5) * 5);
-            const sMax = niceCeil(Math.max(rangeMeters(), apexHeight()) * 1.05);
+            const yScaleMax = niceCeil(Math.max(apexHeight(), 5) * 1.05);
+            const xScaleMax = niceCeil(Math.max(rangeMeters(), 5) * 1.05);
             drawChart(vtView, vtCtx, [
                 { fn: v0xOf, color: '#33cc55', dashColor: 'rgba(51, 204, 85, 0.55)', label: 'vₓ', unit: ' m/s' },
                 { fn: (time) => v0yOf() - g * time, color: '#ff9933', dashColor: 'rgba(255, 153, 51, 0.55)', label: 'vᵧ', unit: ' m/s' }
             ], -vMax, vMax, 't/s', 'v (m/s)');
             drawChart(stView, stCtx, [
-                { fn: xOf, color: '#33cc55', dashColor: 'rgba(51, 204, 85, 0.55)', label: 'x', unit: ' m' },
+                { fn: xOf, color: '#33cc55', dashColor: 'rgba(51, 204, 85, 0.55)', label: 'x', unit: ' m', ownMax: xScaleMax },
                 { fn: yOf, color: '#ff9933', dashColor: 'rgba(255, 153, 51, 0.55)', label: 'y', unit: ' m' }
-            ], 0, sMax, 't/s', 's (m)');
+            ], 0, yScaleMax, 't/s', 's (m)', 'x、y 纵轴独立缩放，读数为真实值');
         }
 
         function render() {
@@ -727,7 +747,7 @@
             elVx.textContent = vx.toFixed(2) + ' m/s';
             elVy.textContent = vy.toFixed(2) + ' m/s';
             elVv.textContent = speed.toFixed(2) + ' m/s';
-            elVt.textContent = gamma.toFixed(1) + '°';
+            elGamma.textContent = gamma.toFixed(1) + '°';
             elFlightTime.textContent = tEnd().toFixed(2) + ' s';
             elRange.textContent = rangeMeters().toFixed(2) + ' m';
             elMaxHeight.textContent = apexHeight().toFixed(2) + ' m';
@@ -765,7 +785,7 @@
         function frame(timestamp) {
             if (state !== 'running') return;
             if (lastTs === null) lastTs = timestamp;
-            const dt = Math.min((timestamp - lastTs) / 1000, 0.05);
+            const dt = Math.min((timestamp - lastTs) / 1000, 0.05) * speedOf();
             lastTs = timestamp;
             t = Math.min(t + dt, tEnd());
             const ended = t >= tEnd();
@@ -780,6 +800,7 @@
                 btnContinue.disabled = true;
                 inputV0.disabled = false;
                 inputAngle.disabled = false;
+                dataGroup.setAttribute('aria-live', 'polite');
                 return;
             }
             raf = requestAnimationFrame(frame);
@@ -797,6 +818,7 @@
             btnContinue.disabled = true;
             inputV0.disabled = true;
             inputAngle.disabled = true;
+            dataGroup.setAttribute('aria-live', 'off');
             updateReadouts();
             render();
             raf = requestAnimationFrame(frame);
@@ -808,6 +830,7 @@
             if (raf) cancelAnimationFrame(raf);
             btnPause.disabled = true;
             btnContinue.disabled = false;
+            dataGroup.setAttribute('aria-live', 'polite');
             render();
         }
 
@@ -817,6 +840,7 @@
             lastTs = null;
             btnPause.disabled = false;
             btnContinue.disabled = true;
+            dataGroup.setAttribute('aria-live', 'off');
             raf = requestAnimationFrame(frame);
         }
 
@@ -832,6 +856,7 @@
             btnStart.textContent = '开始';
             btnPause.disabled = true;
             btnContinue.disabled = true;
+            dataGroup.setAttribute('aria-live', 'polite');
             updateReadouts();
             render();
         }
@@ -839,12 +864,25 @@
         function updateParameterLabels() {
             v0Val.textContent = inputV0.value + ' m/s';
             angleVal.textContent = inputAngle.value + '°';
+            speedVal.textContent = Number(inputSpeed.value).toFixed(1) + '×';
+        }
+
+        function togglePlay() {
+            if (state === 'running') pause();
+            else if (state === 'paused') resume();
+            else start();
         }
 
         btnStart.addEventListener('click', start);
         btnPause.addEventListener('click', pause);
         btnContinue.addEventListener('click', resume);
         btnReset.addEventListener('click', reset);
+        document.addEventListener('keydown', (e) => {
+            const tag = e.target && e.target.tagName;
+            if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA' || tag === 'BUTTON') return;
+            if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
+            else if (e.code === 'KeyR') { e.preventDefault(); reset(); }
+        });
         inputV0.addEventListener('input', () => {
             updateParameterLabels();
             if (state === 'idle' || state === 'ended') reset();
