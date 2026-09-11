@@ -171,6 +171,10 @@
             opacity: 0.45;
             cursor: not-allowed;
         }
+        input[type=range]:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
         .legend {
             margin-top: 12px;
             font-size: 12px;
@@ -278,6 +282,14 @@
         const vtCtx = vtCanvas.getContext('2d');
         const stCanvas = document.getElementById('stChart');
         const stCtx = stCanvas.getContext('2d');
+        const dataGroup = document.querySelector('.data-group');
+
+        const STATE = {
+            IDLE: 'idle',
+            RUNNING: 'running',
+            PAUSED: 'paused',
+            ENDED: 'ended'
+        };
 
         const g = 10;
         const BASE_WIDTH = 880;
@@ -287,11 +299,12 @@
         const view = { width: BASE_WIDTH, height: BASE_HEIGHT };
         const vtView = { width: 400, height: 180 };
         const stView = { width: 400, height: 180 };
-        let state = 'idle';
+        let state = STATE.IDLE;
         let t = 0;
         let lastTs = null;
         let path = [];
         let raf = null;
+        let lastAriaUpdate = 0;
 
         function hMeters() { return Number(inputH.value); }
         function v0Meters() { return Number(inputV0.value); }
@@ -346,26 +359,30 @@
             };
         }
 
-        function formatValue(value, unit) {
+        function formatValue(value, unit = '') {
             const text = Math.abs(value) >= 100 ? value.toFixed(0) : value.toFixed(1);
-            return `${text} ${unit}`;
+            return unit ? `${text} ${unit}` : text;
         }
 
         function drawGridAndAxes(geometry) {
             const { xMax, yMax, scale, originX, originY } = geometry;
             const xStep = niceStep(xMax);
             const yStep = niceStep(yMax);
+            const xCount = Math.round(xMax / xStep);
+            const yCount = Math.round(yMax / yStep);
 
             ctx.clearRect(0, 0, view.width, view.height);
             ctx.strokeStyle = '#1f2d3d';
             ctx.lineWidth = 1;
             ctx.beginPath();
-            for (let x = 0; x <= xMax + xStep * 0.001; x += xStep) {
+            for (let i = 0; i <= xCount; i++) {
+                const x = i * xStep;
                 const px = originX + x * scale;
                 ctx.moveTo(px, PAD.top);
                 ctx.lineTo(px, originY);
             }
-            for (let y = 0; y <= yMax + yStep * 0.001; y += yStep) {
+            for (let i = 0; i <= yCount; i++) {
+                const y = i * yStep;
                 const py = originY - y * scale;
                 ctx.moveTo(originX, py);
                 ctx.lineTo(view.width - PAD.right, py);
@@ -383,7 +400,8 @@
             ctx.fillStyle = '#8899aa';
             ctx.font = '11px system-ui, sans-serif';
             ctx.textAlign = 'center';
-            for (let x = 0; x <= xMax + xStep * 0.001; x += xStep) {
+            for (let i = 0; i <= xCount; i++) {
+                const x = i * xStep;
                 const px = originX + x * scale;
                 ctx.strokeStyle = '#7b8ea3';
                 ctx.lineWidth = 1;
@@ -391,10 +409,11 @@
                 ctx.moveTo(px, originY);
                 ctx.lineTo(px, originY + 5);
                 ctx.stroke();
-                ctx.fillText(formatValue(x, ''), px, originY + 20);
+                ctx.fillText(formatValue(x), px, originY + 20);
             }
             ctx.textAlign = 'right';
-            for (let y = 0; y <= yMax + yStep * 0.001; y += yStep) {
+            for (let i = 0; i <= yCount; i++) {
+                const y = i * yStep;
                 const py = originY - y * scale;
                 ctx.strokeStyle = '#7b8ea3';
                 ctx.lineWidth = 1;
@@ -402,11 +421,11 @@
                 ctx.moveTo(originX - 5, py);
                 ctx.lineTo(originX, py);
                 ctx.stroke();
-                ctx.fillText(formatValue(y, ''), originX - 8, py + 4);
+                ctx.fillText(formatValue(y), originX - 8, py + 4);
             }
 
-            ctx.textAlign = 'right';
-            ctx.fillText('x/m', view.width - PAD.right, originY + 38);
+            ctx.textAlign = 'left';
+            ctx.fillText('x/m', view.width - PAD.right + 8, originY + 38);
             ctx.textAlign = 'left';
             ctx.fillText('y/m', originX - 30, PAD.top + 2);
         }
@@ -500,7 +519,7 @@
         }
 
         function drawLandingMarker(geometry) {
-            if (state !== 'ended') return;
+            if (state !== STATE.ENDED) return;
             const point = toScreen(geometry, rangeMeters(), 0);
             ctx.fillStyle = '#66aaff';
             ctx.beginPath();
@@ -555,7 +574,9 @@
             const tStep = niceStep(tMax);
             const tDecimals = tickDecimals(tStep);
             chartCtx.textAlign = 'center';
-            for (let tt = 0; tt <= tMax + tStep * 0.001; tt += tStep) {
+            const tCount = Math.round(tMax / tStep);
+            for (let i = 0; i <= tCount; i++) {
+                const tt = i * tStep;
                 const px = xOfTime(tt);
                 chartCtx.strokeStyle = '#1f2d3d';
                 chartCtx.lineWidth = 1;
@@ -680,10 +701,15 @@
             elVt.textContent = angle.toFixed(1) + '°';
             elFlightTime.textContent = tEnd().toFixed(2) + ' s';
             elRange.textContent = rangeMeters().toFixed(2) + ' m';
-            canvas.setAttribute(
-                'aria-label',
-                `平抛运动演示：当前时间${t.toFixed(2)}秒，水平位移${x.toFixed(2)}米，竖直位移${dy.toFixed(2)}米，高度${y.toFixed(2)}米，合速度${speed.toFixed(2)}米每秒`
-            );
+
+            const now = performance.now();
+            if (state !== STATE.RUNNING || now - lastAriaUpdate > 250) {
+                lastAriaUpdate = now;
+                canvas.setAttribute(
+                    'aria-label',
+                    `平抛运动演示：当前时间${t.toFixed(2)}秒，水平位移${x.toFixed(2)}米，竖直位移${dy.toFixed(2)}米，高度${y.toFixed(2)}米，合速度${speed.toFixed(2)}米每秒`
+                );
+            }
         }
 
         function setupChartCanvas(chartCanvas, chartCtx, chartView) {
@@ -712,17 +738,18 @@
         }
 
         function frame(timestamp) {
-            if (state !== 'running') return;
+            if (state !== STATE.RUNNING) return;
             if (lastTs === null) lastTs = timestamp;
             const dt = Math.min((timestamp - lastTs) / 1000, 0.05);
             lastTs = timestamp;
             t = Math.min(t + dt, tEnd());
             const ended = t >= tEnd();
-            if (ended) state = 'ended';
+            if (ended) state = STATE.ENDED;
             path.push(currentPosition());
             render();
             updateReadouts();
             if (ended) {
+                dataGroup.setAttribute('aria-live', 'polite');
                 btnStart.disabled = false;
                 btnStart.textContent = '重新开始';
                 btnPause.disabled = true;
@@ -735,12 +762,13 @@
         }
 
         function start() {
-            if (state === 'running' || state === 'paused') return;
-            const restart = state === 'ended';
+            if (state === STATE.RUNNING || state === STATE.PAUSED) return;
+            const restart = state === STATE.ENDED;
             path = [{ x: 0, y: hMeters() }];
             t = 0;
             lastTs = null;
-            state = 'running';
+            state = STATE.RUNNING;
+            dataGroup.setAttribute('aria-live', 'off');
             btnStart.disabled = true;
             btnStart.textContent = restart ? '重新开始' : '开始';
             btnPause.disabled = false;
@@ -753,8 +781,8 @@
         }
 
         function pause() {
-            if (state !== 'running') return;
-            state = 'paused';
+            if (state !== STATE.RUNNING) return;
+            state = STATE.PAUSED;
             if (raf) cancelAnimationFrame(raf);
             btnPause.disabled = true;
             btnContinue.disabled = false;
@@ -762,8 +790,8 @@
         }
 
         function resume() {
-            if (state !== 'paused') return;
-            state = 'running';
+            if (state !== STATE.PAUSED) return;
+            state = STATE.RUNNING;
             lastTs = null;
             btnPause.disabled = false;
             btnContinue.disabled = true;
@@ -772,10 +800,11 @@
 
         function reset() {
             if (raf) cancelAnimationFrame(raf);
-            state = 'idle';
+            state = STATE.IDLE;
             t = 0;
             lastTs = null;
             path = [];
+            dataGroup.setAttribute('aria-live', 'polite');
             inputH.disabled = false;
             inputV0.disabled = false;
             btnStart.disabled = false;
@@ -797,16 +826,16 @@
         btnReset.addEventListener('click', reset);
         inputH.addEventListener('input', () => {
             updateParameterLabels();
-            if (state === 'idle' || state === 'ended') reset();
+            if (state === STATE.IDLE || state === STATE.ENDED) reset();
         });
         inputV0.addEventListener('input', () => {
             updateParameterLabels();
-            if (state === 'idle' || state === 'ended') reset();
+            if (state === STATE.IDLE || state === STATE.ENDED) reset();
         });
         function togglePlay() {
-            if (state === 'idle' || state === 'ended') start();
-            else if (state === 'running') pause();
-            else if (state === 'paused') resume();
+            if (state === STATE.IDLE || state === STATE.ENDED) start();
+            else if (state === STATE.RUNNING) pause();
+            else if (state === STATE.PAUSED) resume();
         }
 
         inputPreview.addEventListener('change', render);
@@ -815,7 +844,11 @@
             const tag = e.target && e.target.tagName;
             if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA' || tag === 'BUTTON') return;
             if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
-            else if (e.key === 'r' || e.key === 'R') { e.preventDefault(); reset(); }
+            else if (e.key === 'Enter') { e.preventDefault(); if (state === STATE.IDLE || state === STATE.ENDED) start(); }
+            else if (e.key === 'r' || e.key === 'R' || e.key === 'Escape') { e.preventDefault(); reset(); }
+        });
+        window.addEventListener('beforeunload', () => {
+            if (raf) cancelAnimationFrame(raf);
         });
         if (typeof ResizeObserver !== 'undefined') {
             const observer = new ResizeObserver(resizeCanvas);
