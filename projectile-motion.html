@@ -117,6 +117,37 @@
             color: #ffffff;
             font-variant-numeric: tabular-nums;
         }
+        .fixed-note {
+            margin-top: 8px;
+            font-size: 12px;
+            color: #8899aa;
+            line-height: 1.6;
+        }
+        .fixed-note b { color: #ff9933; font-weight: 600; }
+        .charts-row {
+            margin-top: 16px;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+        @media (max-width: 720px) {
+            .charts-row { grid-template-columns: 1fr; }
+        }
+        .chart-panel {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 14px 16px;
+        }
+        .chart-panel canvas {
+            display: block;
+            width: 100%;
+            aspect-ratio: 20 / 9;
+            background: #0b1828;
+            border: 2px solid #3388dd;
+            border-radius: 10px;
+        }
         .actions {
             margin-top: 16px;
             display: flex;
@@ -156,6 +187,16 @@
         <div class="canvas-wrap">
             <canvas id="canvas" role="img" aria-label="平抛运动轨迹演示"></canvas>
         </div>
+        <div class="charts-row">
+            <section class="chart-panel">
+                <div class="group-title">速度-时间图 (v-t)</div>
+                <canvas id="vtChart" role="img" aria-label="速度-时间图像：水平分速度恒定，竖直分速度随时间线性增大"></canvas>
+            </section>
+            <section class="chart-panel">
+                <div class="group-title">位移-时间图 (s-t)</div>
+                <canvas id="stChart" role="img" aria-label="位移-时间图像：水平位移直线增大，离地高度抛物线下降"></canvas>
+            </section>
+        </div>
         <div class="control-panel">
             <section class="param-group" aria-labelledby="parameterTitle">
                 <div class="group-title" id="parameterTitle">参数设定</div>
@@ -173,6 +214,10 @@
                     <input id="showPreview" type="checkbox" checked>
                     显示理论轨迹
                 </label>
+                <div class="fixed-note">
+                    重力加速度 <b>g = 10 m/s²</b>（固定值）。水平方向匀速直线，竖直方向自由落体。<br>
+                    公式：x = v₀t，y = h − ½gt²，vᵧ = gt
+                </div>
             </section>
             <section class="data-group" aria-labelledby="dataTitle" aria-live="polite">
                 <div class="group-title" id="dataTitle">实时数值</div>
@@ -184,8 +229,8 @@
                     <div class="data-item"><span>竖直速度 |vᵧ|</span><b id="vy">0.00 m/s</b></div>
                     <div class="data-item"><span>合速度 v</span><b id="vv">20.00 m/s</b></div>
                     <div class="data-item"><span>方向角 θ</span><b id="vt">0.0°</b></div>
-                    <div class="data-item"><span>落地时间</span><b id="flightTime">3.03 s</b></div>
-                    <div class="data-item"><span>水平射程</span><b id="range">60.61 m</b></div>
+                    <div class="data-item"><span>落地时间</span><b id="flightTime">3.00 s</b></div>
+                    <div class="data-item"><span>水平射程</span><b id="range">60.00 m</b></div>
                 </div>
             </section>
         </div>
@@ -196,11 +241,12 @@
             <button id="btnReset" type="button">重置</button>
         </div>
         <div class="legend">
-            <span>🟢 水平分速度</span>
-            <span>🟠 竖直分速度</span>
-            <span>🔵 合速度</span>
+            <span>🟢 水平分速度 vₓ（恒定）</span>
+            <span>🟠 竖直分速度 vᵧ（匀加速，a=g）</span>
+            <span>🔵 合速度 v</span>
             <span>虚线：理论轨迹</span>
             <span>实线：已播放轨迹</span>
+            <span>⌨ 空格 = 播放/暂停　R = 重置</span>
         </div>
     </main>
     <script>
@@ -224,12 +270,19 @@
         const btnPause = document.getElementById('btnPause');
         const btnContinue = document.getElementById('btnContinue');
         const btnReset = document.getElementById('btnReset');
+        const vtCanvas = document.getElementById('vtChart');
+        const vtCtx = vtCanvas.getContext('2d');
+        const stCanvas = document.getElementById('stChart');
+        const stCtx = stCanvas.getContext('2d');
 
-        const g = 9.8;
+        const g = 10;
         const BASE_WIDTH = 880;
         const BASE_HEIGHT = 520;
+        const CHART_ASPECT = 20 / 9;
         const PAD = { left: 58, right: 26, top: 30, bottom: 52 };
         const view = { width: BASE_WIDTH, height: BASE_HEIGHT };
+        const vtView = { width: 400, height: 180 };
+        const stView = { width: 400, height: 180 };
         let state = 'idle';
         let t = 0;
         let lastTs = null;
@@ -258,6 +311,11 @@
             const normalized = rawStep / magnitude;
             const factor = normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10;
             return factor * magnitude;
+        }
+
+        function tickDecimals(step) {
+            if (step >= 1) return 0;
+            return Math.min(6, Math.ceil(-Math.log10(step) + 1e-9));
         }
 
         function plotGeometry() {
@@ -447,6 +505,145 @@
             ctx.fillText('落地', point.x, point.y - 14);
         }
 
+        function drawChartView(chartView, chartCtx, seriesList, yMin, yMax, yLabel) {
+            const padL = 48, padR = 16, padT = 16, padB = 30;
+            const plotW = chartView.width - padL - padR;
+            const plotH = chartView.height - padT - padB;
+            const tMax = tEnd();
+            const xOfTime = (time) => padL + (tMax > 0 ? time / tMax : 0) * plotW;
+            const yOfVal = (val) => {
+                const p = padT + plotH - (val - yMin) / (yMax - yMin) * plotH;
+                return Math.max(padT, Math.min(padT + plotH, p));
+            };
+            chartCtx.clearRect(0, 0, chartView.width, chartView.height);
+            chartCtx.font = '10px system-ui, sans-serif';
+
+            const yStep = niceStep(yMax - yMin);
+            const yDecimals = tickDecimals(yStep);
+            const iStart = Math.ceil(yMin / yStep - 1e-9);
+            const iEnd = Math.floor(yMax / yStep + 1e-9);
+            for (let i = iStart; i <= iEnd; i++) {
+                const val = i * yStep;
+                const py = yOfVal(val);
+                chartCtx.strokeStyle = '#1f2d3d';
+                chartCtx.lineWidth = 1;
+                chartCtx.beginPath();
+                chartCtx.moveTo(padL, py);
+                chartCtx.lineTo(padL + plotW, py);
+                chartCtx.stroke();
+                chartCtx.fillStyle = '#8899aa';
+                chartCtx.textAlign = 'right';
+                chartCtx.fillText(val.toFixed(yDecimals), padL - 6, py + 3);
+            }
+            if (yMin < 0 && yMax > 0) {
+                const py0 = yOfVal(0);
+                chartCtx.strokeStyle = '#7b8ea3';
+                chartCtx.lineWidth = 1.5;
+                chartCtx.beginPath();
+                chartCtx.moveTo(padL, py0);
+                chartCtx.lineTo(padL + plotW, py0);
+                chartCtx.stroke();
+            }
+
+            const tStep = niceStep(tMax);
+            const tDecimals = tickDecimals(tStep);
+            chartCtx.textAlign = 'center';
+            for (let tt = 0; tt <= tMax + tStep * 0.001; tt += tStep) {
+                const px = xOfTime(tt);
+                chartCtx.strokeStyle = '#1f2d3d';
+                chartCtx.lineWidth = 1;
+                chartCtx.beginPath();
+                chartCtx.moveTo(px, padT);
+                chartCtx.lineTo(px, padT + plotH);
+                chartCtx.stroke();
+                chartCtx.fillStyle = '#8899aa';
+                chartCtx.fillText(tt.toFixed(tDecimals), px, padT + plotH + 16);
+            }
+
+            chartCtx.strokeStyle = '#7b8ea3';
+            chartCtx.lineWidth = 2;
+            chartCtx.beginPath();
+            chartCtx.moveTo(padL, padT);
+            chartCtx.lineTo(padL, padT + plotH);
+            chartCtx.lineTo(padL + plotW, padT + plotH);
+            chartCtx.stroke();
+
+            chartCtx.fillStyle = '#8899aa';
+            chartCtx.textAlign = 'left';
+            chartCtx.fillText(yLabel, padL + 6, padT + 12);
+            let chipX = padL + 72;
+            seriesList.forEach((s) => {
+                chartCtx.fillStyle = s.color;
+                chartCtx.fillRect(chipX, padT + 5, 12, 3);
+                chartCtx.fillText(s.label, chipX + 16, padT + 12);
+                chipX += 16 + chartCtx.measureText(s.label).width + 14;
+            });
+            chartCtx.textAlign = 'right';
+            chartCtx.fillStyle = '#8899aa';
+            chartCtx.fillText('t/s', padL + plotW, chartView.height - 8);
+
+            seriesList.forEach((s) => {
+                chartCtx.strokeStyle = s.color;
+                chartCtx.lineWidth = 2.5;
+                chartCtx.lineJoin = 'round';
+                chartCtx.beginPath();
+                const samples = 120;
+                for (let i = 0; i <= samples; i++) {
+                    const time = (i / samples) * tMax;
+                    const px = xOfTime(time);
+                    const py = yOfVal(s.fn(time));
+                    if (i === 0) chartCtx.moveTo(px, py);
+                    else chartCtx.lineTo(px, py);
+                }
+                chartCtx.stroke();
+            });
+
+            const frac = tMax > 0 ? Math.min(t / tMax, 1) : 0;
+            const pxNow = padL + frac * plotW;
+            chartCtx.strokeStyle = 'rgba(51, 136, 221, 0.4)';
+            chartCtx.lineWidth = 1;
+            chartCtx.beginPath();
+            chartCtx.moveTo(pxNow, padT);
+            chartCtx.lineTo(pxNow, padT + plotH);
+            chartCtx.stroke();
+            seriesList.forEach((s) => {
+                const pyNow = yOfVal(s.fn(t));
+                chartCtx.fillStyle = s.color;
+                chartCtx.beginPath();
+                chartCtx.arc(pxNow, pyNow, s.primary ? 4.5 : 3, 0, Math.PI * 2);
+                chartCtx.fill();
+            });
+            const primary = seriesList.find((s) => s.primary) || seriesList[seriesList.length - 1];
+            const pyNow = yOfVal(primary.fn(t));
+            const valText = primary.fn(t).toFixed(1) + primary.unit;
+            let lx = pxNow + 7, ly = pyNow - 7;
+            if (lx > padL + plotW - 40) lx = pxNow - 44;
+            if (ly < padT + 10) ly = pyNow + 16;
+            chartCtx.textAlign = 'left';
+            chartCtx.fillStyle = '#dde6f0';
+            chartCtx.fillText(valText, lx, ly);
+        }
+
+        function drawCharts() {
+            const v0 = v0Meters();
+            const tf = tEnd();
+            const vyMax = g * tf;
+            const vMax = niceCeil(Math.max(Math.hypot(v0, vyMax), v0, vyMax, 1) * 1.05);
+            const sMax = niceCeil(Math.max(rangeMeters(), hMeters(), 1) * 1.05);
+            drawChartView(vtView, vtCtx, [
+                { fn: () => v0, color: '#33cc55', label: 'vₓ', unit: ' m/s' },
+                { fn: (time) => g * time, color: '#ff9933', label: 'vᵧ', unit: ' m/s' },
+                {
+                    fn: (time) => Math.hypot(v0, g * time),
+                    color: '#3388dd', label: 'v', unit: ' m/s', primary: true
+                }
+            ], 0, vMax, 'v (m/s)');
+            drawChartView(stView, stCtx, [
+                { fn: (time) => v0 * time, color: '#33cc55', label: 'x', unit: ' m' },
+                { fn: (time) => Math.max(yOf(time), 0), color: '#ff9933', label: 'y', unit: ' m', primary: true }
+            ], 0, sMax, 's (m)');
+        }
+
         function render() {
             const geometry = plotGeometry();
             drawGridAndAxes(geometry);
@@ -457,6 +654,7 @@
             drawPoint(point.x, point.y);
             drawVelocityVectors(geometry, position);
             drawLandingMarker(geometry);
+            drawCharts();
         }
 
         function updateReadouts() {
@@ -481,6 +679,17 @@
             );
         }
 
+        function setupChartCanvas(chartCanvas, chartCtx, chartView) {
+            const cssWidth = chartCanvas.clientWidth || 400;
+            const cssHeight = cssWidth / CHART_ASPECT;
+            const devicePixelRatio = window.devicePixelRatio || 1;
+            chartCanvas.width = Math.round(cssWidth * devicePixelRatio);
+            chartCanvas.height = Math.round(cssHeight * devicePixelRatio);
+            chartCtx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+            chartView.width = cssWidth;
+            chartView.height = cssHeight;
+        }
+
         function resizeCanvas() {
             const cssWidth = canvas.clientWidth || BASE_WIDTH;
             const cssHeight = cssWidth * BASE_HEIGHT / BASE_WIDTH;
@@ -490,6 +699,8 @@
             ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
             view.width = cssWidth;
             view.height = cssHeight;
+            setupChartCanvas(vtCanvas, vtCtx, vtView);
+            setupChartCanvas(stCanvas, stCtx, stView);
             render();
         }
 
@@ -585,10 +796,25 @@
             updateParameterLabels();
             if (state === 'idle' || state === 'ended') reset();
         });
+        function togglePlay() {
+            if (state === 'idle' || state === 'ended') start();
+            else if (state === 'running') pause();
+            else if (state === 'paused') resume();
+        }
+
         inputPreview.addEventListener('change', render);
         window.addEventListener('resize', resizeCanvas);
+        document.addEventListener('keydown', (e) => {
+            const tag = e.target && e.target.tagName;
+            if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA' || tag === 'BUTTON') return;
+            if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
+            else if (e.key === 'r' || e.key === 'R') { e.preventDefault(); reset(); }
+        });
         if (typeof ResizeObserver !== 'undefined') {
-            new ResizeObserver(resizeCanvas).observe(canvas);
+            const observer = new ResizeObserver(resizeCanvas);
+            observer.observe(canvas);
+            observer.observe(vtCanvas);
+            observer.observe(stCanvas);
         }
 
         updateParameterLabels();
