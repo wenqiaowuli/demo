@@ -1033,11 +1033,16 @@ footer {
       for (let i = 0; i < sub; i++) step(dt / sub);
       state.trace.push([state.t, state.v, state.x - state.x0]);
       if (state.trace.length > 4000) state.trace.splice(0, state.trace.length - 3600);
-      // 擦痕扫掠（带参考系 q = x - v带·t）
+      // 擦痕扫掠（带参考系 q = x - v带·t，起点偏移至物块边缘）
       if (!state.offbelt) {
         const q = state.x - state.vBelt * state.t;
         if (Math.abs(vRbefore) > 1e-3) {
-          addScratch(Math.min(state.prevQ, q), Math.max(state.prevQ, q));
+          // 物块半宽（米）：50px / pix
+          const w = cv.clientWidth;
+          const pix = (w - 88) / state.L;
+          const halfW = (50 / 2) / pix;
+          const offset = Math.sign(vRbefore) * halfW;
+          addScratch(Math.min(state.prevQ + offset, q + offset), Math.max(state.prevQ + offset, q + offset));
         }
         state.prevQ = q;
       }
