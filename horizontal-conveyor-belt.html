@@ -432,7 +432,7 @@ footer {
     return {
       w, h, xL, xR, yC, R, band, ground,
       pix: (xR - xL) / state.L,
-      topY: yC - band - 6         // 上承载带外缘 = 物块底部
+      topY: yC - band - 4         // 上承载带外缘 = 物块底部
     };
   }
 
@@ -598,20 +598,20 @@ footer {
     ctx.arc(G.xL, G.yC, G.band, Math.PI / 2, Math.PI * 1.5);
     ctx.closePath();
     ctx.strokeStyle = '#2a3340';
-    ctx.lineWidth = 12;
+    ctx.lineWidth = 8;
     ctx.stroke();
     // 带边缘线
     ctx.strokeStyle = 'rgba(120,160,200,0.22)';
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(G.xL, G.yC - G.band - 6);
-    ctx.lineTo(G.xR, G.yC - G.band - 6);
-    ctx.moveTo(G.xL, G.yC - G.band + 6);
-    ctx.lineTo(G.xR, G.yC - G.band + 6);
-    ctx.moveTo(G.xL, G.yC + G.band - 6);
-    ctx.lineTo(G.xR, G.yC + G.band - 6);
-    ctx.moveTo(G.xL, G.yC + G.band + 6);
-    ctx.lineTo(G.xR, G.yC + G.band + 6);
+      ctx.moveTo(G.xL, G.yC - G.band - 4);
+      ctx.lineTo(G.xR, G.yC - G.band - 4);
+      ctx.moveTo(G.xL, G.yC - G.band + 4);
+      ctx.lineTo(G.xR, G.yC - G.band + 4);
+      ctx.moveTo(G.xL, G.yC + G.band - 4);
+      ctx.lineTo(G.xR, G.yC + G.band - 4);
+      ctx.moveTo(G.xL, G.yC + G.band + 4);
+      ctx.lineTo(G.xR, G.yC + G.band + 4);
     ctx.stroke();
     // ---- 带面纹理（短斜纹：上承载随带正向、下回程反向平移）----
     const span = G.xR - G.xL;
@@ -646,8 +646,8 @@ footer {
         const x1 = Math.max(G.xL, Math.min(G.xR, rawX1));
         const x2 = Math.max(G.xL, Math.min(G.xR, rawX2));
         if (x2 > x1) {
-          ctx.moveTo(x1, G.topY + 6);
-          ctx.lineTo(Math.max(x2, x1 + 1.5), G.topY + 6);
+          ctx.moveTo(x1, G.topY + 4);
+          ctx.lineTo(Math.max(x2, x1 + 1.5), G.topY + 4);
         }
       });
       ctx.stroke();
@@ -702,11 +702,11 @@ footer {
       ctx.fillStyle = '#44ddff';
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.moveTo(axx, G.topY + 6);
-      ctx.lineTo(axx + dir * 12, G.topY + 6);
+      ctx.moveTo(axx, G.topY + 4);
+      ctx.lineTo(axx + dir * 12, G.topY + 4);
       ctx.stroke();
       ctx.beginPath();
-      ctx.moveTo(axx + dir * 12, G.topY + 6);
+      ctx.moveTo(axx + dir * 12, G.topY + 4);
       ctx.lineTo(axx + dir * 6, G.topY + 2);
       ctx.lineTo(axx + dir * 6, G.topY + 10);
       ctx.closePath();
@@ -768,7 +768,7 @@ footer {
       const fDir = -Math.sign(vR);
       const fMag = state.mu * MASS * state.g;
       const len = fDir * (12 + fMag * 4);
-      const fy = G.topY + 10;
+      const fy = G.topY + 6;
       const fx0 = drawX;
       ctx.beginPath();
       ctx.moveTo(fx0, fy);
