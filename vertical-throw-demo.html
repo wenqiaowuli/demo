@@ -188,17 +188,25 @@
                 <div class="group-title" id="parameterTitle">参数设定</div>
                 <div class="param-row">
                     <label for="v0">初速度 v₀</label>
-                    <input id="v0" type="range" min="5" max="40" value="20" step="1">
+                    <input id="v0" type="range" min="1" max="40" value="20" step="1">
                     <div class="val" id="v0Val">20 m/s</div>
                 </div>
                 <div class="param-row">
+                    <label for="g">重力加速度 g</label>
+                    <select id="g" style="flex:1; background:#0b1828; color:#fff; border:1px solid rgba(255,255,255,0.2); border-radius:6px; padding:4px 6px; font-size:13px;">
+                        <option value="10">10（高中简化）</option>
+                        <option value="9.8">9.8（标准）</option>
+                    </select>
+                    <div class="val" id="gVal">10</div>
+                </div>
+                <div class="param-row">
                     <label for="speed">播放速度</label>
-                    <input id="speed" type="range" min="0.1" max="2" value="0.5" step="0.1">
+                    <input id="speed" type="range" min="0.1" max="4" value="0.5" step="0.1">
                     <div class="val" id="speedVal">0.5×</div>
                 </div>
                 <div class="fixed-note">
-                    重力加速度 <b>g = 10 m/s²</b>（固定值），以竖直向上为正方向。<br>
-                    公式：y = v₀t − ½gt²，v = v₀ − gt
+                    以竖直向上为正方向。运行时 g、v₀ 锁定，停止后可调。<br>
+                    公式：y = v₀t − ½gt²，v = v₀ − gt，上升/下落时间 = v₀/g
                 </div>
             </section>
             <section class="data-group" aria-labelledby="dataTitle" aria-live="polite">
@@ -209,6 +217,8 @@
                     <div class="data-item"><span>速度 v（向上为正）</span><b id="vel">20.00 m/s</b></div>
                     <div class="data-item"><span>加速度 a</span><b id="acc">-10.00 m/s²</b></div>
                     <div class="data-item"><span>飞行时间 T = 2v₀/g</span><b id="flightTime">4.00 s</b></div>
+                    <div class="data-item"><span>上升时间 t↑ = v₀/g</span><b id="riseTime">2.00 s</b></div>
+                    <div class="data-item"><span>下落时间 t↓ = v₀/g</span><b id="fallTime">2.00 s</b></div>
                     <div class="data-item"><span>落地速度（大小 = v₀）</span><b id="landVel">20.00 m/s</b></div>
                     <div class="data-item span-full"><span>最大高度 H = v₀²/2g（最高点处 v = 0）</span><b id="maxHeight">20.00 m</b></div>
                 </div>
@@ -222,16 +232,17 @@
         </div>
         <div class="legend">
             <span style="color:#ff5555">→ 速度 v（上升向上、下落反向）</span>
-            <span style="color:#ff9933">→ 加速度 a = g（恒定向下）</span>
+            <span style="color:#ff9933">→ 加速度 a（恒定向下，箭头长度固定＝大小恒定）</span>
             <span>⚪ 小球</span>
             <span>虚线：运动轨迹</span>
             <span style="color:#33ddcc">● 最高点</span>
             <span style="color:#66aaff">● 落地点</span>
             <span style="color:#ff5555">● 图中当前点</span>
+            <span>⌨ 空格 = 播放/暂停　R = 重置</span>
         </div>
     </main>
     <script>
-        const g = 10;
+        let g = 10;
         const BASE_WIDTH = 880;
         const BASE_HEIGHT = 520;
         const CHART_ASPECT = 20 / 9;
@@ -247,20 +258,26 @@
         const stCanvas = document.getElementById('stChart');
         const stCtx = stCanvas.getContext('2d');
         const inputV0 = document.getElementById('v0');
+        const inputG = document.getElementById('g');
         const inputSpeed = document.getElementById('speed');
         const v0Val = document.getElementById('v0Val');
+        const gVal = document.getElementById('gVal');
         const speedVal = document.getElementById('speedVal');
         const elTime = document.getElementById('time');
         const elHeight = document.getElementById('height');
         const elVel = document.getElementById('vel');
         const elAcc = document.getElementById('acc');
         const elFlightTime = document.getElementById('flightTime');
+        const elRiseTime = document.getElementById('riseTime');
+        const elFallTime = document.getElementById('fallTime');
         const elLandVel = document.getElementById('landVel');
         const elMaxHeight = document.getElementById('maxHeight');
         const btnStart = document.getElementById('btnStart');
         const btnPause = document.getElementById('btnPause');
         const btnContinue = document.getElementById('btnContinue');
         const btnReset = document.getElementById('btnReset');
+
+        function gOf() { return Number(inputG.value); }
 
         let state = 'idle';
         let t = 0;
@@ -592,11 +609,14 @@
         function updateReadouts() {
             const y = yOf(t);
             const v = vOf(t);
+            const rise = v0Of() / g;
             elTime.textContent = t.toFixed(2) + ' s';
             elHeight.textContent = y.toFixed(2) + ' m';
             elVel.textContent = v.toFixed(2) + ' m/s';
             elAcc.textContent = '-' + g.toFixed(2) + ' m/s²';
             elFlightTime.textContent = tEnd().toFixed(2) + ' s';
+            elRiseTime.textContent = rise.toFixed(2) + ' s';
+            elFallTime.textContent = rise.toFixed(2) + ' s';
             elLandVel.textContent = v0Of().toFixed(2) + ' m/s';
             elMaxHeight.textContent = apexHeight().toFixed(2) + ' m';
             sceneCanvas.setAttribute(
@@ -639,6 +659,7 @@
                 btnPause.disabled = true;
                 btnContinue.disabled = true;
                 inputV0.disabled = false;
+                inputG.disabled = false;
                 return;
             }
             raf = requestAnimationFrame(frame);
@@ -654,6 +675,7 @@
             btnPause.disabled = false;
             btnContinue.disabled = true;
             inputV0.disabled = true;
+            inputG.disabled = true;
             updateReadouts();
             renderAll();
             raf = requestAnimationFrame(frame);
@@ -682,6 +704,7 @@
             t = 0;
             lastTs = null;
             inputV0.disabled = false;
+            inputG.disabled = false;
             btnStart.disabled = false;
             btnStart.textContent = '开始';
             btnPause.disabled = true;
@@ -690,9 +713,16 @@
             renderAll();
         }
 
+        function togglePlay() {
+            if (state === 'idle' || state === 'ended') start();
+            else if (state === 'running') pause();
+            else if (state === 'paused') resume();
+        }
+
         function updateParameterLabels() {
             v0Val.textContent = inputV0.value + ' m/s';
             speedVal.textContent = Number(inputSpeed.value).toFixed(1) + '×';
+            gVal.textContent = (g % 1 === 0) ? String(g) : g.toFixed(1);
         }
 
         btnStart.addEventListener('click', start);
@@ -703,8 +733,19 @@
             updateParameterLabels();
             if (state === 'idle' || state === 'ended') reset();
         });
+        inputG.addEventListener('change', () => {
+            g = gOf();
+            updateParameterLabels();
+            if (state === 'idle' || state === 'ended') reset();
+        });
         inputSpeed.addEventListener('input', updateParameterLabels);
         window.addEventListener('resize', resizeAll);
+        document.addEventListener('keydown', (e) => {
+            const tag = e.target && e.target.tagName;
+            if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA' || tag === 'BUTTON') return;
+            if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
+            else if (e.key === 'r' || e.key === 'R') { e.preventDefault(); reset(); }
+        });
         if (typeof ResizeObserver !== 'undefined') {
             const observer = new ResizeObserver(resizeAll);
             observer.observe(sceneCanvas);
