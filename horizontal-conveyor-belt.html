@@ -14,7 +14,8 @@
 图表：主画布下方 v-t 与 s-t 双图并排——
       v-t：物块 v（橙）/ 带速 v带（青实线）/ 两线间阴影=相对位移 / 共速竖线；
       s-t：物块位移（橙）/ 带位移 v带·t（青实线）/ 两线间距=相对位移 / 共速竖线 / 零线高亮。
-      交互：物块直接出现（无落下动画）；滑出带端匀速离带；暂停/继续；空格（开始/暂停/继续）与 R（重置）；
+      正方向：以传送带初速度方向为正（带速始终显示为正值）。
+交互：物块直接出现（无落下动画）；滑出带端匀速离带；暂停/继续；空格（开始/暂停/继续）与 R（重置）；
       传送带速度 v带（±6 m/s，正负表示方向）与初速度 v₀ 可调；播放速度（0.25–4×）与带长 L（5–40 m）可调；运行中滑条禁用；g 默认 10。
 -->
 <style>
@@ -351,8 +352,6 @@ footer {
         <button id="bPause" disabled>⏸ 暂停</button>
         <button id="bContinue" disabled>▶ 继续</button>
         <button id="bReset">⟲ 重置</button>
-        <button id="bScenario1" class="alt">起点左端</button>
-        <button id="bScenario2" class="alt">起点右端</button>
       </div>
       <div class="note">空格：开始 / 暂停 / 继续 · R：重置 · g = 10 m/s²</div>
       <div class="fixed-note">
@@ -430,7 +429,6 @@ footer {
   const dirText = $('dirText'), vbv2 = $('vbv2');
   const hudRow = $('hudRow');
   const bStart = $('bStart'), bReset = $('bReset'), bPause = $('bPause'), bContinue = $('bContinue');
-  const s1 = $('bScenario1'), s2 = $('bScenario2');
 
   // ===== 状态机：idle | run | pause | done =====
   let phase = 'idle';
@@ -965,27 +963,29 @@ footer {
   }
 
   function drawVT() {
+    const sign = state.vBelt < 0 ? -1 : 1;
     drawTimeChart(vtCv, vtCtx, {
       series: [
-        { pts: state.trace.map(([t, v]) => [t, v]), color: '#ffaa44', width: 2 },
-        { pts: [[0, state.vBelt], [Math.max(10, state.t), state.vBelt]], color: '#44ddff', width: 2 }
+        { pts: state.trace.map(([t, v]) => [t, v * sign]), color: '#ffaa44', width: 2 },
+        { pts: [[0, Math.abs(state.vBelt)], [Math.max(10, state.t), Math.abs(state.vBelt)]], color: '#44ddff', width: 2 }
       ],
-      yMin: -7, yMax: 7, yLabel: 'v/(m/s)', curY: state.v
+      yMin: -7, yMax: 7, yLabel: 'v/(m/s)', curY: state.v * sign
     });
   }
 
   function drawST() {
+    const sign = state.vBelt < 0 ? -1 : 1;
     const tEnd = Math.max(10, state.t);
     let sMax = 1;
-    state.trace.forEach(([, , x]) => { if (x > sMax) sMax = x; });
-    sMax = Math.max(sMax, state.vBelt * tEnd);
+    state.trace.forEach(([, , x]) => { if (x * sign > sMax) sMax = x * sign; });
+    sMax = Math.max(sMax, Math.abs(state.vBelt) * tEnd);
     const yMin = 0, yMax = Math.max(sMax * 1.2, 1);
     drawTimeChart(stCv, stCtx, {
       series: [
-        { pts: state.trace.map(([t, , x]) => [t, x]), color: '#ffaa44', width: 2 },
-        { pts: [[0, 0], [tEnd, state.vBelt * tEnd]], color: '#44ddff', width: 2 }
+        { pts: state.trace.map(([t, , x]) => [t, x * sign]), color: '#ffaa44', width: 2 },
+        { pts: [[0, 0], [tEnd, Math.abs(state.vBelt) * tEnd]], color: '#44ddff', width: 2 }
       ],
-      yMin, yMax, yLabel: 's/m', curY: state.x - state.x0
+      yMin, yMax, yLabel: 's/m', curY: (state.x - state.x0) * sign
     });
   }
 
@@ -1196,18 +1196,6 @@ footer {
     if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA' || tag === 'BUTTON') return;
     if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
     else if (e.code === 'KeyR') { e.preventDefault(); reset(); }
-  });
-
-  // 情景
-  s1.addEventListener('click', () => {
-    v0El.value = 0; muEl.value = 0.30; gEl.value = 10; lenEl.value = 24;
-    vbSizeEl.value = 3;
-    setStartSide('left');   // 左端起点：带向右
-  });
-  s2.addEventListener('click', () => {
-    v0El.value = 0; muEl.value = 0.30; gEl.value = 10; lenEl.value = 24;
-    vbSizeEl.value = -3;
-    setStartSide('right');  // 右端起点：带向左
   });
 
   // 初始
