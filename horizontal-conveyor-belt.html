@@ -317,10 +317,12 @@ footer {
           <button id="vbStill" class="alt" title="静止">· 静止</button>
           <button id="vbRight" class="alt" title="向右（正向）">→ 向右</button>
         </span>
+        <span class="val" id="dirText" style="flex:0 0 70px; text-align:right;">→ 向右</span>
       </div>
       <div class="param-row">
-        <label>带速 v带</label>
-        <span class="val" id="vbv" style="flex:1; text-align:left;">+3.0 m/s</span>
+        <label>带速大小</label>
+        <input id="vbSize" type="range" min="0.5" max="6" step="0.1" value="3">
+        <span class="val" id="vbSizeVal">3.0 m/s</span>
       </div>
       <div class="param-row">
         <label>动摩擦 μ</label>
@@ -415,6 +417,7 @@ footer {
   const muEl  = $('mu'),  muv  = $('muv');
   const gEl   = $('g'),   gv   = $('gv');
   const vbLeft  = $('vbLeft'),  vbStill = $('vbStill'),  vbRight = $('vbRight');
+  const vbSizeEl = $('vbSize'), vbSizeVal = $('vbSizeVal');
   const vbv = $('vbv');
   const lenEl = $('len'), lenVal = $('lenVal');
   const speedEl = $('speed'), speedVal = $('speedVal');
@@ -428,7 +431,7 @@ footer {
   // ===== 状态机：idle | run | pause | done =====
   let phase = 'idle';
   const state = {
-    v0: 0, vBelt: 3, mu: 0.30, g: 10,
+    v0: 0, vBelt: 3, vbSize: 3, mu: 0.30, g: 10,
     L: 24,            // 带长 m（滑条可调）
     speed: 1,         // 播放倍速
     dir: 'right',     // 'left' | 'still' | 'right'
@@ -960,8 +963,8 @@ footer {
   function drawVT() {
     drawTimeChart(vtCv, vtCtx, {
       series: [
-        { pts: state.trace.map(([t, v]) => [t, v]), color: '#ffaa44' },
-        { pts: [[0, state.vBelt], [Math.max(10, state.t), state.vBelt]], color: 'rgba(68,221,255,0.7)', dash: [5, 4] }
+        { pts: state.trace.map(([t, v]) => [t, v]), color: '#ffaa44', width: 2 },
+        { pts: [[0, state.vBelt], [Math.max(10, state.t), state.vBelt]], color: '#44ddff', width: 2 }
       ],
       yMin: -7, yMax: 7, yLabel: 'v/(m/s)', curY: state.v
     });
@@ -969,7 +972,6 @@ footer {
 
   function drawST() {
     const tEnd = Math.max(10, state.t);
-    // 动态 Y 轴：从 0 起算，上界取 s物 最大值（保证两线间距可见）
     let sMax = 1;
     state.trace.forEach(([, , x]) => { if (x > sMax) sMax = x; });
     sMax = Math.max(sMax, state.vBelt * tEnd);
@@ -977,7 +979,7 @@ footer {
     drawTimeChart(stCv, stCtx, {
       series: [
         { pts: state.trace.map(([t, , x]) => [t, x]), color: '#ffaa44', width: 2 },
-        { pts: [[0, 0], [tEnd, state.vBelt * tEnd]], color: 'rgba(68,221,255,0.7)', dash: [5, 4] }
+        { pts: [[0, 0], [tEnd, state.vBelt * tEnd]], color: '#44ddff', width: 2 }
       ],
       yMin, yMax, yLabel: 's/m', curY: state.x - state.x0
     });
@@ -1058,7 +1060,7 @@ footer {
 
   // ===== 控件 =====
   function setSliders(dis) {
-    [v0El, muEl, gEl, lenEl].forEach(el => { el.disabled = dis; });
+    [v0El, muEl, gEl, lenEl, vbSizeEl].forEach(el => { el.disabled = dis; });
   }
 
   function readControls() {
@@ -1067,16 +1069,22 @@ footer {
     state.g     = parseFloat(gEl.value);
     state.L     = parseFloat(lenEl.value);
     state.speed = parseFloat(speedEl.value);
+    state.vbSize = parseFloat(vbSizeEl.value);
+    state.vBelt = state.dir === 'left' ? -state.vbSize : state.dir === 'right' ? state.vbSize : 0;
     v0v.textContent   = (state.v0 >= 0 ? '+' : '') + state.v0.toFixed(1) + ' m/s';
     muv.textContent   = state.mu.toFixed(2);
     gv.textContent    = state.g.toFixed(1) + ' m/s²';
     vbv.textContent   = (state.vBelt >= 0 ? '+' : '') + state.vBelt.toFixed(1) + ' m/s';
+    vbSizeVal.textContent = state.vbSize.toFixed(1) + ' m/s';
     lenVal.textContent  = state.L + ' m';
     speedVal.textContent = String(+state.speed.toFixed(2)) + '×';
+    const dirLabel = state.vBelt > 0.01 ? '→ 向右' : (state.vBelt < -0.01 ? '← 向左' : '· 静止');
+    dirText.textContent = dirLabel;
   }
 
   function setDirBtn(dir) {
-    state.vBelt = dir === 'left' ? -3 : dir === 'right' ? 3 : 0;
+    state.dir = dir;
+    state.vBelt = dir === 'left' ? -state.vbSize : dir === 'right' ? state.vbSize : 0;
     vbLeft.disabled  = dir === 'left';
     vbStill.disabled = dir === 'still';
     vbRight.disabled = dir === 'right';
@@ -1086,7 +1094,7 @@ footer {
   function reset() {
     readControls();
     phase = 'idle';
-    // 放上位置：由 startSide 决定（左端/右端）
+    // 放上位置：由 startSide 决定（左端/右端），改 L 时自适应
     state.x0 = state.startSide === 'right' ? (state.L / 2 - 1) : -(state.L / 2 - 1);
     state.x = state.x0;
     state.v = state.v0;
@@ -1151,9 +1159,21 @@ footer {
   }
 
   // 绑定
-  [v0El, muEl, gEl, lenEl].forEach(el => {
+  function updateL() {
+    if (phase === 'run') return;
+    readControls();
+    state.x0 = state.startSide === 'right' ? (state.L / 2 - 1) : -(state.L / 2 - 1);
+    state.x = state.x0;
+    state.v = state.v0;
+    state.trace = [[0, state.v0, 0]];
+    drawAll();
+    updateHud();
+  }
+  [v0El, muEl, gEl].forEach(el => {
     el.addEventListener('input', () => { if (phase === 'idle' || phase === 'done') reset(); });
   });
+  lenEl.addEventListener('input', updateL);
+  vbSizeEl.addEventListener('input', () => { readControls(); drawAll(); updateHud(); });
   speedEl.addEventListener('input', readControls);
   bStart.addEventListener('click', start);
   bPause.addEventListener('click', pause);
