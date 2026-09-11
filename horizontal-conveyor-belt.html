@@ -10,7 +10,7 @@
            相对滑动距离 s相对 与摩擦生热 Q = μmg·s相对。
 视觉结构：两端滚筒（8 辐条 + 双轮缘 + 空心轮毂 + 旋转亮斑，随带速旋转）+ 环形带面（上承载/下回程）
           + 机架支腿与地面 + 带长刻度（0 / L m）/ 放上点 / 出料箭头；
-          物块相对带滑动时带面留下红色擦痕（长度 = s相对，共速后停止增长）。
+          物块相对带滑动时带面留下红色擦痕（绘于物块后方外露区域，露出长度 = s相对，共速后停止增长）。
 图表：主画布下方 v-t 与 s-t 双图并排——
       v-t：物块 v（橙）/ 带速 v带（青实线）/ 两线间阴影=相对位移 / 共速竖线；
       s-t：物块位移（橙）/ 带位移 v带·t（青实线）/ 两线间距=相对位移 / 共速竖线 / 零线高亮。
@@ -1166,27 +1166,13 @@ footer {
   // 绑定
   function updateL() {
     if (phase === 'run') return;
-    readControls();
-    state.x0 = state.startSide === 'right' ? (state.L / 2 - 1) : -(state.L / 2 - 1);
-    state.x = state.x0;
-    state.v = state.v0;
-    state.t = 0;
-    state.slip = 0;
-    state.tSync = null;
-    state.offbelt = false;
-    state.scratches = [];
-    state.prevQ = state.x0;
-    state.beltClock = 0;
-    lastTs = 0;
-    state.trace = [[0, state.v0, 0]];
-    drawAll();
-    updateHud();
+    reset(); // 完整重置：idle/done 态改 L 后恢复 idle 与按钮状态（L18）
   }
   [v0El, muEl, gEl].forEach(el => {
     el.addEventListener('input', () => { if (phase === 'idle' || phase === 'done') reset(); });
   });
   lenEl.addEventListener('input', updateL);
-  vbSizeEl.addEventListener('input', () => { readControls(); drawAll(); updateHud(); });
+  vbSizeEl.addEventListener('input', () => { if (phase === 'idle' || phase === 'done') reset(); });
   speedEl.addEventListener('input', readControls);
   bStart.addEventListener('click', start);
   bPause.addEventListener('click', pause);
