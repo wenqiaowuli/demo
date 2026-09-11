@@ -1050,6 +1050,9 @@ footer {
           bContinue.disabled = true;
           setSliders(false);
           hudRow.setAttribute('aria-live', 'polite');
+          drawAll();
+          updateHud();
+          return; // 立即停止，不再执行后续 step / 请求新帧
         }
       }
     }
@@ -1094,7 +1097,6 @@ footer {
   function reset() {
     readControls();
     phase = 'idle';
-    // 放上位置：由 startSide 决定（左端/右端），改 L 时自适应
     state.x0 = state.startSide === 'right' ? (state.L / 2 - 1) : -(state.L / 2 - 1);
     state.x = state.x0;
     state.v = state.v0;
@@ -1112,8 +1114,7 @@ footer {
     bPause.disabled = true;
     bContinue.disabled = true;
     setSliders(false);
-    // 方向按钮：默认右向（起点左端情景），起点右端情景由 s2 设置
-    vbLeft.disabled  = false;
+    vbLeft.disabled = false;
     vbStill.disabled = false;
     vbRight.disabled = false;
     hudRow.setAttribute('aria-live', 'polite');
