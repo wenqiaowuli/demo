@@ -628,15 +628,11 @@
             const v0 = v0Meters();
             const tf = tEnd();
             const vyMax = g * tf;
-            const vMax = niceCeil(Math.max(Math.hypot(v0, vyMax), v0, vyMax, 1) * 1.05);
+            const vMax = niceCeil(Math.max(v0, vyMax, 1) * 1.05);
             const sMax = niceCeil(Math.max(rangeMeters(), hMeters(), 1) * 1.05);
             drawChartView(vtView, vtCtx, [
                 { fn: () => v0, color: '#33cc55', label: 'vₓ', unit: ' m/s' },
-                { fn: (time) => g * time, color: '#ff9933', label: 'vᵧ', unit: ' m/s' },
-                {
-                    fn: (time) => Math.hypot(v0, g * time),
-                    color: '#3388dd', label: 'v', unit: ' m/s', primary: true
-                }
+                { fn: (time) => g * time, color: '#ff9933', label: 'vᵧ', unit: ' m/s', primary: true }
             ], 0, vMax, 'v (m/s)');
             drawChartView(stView, stCtx, [
                 { fn: (time) => v0 * time, color: '#33cc55', label: 'x', unit: ' m' },
