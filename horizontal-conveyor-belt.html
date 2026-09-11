@@ -679,29 +679,16 @@ footer {
       }
     }
     ctx.stroke();
-    // ---- 滑动擦痕（带参考系，仅绘制物块后方外露部分）----
+    // ---- 滑动擦痕（带参考系，已偏移至物块后方外露部分，长度 = s相对）----
     if (state.scratches.length) {
       ctx.strokeStyle = 'rgba(255,85,119,0.6)';
       ctx.lineWidth = 3;
       ctx.lineCap = 'butt';
       ctx.beginPath();
       const beltOffset = state.vBelt * state.beltClock;
-      const vRel = state.v - state.vBelt;
-      const pix = G.pix;
-      const halfW = (50 / 2) / pix;
-      const qBlock = state.x - state.vBelt * state.t;
-      const trailingEdge = vRel >= 0 ? qBlock + halfW : qBlock - halfW;
       state.scratches.forEach(([qa, qb]) => {
-        let drawA = qa, drawB = qb;
-        if (vRel >= 0) {
-          if (drawB <= trailingEdge) return;
-          drawA = Math.max(drawA, trailingEdge);
-        } else {
-          if (drawA >= trailingEdge) return;
-          drawB = Math.min(drawB, trailingEdge);
-        }
-        const x1 = G.xL + (state.L / 2 + drawA + beltOffset) * pix;
-        const x2 = G.xL + (state.L / 2 + drawB + beltOffset) * pix;
+        const x1 = G.xL + (state.L / 2 + qa + beltOffset) * G.pix;
+        const x2 = G.xL + (state.L / 2 + qb + beltOffset) * G.pix;
         ctx.moveTo(x1, G.topY + 6);
         ctx.lineTo(Math.max(x2, x1 + 1.5), G.topY + 6);
       });
@@ -1046,11 +1033,14 @@ footer {
       for (let i = 0; i < sub; i++) step(dt / sub);
       state.trace.push([state.t, state.v, state.x - state.x0]);
       if (state.trace.length > 4000) state.trace.splice(0, state.trace.length - 3600);
-      // 擦痕扫掠（带参考系 q = x - v带·t）
+      // 擦痕扫掠（带参考系 q = x - v带·t；偏移到物块后方外露区域）
       if (!state.offbelt) {
         const q = state.x - state.vBelt * state.t;
         if (Math.abs(vRbefore) > 1e-3) {
-          addScratch(Math.min(state.prevQ, q), Math.max(state.prevQ, q));
+          const G = geom();
+          const halfW = (50 / 2) / G.pix;
+          const off = -Math.sign(vRbefore) * halfW;
+          addScratch(Math.min(state.prevQ, q) + off, Math.max(state.prevQ, q) + off);
         }
         state.prevQ = q;
       }
