@@ -459,17 +459,20 @@ footer {
       // 这一步内共速：先走到共速点（相对滑动 = |vR|·dt1/2），再匀速走剩余
       const dt1 = tToSync;
       const t0 = state.t;
+      const vBefore = state.v;
+      const vSync = state.v + aDir * aMag * dt1;
       state.slip += Math.abs(vR) * dt1 / 2;
-      state.v += aDir * aMag * dt1;
-      state.x += state.v * dt1;
-      state.x += state.vBelt * (dt - dt1);
+      state.v = vSync;
+      state.x += (vBefore + vSync) * dt1 / 2;
+      state.x += vSync * (dt - dt1);
       state.t += dt;
       if (state.tSync === null) state.tSync = t0 + dt1;
       if (Math.abs(state.v - state.vBelt) < 1e-4) state.v = state.vBelt;
     } else {
       // 本步未达共速（相对滑动取梯形积分）
+      const vBefore = state.v;
       state.v += aDir * aMag * dt;
-      state.x += state.v * dt;
+      state.x += (vBefore + state.v) * dt / 2;
       state.slip += (Math.abs(vR) + Math.abs(state.v - state.vBelt)) / 2 * dt;
       state.t += dt;
     }
@@ -490,7 +493,8 @@ footer {
 
   // ===== 绘制：主画布 =====
   function clear() {
-    const w = cv.clientWidth, h = cv.clientHeight;
+    const w = cv.clientWidth || cv.width || 880;
+    const h = cv.clientHeight || cv.height || 240;
     ctx.fillStyle = '#0d141b';
     ctx.fillRect(0, 0, w, h);
     ctx.strokeStyle = 'rgba(255,255,255,0.04)';
@@ -951,10 +955,16 @@ footer {
     const sign = state.vBelt < 0 ? -1 : 1;
     const absV = Math.abs(state.vBelt);
     const tEnd = Math.max(10, state.t);
+    let sMin = 0;
     let sMax = 1;
-    state.trace.forEach(([, , x]) => { if (x * sign > sMax) sMax = x * sign; });
+    state.trace.forEach(([, , x]) => {
+      const s = x * sign;
+      if (s < sMin) sMin = s;
+      if (s > sMax) sMax = s;
+    });
     sMax = Math.max(sMax, absV * tEnd);
-    const yMin = 0, yMax = Math.max(sMax * 1.2, 1);
+    const yMin = Math.min(0, sMin * 1.2);
+    const yMax = Math.max(sMax * 1.2, yMin + 1);
     drawTimeChart(stCv, stCtx, {
       series: [
         { pts: state.trace.map(([t, , x]) => [t, x * sign]), color: '#ffaa44', width: 2 },
@@ -1049,7 +1059,9 @@ footer {
 
   // ===== 控件 =====
   function setSliders(dis) {
-    [v0El, muEl, gEl, lenEl, vbSizeEl].forEach(el => { el.disabled = dis; });
+    [v0El, muEl, gEl, lenEl, vbSizeEl, speedEl].forEach(el => { el.disabled = dis; });
+    startLeft.disabled = dis || state.startSide === 'left';
+    startRight.disabled = dis || state.startSide === 'right';
   }
 
   function readControls() {
