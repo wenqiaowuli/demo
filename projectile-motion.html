@@ -190,11 +190,11 @@
         <div class="charts-row">
             <section class="chart-panel">
                 <div class="group-title">速度-时间图 (v-t)</div>
-                <canvas id="vtChart" role="img" aria-label="速度-时间图像：水平分速度恒定，竖直分速度随时间线性增大"></canvas>
+                <canvas id="vtChart" role="img" aria-label="速度-时间图像：水平分速度恒为正，竖直分速度为负且随时间增大"></canvas>
             </section>
             <section class="chart-panel">
                 <div class="group-title">位移-时间图 (s-t)</div>
-                <canvas id="stChart" role="img" aria-label="位移-时间图像：水平位移直线增大，离地高度抛物线下降"></canvas>
+                <canvas id="stChart" role="img" aria-label="位移-时间图像：水平位移为正且直线增大，竖直位移为负且抛物线下降"></canvas>
             </section>
         </div>
         <div class="control-panel">
@@ -216,7 +216,8 @@
                 </label>
                 <div class="fixed-note">
                     重力加速度 <b>g = 10 m/s²</b>（固定值）。水平方向匀速直线，竖直方向自由落体。<br>
-                    公式：x = v₀t，y = h − ½gt²，vᵧ = gt
+                    正方向：水平向右为 +x，竖直向上为 +y（故 vᵧ、Δy 为负）。<br>
+                    公式：vₓ = v₀，vᵧ = −gt，x = v₀t，Δy = −½gt²
                 </div>
             </section>
             <section class="data-group" aria-labelledby="dataTitle" aria-live="polite">
@@ -225,8 +226,9 @@
                     <div class="data-item"><span>时间 t</span><b id="time">0.00 s</b></div>
                     <div class="data-item"><span>水平位移 x</span><b id="positionX">0.00 m</b></div>
                     <div class="data-item"><span>离地高度 y</span><b id="positionY">45.00 m</b></div>
+                    <div class="data-item"><span>竖直位移 Δy</span><b id="dyDisp">0.00 m</b></div>
                     <div class="data-item"><span>水平速度 vₓ</span><b id="vx">20.00 m/s</b></div>
-                    <div class="data-item"><span>竖直速度 |vᵧ|</span><b id="vy">0.00 m/s</b></div>
+                    <div class="data-item"><span>竖直速度 vᵧ</span><b id="vy">0.00 m/s</b></div>
                     <div class="data-item"><span>合速度 v</span><b id="vv">20.00 m/s</b></div>
                     <div class="data-item"><span>方向角 θ</span><b id="vt">0.0°</b></div>
                     <div class="data-item"><span>落地时间</span><b id="flightTime">3.00 s</b></div>
@@ -241,8 +243,9 @@
             <button id="btnReset" type="button">重置</button>
         </div>
         <div class="legend">
-            <span>🟢 水平分速度 vₓ（恒定）</span>
-            <span>🟠 竖直分速度 vᵧ（匀加速，a=g）</span>
+            <span>正方向：水平向右为 +x，竖直向上为 +y（故 vᵧ、Δy 为负）</span>
+            <span>🟢 水平分速度 vₓ（正，恒定）</span>
+            <span>🟠 竖直分速度 vᵧ（负，匀加速 a=−g）</span>
             <span>🔵 合速度 v</span>
             <span>虚线：理论轨迹</span>
             <span>实线：已播放轨迹</span>
@@ -260,6 +263,7 @@
         const elTime = document.getElementById('time');
         const elPositionX = document.getElementById('positionX');
         const elPositionY = document.getElementById('positionY');
+        const elDy = document.getElementById('dyDisp');
         const elVx = document.getElementById('vx');
         const elVy = document.getElementById('vy');
         const elVv = document.getElementById('vv');
@@ -292,7 +296,9 @@
         function hMeters() { return Number(inputH.value); }
         function v0Meters() { return Number(inputV0.value); }
         function xOf(time) { return v0Meters() * time; }
-        function yOf(time) { return hMeters() - 0.5 * g * time * time; }  // 这里 y 表示离地高度
+        function yOf(time) { return hMeters() - 0.5 * g * time * time; }  // 这里 y 表示离地高度（正值）
+        function dyOf(time) { return -0.5 * g * time * time; }  // 竖直位移，向下为负
+        function vyOf(time) { return -g * time; }  // 竖直分速度，向下为负
         function tEnd() { return Math.sqrt(2 * hMeters() / g); }
         function rangeMeters() { return v0Meters() * tEnd(); }
         function currentPosition() { return { x: xOf(t), y: yOf(t) }; }
@@ -627,17 +633,20 @@
         function drawCharts() {
             const v0 = v0Meters();
             const tf = tEnd();
-            const vyMax = g * tf;
+            const vyMax = g * tf;                 // 落地时竖直分速度大小
             const vMax = niceCeil(Math.max(v0, vyMax, 1) * 1.05);
-            const sMax = niceCeil(Math.max(rangeMeters(), hMeters(), 1) * 1.05);
+            const sTop = niceCeil(Math.max(rangeMeters(), 1) * 1.05);   // 水平位移上限（正）
+            const sBottom = niceCeil(Math.max(hMeters(), 1) * 1.05);    // 竖直位移下限（负）
+            // v-t：vₓ 为正（向右），vᵧ 为负（向下坠落），纵轴对称含零线
             drawChartView(vtView, vtCtx, [
                 { fn: () => v0, color: '#33cc55', label: 'vₓ', unit: ' m/s' },
-                { fn: (time) => g * time, color: '#ff9933', label: 'vᵧ', unit: ' m/s', primary: true }
-            ], 0, vMax, 'v (m/s)');
+                { fn: vyOf, color: '#ff9933', label: 'vᵧ', unit: ' m/s', primary: true }
+            ], -vMax, vMax, 'v (m/s)');
+            // s-t：水平位移 x 为正，竖直位移 Δy 为负（与 vᵧ 同向）
             drawChartView(stView, stCtx, [
-                { fn: (time) => v0 * time, color: '#33cc55', label: 'x', unit: ' m' },
-                { fn: (time) => Math.max(yOf(time), 0), color: '#ff9933', label: 'y', unit: ' m', primary: true }
-            ], 0, sMax, 's (m)');
+                { fn: xOf, color: '#33cc55', label: 'x', unit: ' m' },
+                { fn: dyOf, color: '#ff9933', label: 'Δy', unit: ' m', primary: true }
+            ], -sBottom, sTop, 's (m)');
         }
 
         function render() {
@@ -656,22 +665,24 @@
         function updateReadouts() {
             const x = xOf(t);
             const y = Math.max(yOf(t), 0);
+            const dy = dyOf(t);
             const vx = v0Meters();
-            const vyMagnitude = g * t;
-            const speed = Math.hypot(vx, vyMagnitude);
-            const angle = Math.atan2(vyMagnitude, vx) * 180 / Math.PI;
+            const vySigned = -g * t;
+            const speed = Math.hypot(vx, vySigned);
+            const angle = Math.atan2(vySigned, vx) * 180 / Math.PI;
             elTime.textContent = t.toFixed(2) + ' s';
             elPositionX.textContent = x.toFixed(2) + ' m';
             elPositionY.textContent = y.toFixed(2) + ' m';
+            elDy.textContent = dy.toFixed(2) + ' m';
             elVx.textContent = vx.toFixed(2) + ' m/s';
-            elVy.textContent = vyMagnitude.toFixed(2) + ' m/s';
+            elVy.textContent = vySigned.toFixed(2) + ' m/s';
             elVv.textContent = speed.toFixed(2) + ' m/s';
             elVt.textContent = angle.toFixed(1) + '°';
             elFlightTime.textContent = tEnd().toFixed(2) + ' s';
             elRange.textContent = rangeMeters().toFixed(2) + ' m';
             canvas.setAttribute(
                 'aria-label',
-                `平抛运动演示：当前时间${t.toFixed(2)}秒，水平位移${x.toFixed(2)}米，高度${y.toFixed(2)}米，合速度${speed.toFixed(2)}米每秒`
+                `平抛运动演示：当前时间${t.toFixed(2)}秒，水平位移${x.toFixed(2)}米，竖直位移${dy.toFixed(2)}米，高度${y.toFixed(2)}米，合速度${speed.toFixed(2)}米每秒`
             );
         }
 
