@@ -718,7 +718,7 @@ footer {
 
   function drawBlock() {
     const G = geom();
-    const blockW = 50, blockH = 50;
+    const blockW = 40, blockH = 40;
     const drawX = G.xL + (state.L / 2 + state.x) * G.pix;
     const drawY = G.topY - blockH;
     // 阴影（物块在带上时有）
@@ -1027,7 +1027,7 @@ footer {
         const q = state.x - state.vBelt * state.t;
         if (Math.abs(vRbefore) > 1e-3) {
           const G = geom();
-          const halfW = (50 / 2) / G.pix;
+          const halfW = (40 / 2) / G.pix;
           const off = -Math.sign(vRbefore) * halfW;
           addScratch(Math.min(state.prevQ, q) + off, Math.max(state.prevQ, q) + off);
         }
