@@ -14,8 +14,8 @@
 图表：主画布下方 v-t 与 s-t 双图并排——
       v-t：物块 v（橙）/ 带速 v带（青实线）/ 两线间阴影=相对位移 / 共速竖线；
       s-t：物块位移（橙）/ 带位移 v带·t（青实线）/ 两线间距=相对位移 / 共速竖线 / 零线高亮。
-交互：物块直接出现（无落下动画）；滑出带端匀速离带；暂停/继续；空格（开始/暂停/继续）与 R（重置）；
-      运动方向（←/·/→）与初速度 v₀ 可调；播放速度（0.25–4×）与带长 L（5–40 m）可调；运行中滑条禁用；g 默认 10。
+      交互：物块直接出现（无落下动画）；滑出带端匀速离带；暂停/继续；空格（开始/暂停/继续）与 R（重置）；
+      传送带速度 v带（±6 m/s，正负表示方向）与初速度 v₀ 可调；播放速度（0.25–4×）与带长 L（5–40 m）可调；运行中滑条禁用；g 默认 10。
 -->
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -109,10 +109,10 @@ canvas { display: block; width: 100%; }
   color: #aab;
   margin-bottom: 6px;
 }
-.param-row label { flex: 0 0 80px; color: #c0c8d4; }
+.param-row label { flex: 0 0 110px; color: #c0c8d4; }
 .param-row input[type=range] { flex: 1; accent-color: #3388dd; }
 .param-row .val {
-  flex: 0 0 60px;
+  flex: 0 0 70px;
   text-align: right;
   color: #fff;
   font-variant-numeric: tabular-nums;
@@ -360,7 +360,9 @@ footer {
         滑动：<em>f = μmg</em> · <em>a = μg</em>（方向与相对速度相反）<br>
         相对位移：<em>s相对 = (v₀ − v带)² / (2μg)</em><br>
         摩擦生热：<em>Q = μmg · s相对</em><br>
-        共速后：<em>v = v带</em>，<em>a = 0</em>，匀速 · s相对 停止增长
+        共速后：<em>v = v带</em>，<em>a = 0</em>，匀速 · s相对 停止增长<br>
+        正方向：物块位移向右为正；传送带位移 v带 > 0 向右<br>
+        参数：μ（动摩擦因数）· m = 1 kg（物块质量）· g（重力加速度）· v₀（初速度）· v带（传送带速度）· L（带长）
       </div>
     </section>
 
