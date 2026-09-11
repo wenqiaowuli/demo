@@ -311,6 +311,13 @@ footer {
         <span class="val" id="v0v">+0.0 m/s</span>
       </div>
       <div class="param-row">
+        <label>起点位置</label>
+        <span class="btn-group" style="flex:0 0 auto; display:flex; gap:6px;">
+          <button id="startLeft" class="alt" title="物块从左端出发">⬒ 左端</button>
+          <button id="startRight" class="alt" title="物块从右端出发">⬒ 右端</button>
+        </span>
+      </div>
+      <div class="param-row">
         <label>运动方向</label>
         <span class="btn-group" style="flex:0 0 auto; display:flex; gap:6px;">
           <button id="vbLeft" class="alt" title="向左（负向）">← 向左</button>
@@ -420,6 +427,7 @@ footer {
   const muEl  = $('mu'),  muv  = $('muv');
   const gEl   = $('g'),   gv   = $('gv');
   const vbLeft  = $('vbLeft'),  vbStill = $('vbStill'),  vbRight = $('vbRight');
+  const startLeft = $('startLeft'), startRight = $('startRight');
   const vbSizeEl = $('vbSize'), vbSizeVal = $('vbSizeVal');
   const vbv = $('vbv');
   const lenEl = $('len'), lenVal = $('lenVal');
@@ -687,9 +695,10 @@ footer {
       ctx.lineWidth = 3;
       ctx.lineCap = 'butt';
       ctx.beginPath();
+      const beltOffset = state.vBelt * state.beltClock;
       state.scratches.forEach(([qa, qb]) => {
-        const x1 = G.xL + (state.L / 2 + qa) * G.pix;
-        const x2 = G.xL + (state.L / 2 + qb) * G.pix;
+        const x1 = G.xL + (state.L / 2 + qa + beltOffset) * G.pix;
+        const x2 = G.xL + (state.L / 2 + qb + beltOffset) * G.pix;
         ctx.moveTo(x1, G.topY + 6);
         ctx.lineTo(Math.max(x2, x1 + 1.5), G.topY + 6);
       });
@@ -1097,6 +1106,13 @@ footer {
     readControls();
   }
 
+  function setStartSide(side) {
+    state.startSide = side;
+    startLeft.disabled = side === 'left';
+    startRight.disabled = side === 'right';
+    reset();
+  }
+
   function reset() {
     readControls();
     phase = 'idle';
@@ -1120,6 +1136,8 @@ footer {
     vbLeft.disabled = state.dir === 'left';
     vbStill.disabled = state.dir === 'still';
     vbRight.disabled = state.dir === 'right';
+    startLeft.disabled = state.startSide === 'left';
+    startRight.disabled = state.startSide === 'right';
     hudRow.setAttribute('aria-live', 'polite');
     drawAll();
     updateHud();
@@ -1194,6 +1212,8 @@ footer {
   vbLeft.addEventListener('click',  () => setDirBtn('left'));
   vbStill.addEventListener('click', () => setDirBtn('still'));
   vbRight.addEventListener('click', () => setDirBtn('right'));
+  startLeft.addEventListener('click', () => setStartSide('left'));
+  startRight.addEventListener('click', () => setStartSide('right'));
   document.addEventListener('keydown', (e) => {
     const tag = e.target && e.target.tagName;
     if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA' || tag === 'BUTTON') return;
@@ -1204,15 +1224,15 @@ footer {
   // 情景
   s1.addEventListener('click', () => {
     v0El.value = 0; muEl.value = 0.30; gEl.value = 10; lenEl.value = 24;
-    state.vBelt = 3; state.startSide = 'left';
+    state.vBelt = 3;
     setDirBtn('right');   // 左端起点：带向右
-    reset();
+    setStartSide('left');
   });
   s2.addEventListener('click', () => {
     v0El.value = 0; muEl.value = 0.30; gEl.value = 10; lenEl.value = 24;
-    state.vBelt = -3; state.startSide = 'right';
+    state.vBelt = -3;
     setDirBtn('left');    // 右端起点：带向左
-    reset();
+    setStartSide('right');
   });
 
   // 初始
