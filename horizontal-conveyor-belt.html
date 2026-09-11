@@ -306,33 +306,25 @@ footer {
     <section class="card param-group">
       <div class="card-title">参数设定</div>
       <div class="param-row">
-        <label>初速度 v₀</label>
+        <label>小方块初速度 v₀</label>
         <input id="v0" type="range" min="-6" max="6" step="0.1" value="0">
         <span class="val" id="v0v">+0.0 m/s</span>
       </div>
       <div class="param-row">
-        <label>起点位置</label>
+        <label>小方块起点位置</label>
         <span class="btn-group" style="flex:0 0 auto; display:flex; gap:6px;">
           <button id="startLeft" class="alt" title="物块从左端出发">⬒ 左端</button>
           <button id="startRight" class="alt" title="物块从右端出发">⬒ 右端</button>
         </span>
       </div>
       <div class="param-row">
-        <label>运动方向</label>
-        <span class="btn-group" style="flex:0 0 auto; display:flex; gap:6px;">
-          <button id="vbLeft" class="alt" title="向左（负向）">← 向左</button>
-          <button id="vbStill" class="alt" title="静止">· 静止</button>
-          <button id="vbRight" class="alt" title="向右（正向）">→ 向右</button>
-        </span>
-      </div>
-      <div class="param-row">
-        <label>带速 v带</label>
+        <label>传送带速度 v带</label>
         <span class="val" id="vbv" style="flex:1; text-align:left;">+3.0 m/s</span>
       </div>
       <div class="param-row">
-        <label>带速大小</label>
-        <input id="vbSize" type="range" min="0.5" max="6" step="0.1" value="3">
-        <span class="val" id="vbSizeVal">3.0 m/s</span>
+        <label>带速大小（正负表示方向）</label>
+        <input id="vbSize" type="range" min="-6" max="6" step="0.1" value="3">
+        <span class="val" id="vbSizeVal">+3.0 m/s</span>
       </div>
       <div class="param-row">
         <label>动摩擦 μ</label>
@@ -426,7 +418,6 @@ footer {
   const v0El  = $('v0'),  v0v  = $('v0v');
   const muEl  = $('mu'),  muv  = $('muv');
   const gEl   = $('g'),   gv   = $('gv');
-  const vbLeft  = $('vbLeft'),  vbStill = $('vbStill'),  vbRight = $('vbRight');
   const startLeft = $('startLeft'), startRight = $('startRight');
   const vbSizeEl = $('vbSize'), vbSizeVal = $('vbSizeVal');
   const vbv = $('vbv');
@@ -445,7 +436,6 @@ footer {
     v0: 0, vBelt: 3, vbSize: 3, mu: 0.30, g: 10,
     L: 24,            // 带长 m（滑条可调）
     speed: 1,         // 播放倍速
-    dir: 'right',     // 'left' | 'still' | 'right'
     startSide: 'left',// 'left' | 'right'：物块固定起点（default left）
     x0: 0,            // 放上位置（米，带中心为原点）：左端 = -(L/2-1)，右端 = +(L/2-1)
     x: 0,             // 物块位置（米，地面系）
@@ -1085,25 +1075,16 @@ footer {
     state.L     = parseFloat(lenEl.value);
     state.speed = parseFloat(speedEl.value);
     state.vbSize = parseFloat(vbSizeEl.value);
-    state.vBelt = state.dir === 'left' ? -state.vbSize : state.dir === 'right' ? state.vbSize : 0;
+    state.vBelt = state.vbSize;
     v0v.textContent   = (state.v0 >= 0 ? '+' : '') + state.v0.toFixed(1) + ' m/s';
     muv.textContent   = state.mu.toFixed(2);
     gv.textContent    = state.g.toFixed(1) + ' m/s²';
     vbv.textContent   = (state.vBelt >= 0 ? '+' : '') + state.vBelt.toFixed(1) + ' m/s';
-    vbSizeVal.textContent = state.vbSize.toFixed(1) + ' m/s';
+    vbSizeVal.textContent = (state.vbSize >= 0 ? '+' : '') + state.vbSize.toFixed(1) + ' m/s';
     lenVal.textContent  = state.L + ' m';
     speedVal.textContent = String(+state.speed.toFixed(2)) + '×';
     const dirLabel = state.vBelt > 0.01 ? '→ 向右' : (state.vBelt < -0.01 ? '← 向左' : '· 静止');
     dirText.textContent = dirLabel;
-  }
-
-  function setDirBtn(dir) {
-    state.dir = dir;
-    state.vBelt = dir === 'left' ? -state.vbSize : dir === 'right' ? state.vbSize : 0;
-    vbLeft.disabled  = dir === 'left';
-    vbStill.disabled = dir === 'still';
-    vbRight.disabled = dir === 'right';
-    readControls();
   }
 
   function setStartSide(side) {
@@ -1133,9 +1114,6 @@ footer {
     bPause.disabled = true;
     bContinue.disabled = true;
     setSliders(false);
-    vbLeft.disabled = state.dir === 'left';
-    vbStill.disabled = state.dir === 'still';
-    vbRight.disabled = state.dir === 'right';
     startLeft.disabled = state.startSide === 'left';
     startRight.disabled = state.startSide === 'right';
     hudRow.setAttribute('aria-live', 'polite');
@@ -1209,9 +1187,6 @@ footer {
   bPause.addEventListener('click', pause);
   bContinue.addEventListener('click', resume);
   bReset.addEventListener('click', reset);
-  vbLeft.addEventListener('click',  () => setDirBtn('left'));
-  vbStill.addEventListener('click', () => setDirBtn('still'));
-  vbRight.addEventListener('click', () => setDirBtn('right'));
   startLeft.addEventListener('click', () => setStartSide('left'));
   startRight.addEventListener('click', () => setStartSide('right'));
   document.addEventListener('keydown', (e) => {
@@ -1224,15 +1199,13 @@ footer {
   // 情景
   s1.addEventListener('click', () => {
     v0El.value = 0; muEl.value = 0.30; gEl.value = 10; lenEl.value = 24;
-    state.vBelt = 3;
-    setDirBtn('right');   // 左端起点：带向右
-    setStartSide('left');
+    vbSizeEl.value = 3;
+    setStartSide('left');   // 左端起点：带向右
   });
   s2.addEventListener('click', () => {
     v0El.value = 0; muEl.value = 0.30; gEl.value = 10; lenEl.value = 24;
-    state.vBelt = -3;
-    setDirBtn('left');    // 右端起点：带向左
-    setStartSide('right');
+    vbSizeEl.value = -3;
+    setStartSide('right');  // 右端起点：带向左
   });
 
   // 初始
