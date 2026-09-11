@@ -90,6 +90,79 @@ canvas { display: block; width: 100%; }
   width: 100%;
   justify-content: center;
 }
+.control-panel {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) minmax(280px, 1.25fr);
+  gap: 14px;
+}
+@media (max-width: 720px) {
+  .control-panel { grid-template-columns: 1fr; }
+}
+.param-group {}
+.data-group {}
+.param-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #aab;
+  margin-bottom: 6px;
+}
+.param-row label { flex: 0 0 80px; color: #c0c8d4; }
+.param-row input[type=range] { flex: 1; accent-color: #3388dd; }
+.param-row .val {
+  flex: 0 0 60px;
+  text-align: right;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+}
+.param-row .btn-group {
+  flex: 1;
+  display: flex;
+  gap: 6px;
+}
+.fixed-note {
+  font-size: 11px;
+  color: #667788;
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  line-height: 1.6;
+}
+.fixed-note b { color: #ffaa44; }
+.data-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+@media (max-width: 560px) {
+  .data-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+.data-item {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  padding: 6px 8px;
+  text-align: center;
+}
+.data-item span {
+  display: block;
+  font-size: 10px;
+  color: #8899aa;
+  margin-bottom: 2px;
+}
+.data-item b {
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+}
+.data-item .accent { color: #ffaa44; }
+.data-item .green { color: #44dd88; }
+.data-item .cyan { color: #44ddff; }
+.data-item span.full { grid-column: 1 / -1; }
 .card {
   background: rgba(255,255,255,0.04);
   border: 1px solid rgba(255,255,255,0.1);
@@ -178,22 +251,6 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 }
 .data-card .num.accent { color: #ffaa44; }
 .data-card .num.green { color: #44dd88; }
-.phase {
-  background: #1d2a3a;
-  border: 1px solid #2d4a6a;
-  border-radius: 8px;
-  padding: 10px 14px;
-  font-size: 13px;
-  color: #c8e0ff;
-  text-align: center;
-  width: 100%;
-  min-height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 1.5;
-}
-.phase strong { color: #ffaa44; }
 .legend {
   display: flex;
   gap: 14px;
@@ -245,54 +302,42 @@ footer {
     </section>
   </div>
 
-  <div class="phase" id="phase">点击「开始」观察物块运动</div>
-
-  <div class="panel-row">
-    <div class="card">
-      <div class="card-title">物块参数</div>
-      <div class="row">
+  <div class="control-panel">
+    <section class="card param-group">
+      <div class="card-title">参数设定</div>
+      <div class="param-row">
         <label>初速度 v₀</label>
         <input id="v0" type="range" min="-6" max="6" step="0.1" value="0">
         <span class="val" id="v0v">+0.0 m/s</span>
       </div>
-      <div class="row">
-        <label>动摩擦 μ</label>
-        <input id="mu" type="range" min="0.05" max="0.8" step="0.01" value="0.30">
-        <span class="val" id="muv">0.30</span>
-      </div>
-      <div class="row">
-        <label>重力 g</label>
-        <input id="g" type="range" min="5" max="15" step="0.1" value="10">
-        <span class="val" id="gv">10.0 m/s²</span>
-      </div>
-      <div class="note">g 可调（5–15），默认 10，与系列演示页统一。</div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">传送带</div>
-      <div class="row">
-        <label>初速度 v₀</label>
-        <input id="v0" type="range" min="-6" max="6" step="0.1" value="0">
-        <span class="val" id="v0v">+0.0 m/s</span>
-      </div>
-      <div class="row">
+      <div class="param-row">
         <label>运动方向</label>
-        <span class="btn-group" style="flex:0 0 auto; display:flex; gap:6px; margin-left:4px;">
+        <span class="btn-group" style="flex:0 0 auto; display:flex; gap:6px;">
           <button id="vbLeft" class="alt" title="向左（负向）">← 向左</button>
           <button id="vbStill" class="alt" title="静止">· 静止</button>
           <button id="vbRight" class="alt" title="向右（正向）">→ 向右</button>
         </span>
       </div>
-      <div class="row">
+      <div class="param-row">
         <label>带速 v带</label>
         <span class="val" id="vbv" style="flex:1; text-align:left;">+3.0 m/s</span>
       </div>
-      <div class="row">
+      <div class="param-row">
+        <label>动摩擦 μ</label>
+        <input id="mu" type="range" min="0.05" max="0.8" step="0.01" value="0.30">
+        <span class="val" id="muv">0.30</span>
+      </div>
+      <div class="param-row">
+        <label>重力 g</label>
+        <input id="g" type="range" min="5" max="15" step="0.1" value="10">
+        <span class="val" id="gv">10.0 m/s²</span>
+      </div>
+      <div class="param-row">
         <label>带长 L</label>
         <input id="len" type="range" min="5" max="40" step="1" value="24">
         <span class="val" id="lenVal">24 m</span>
       </div>
-      <div class="row">
+      <div class="param-row">
         <label>播放速度</label>
         <input id="speed" type="range" min="0.25" max="4" step="0.25" value="1">
         <span class="val" id="speedVal">1×</span>
@@ -306,44 +351,29 @@ footer {
         <button id="bScenario2" class="alt">起点右端</button>
       </div>
       <div class="note">空格：开始 / 暂停 / 继续 · R：重置 · g = 10 m/s²</div>
-      <div class="note" style="border-top:1px solid rgba(255,255,255,0.08); padding-top:6px; margin-top:6px;">
-        <strong style="color:#ffaa44;">公式</strong>（地面参考系，向右为正）：<br>
+      <div class="fixed-note">
+        <b>公式</b>（地面参考系，向右为正）<br>
         滑动：<em>f = μmg</em> · <em>a = μg</em>（方向与相对速度相反）<br>
-        相对位移：<em>s相对 = (v₀ − v带)² / (2μg)</em> · 摩擦生热：<em>Q = μmg · s相对</em><br>
-        共速后：<em>v = v带</em>，<em>a = 0</em>，匀速运动 · s相对 停止增长
+        相对位移：<em>s相对 = (v₀ − v带)² / (2μg)</em><br>
+        摩擦生热：<em>Q = μmg · s相对</em><br>
+        共速后：<em>v = v带</em>，<em>a = 0</em>，匀速 · s相对 停止增长
       </div>
-    </div>
-  </div>
+    </section>
 
-  <div class="data-row" id="hudRow" aria-live="polite">
-    <div class="data-card">
-      <div class="label">物块速度 v</div>
-      <div class="num" id="vNum">0.00 m/s</div>
-    </div>
-    <div class="data-card">
-      <div class="label">相对带速 v−v带</div>
-      <div class="num accent" id="vrel">0.00 m/s</div>
-    </div>
-    <div class="data-card">
-      <div class="label">摩擦力 f</div>
-      <div class="num green" id="fNum">0.00 N</div>
-    </div>
-    <div class="data-card">
-      <div class="label">加速度 a</div>
-      <div class="num" id="aNum">0.00 m/s²</div>
-    </div>
-    <div class="data-card">
-      <div class="label">已用时间 t</div>
-      <div class="num" id="tNum">0.00 s</div>
-    </div>
-    <div class="data-card">
-      <div class="label">相对滑动距离 s相对</div>
-      <div class="num" id="sNum">0.00 m</div>
-    </div>
-    <div class="data-card">
-      <div class="label">摩擦生热 Q = μmg·s相对</div>
-      <div class="num green" id="qNum">0.00 J</div>
-    </div>
+    <section class="card data-group" id="hudRow" aria-live="polite">
+      <div class="card-title">实时数值</div>
+      <div class="data-grid">
+        <div class="data-item"><span>物块速度 v</span><b class="accent" id="vNum">0.00 m/s</b></div>
+        <div class="data-item"><span>相对带速 v−v带</span><b class="accent" id="vrel">0.00 m/s</b></div>
+        <div class="data-item"><span>摩擦力 f</span><b class="green" id="fNum">0.00 N</b></div>
+        <div class="data-item"><span>加速度 a</span><b id="aNum">0.00 m/s²</b></div>
+        <div class="data-item"><span>已用时间 t</span><b id="tNum">0.00 s</b></div>
+        <div class="data-item"><span>相对滑动距离 s相对</span><b class="accent" id="sNum">0.00 m</b></div>
+        <div class="data-item"><span>摩擦生热 Q</span><b class="green" id="qNum">0.00 J</b></div>
+        <div class="data-item"><span>带速 v带</span><b class="cyan" id="vbv2">+3.0 m/s</b></div>
+        <div class="data-item"><span>运动方向</span><b id="dirText">→ 向右</b></div>
+      </div>
+    </section>
   </div>
 
   <div class="legend">
@@ -390,8 +420,8 @@ footer {
   const speedEl = $('speed'), speedVal = $('speedVal');
   const vNum  = $('vNum'), vrel = $('vrel'), fNum = $('fNum'), aNum = $('aNum'), tNum = $('tNum');
   const sNum  = $('sNum'), qNum = $('qNum');
+  const dirText = $('dirText'), vbv2 = $('vbv2');
   const hudRow = $('hudRow');
-  const phaseEl = $('phase');
   const bStart = $('bStart'), bReset = $('bReset'), bPause = $('bPause'), bContinue = $('bContinue');
   const s1 = $('bScenario1'), s2 = $('bScenario2');
 
@@ -964,30 +994,23 @@ footer {
   // ===== HUD =====
   function updateHud() {
     const vR = state.v - state.vBelt;
-    let f = 0, a = 0, phaseTxt = '';
+    let f = 0, a = 0;
     if (state.offbelt) {
-      phaseTxt = '<strong>已离带</strong>：匀速直线运动，无摩擦力';
+      f = 0; a = 0;
     } else if (Math.abs(vR) > 1e-3) {
       f = state.mu * MASS * state.g;
       a = -Math.sign(vR) * state.mu * state.g;
-      const dir = vR > 0 ? '向右' : '向左';
-      const fdir = vR > 0 ? '向左' : '向右';
-      if (Math.abs(state.v) < 0.01 && Math.abs(state.vBelt) > 0.01) {
-        phaseTxt = `物块<strong>相对传送带${dir}滑</strong>，受动摩擦<strong>${fdir}</strong>，开始加速`;
-      } else {
-        phaseTxt = `物块<strong>相对传送带${dir}滑</strong>，动摩擦<strong>${fdir}</strong>，a = ${a.toFixed(2)} m/s²`;
-      }
-    } else {
-      phaseTxt = '<strong>共速</strong>：与传送带同速，<strong>无摩擦力</strong>，匀速直线运动';
     }
-    vNum.textContent  = state.v.toFixed(2) + ' m/s';
-    vrel.textContent  = state.offbelt ? '—' : vR.toFixed(2) + ' m/s';
+    const dirLabel = state.vBelt > 0.01 ? '→ 向右' : (state.vBelt < -0.01 ? '← 向左' : '· 静止');
+    vNum.textContent   = state.v.toFixed(2) + ' m/s';
+    vrel.textContent   = state.offbelt ? '—' : vR.toFixed(2) + ' m/s';
     fNum.textContent   = f.toFixed(2) + ' N';
     aNum.textContent   = a.toFixed(2) + ' m/s²';
     tNum.textContent   = state.t.toFixed(2) + ' s';
     sNum.textContent   = state.slip.toFixed(2) + ' m';
     qNum.textContent   = (state.mu * MASS * state.g * state.slip).toFixed(2) + ' J';
-    phaseEl.innerHTML  = phaseTxt;
+    vbv2.textContent   = (state.vBelt >= 0 ? '+' : '') + state.vBelt.toFixed(1) + ' m/s';
+    dirText.textContent = dirLabel;
   }
 
   // ===== Loop =====
