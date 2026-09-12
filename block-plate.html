@@ -324,9 +324,9 @@
         const PAD_X = 90;
         const PAD_RIGHT = 70;
         const PAD_BOTTOM = 58;
-        const PLATE_H = 30;
-        const BLOCK_H = 42;
-        const BLOCK_W_FRAC = 0.09;
+        const PLATE_H = 24;
+        const BLOCK_H = 34;
+        const BLOCK_W_FRAC = 0.08;
 
         function plateScale() {
             return Math.max(8, (view.width - PAD_X - PAD_RIGHT) / P.L * 0.92);
@@ -359,6 +359,7 @@
             let slipAfter = false;
             let t1 = null, vCommon = null, sRel1 = null;
             let tOff = null, offEdge = null;
+            let tCenter = null, centerEvent = false, centerEdge = null;
             let tStop = null;
             let sRelStart = sRel;
             let Q = 0;
@@ -483,6 +484,42 @@
                         }
                         const tOffCand = Math.min(roots[0], roots[1]);
                         if (tOffCand < tau) { tau = tOffCand; eventType = 'off'; }
+
+                        // 中心过缘事件（需求 17）：A 中心滑离板缘，触发视觉下落
+                        if (!centerEvent) {
+                            const C3 = sRel - (L - bw / 2);
+                            const C4 = sRel + bw / 2;
+                            const rootsC = [Infinity, Infinity];
+                            if (Math.abs(A) > 1e-14) {
+                                const disc3 = B * B - 4 * A * C3;
+                                if (disc3 >= 0) {
+                                    const sq = Math.sqrt(disc3);
+                                    const r1 = (-B + sq) / (2 * A);
+                                    const r2 = (-B - sq) / (2 * A);
+                                    if (r1 > 1e-12) rootsC[0] = r1;
+                                    if (r2 > 1e-12) rootsC[0] = Math.min(rootsC[0], r2);
+                                }
+                                const disc4 = B * B - 4 * A * C4;
+                                if (disc4 >= 0) {
+                                    const sq = Math.sqrt(disc4);
+                                    const r1 = (-B + sq) / (2 * A);
+                                    const r2 = (-B - sq) / (2 * A);
+                                    if (r1 > 1e-12) rootsC[1] = r1;
+                                    if (r2 > 1e-12) rootsC[1] = Math.min(rootsC[1], r2);
+                                }
+                            } else if (Math.abs(B) > 1e-14) {
+                                const tcf = C3 / (-B);
+                                const tcb = C4 / (-B);
+                                if (tcf > 1e-12) rootsC[0] = tcf;
+                                if (tcb > 1e-12) rootsC[1] = tcb;
+                            }
+                            const tCenterCand = Math.min(rootsC[0], rootsC[1]);
+                            if (tCenterCand < tau) {
+                                tau = tCenterCand;
+                                eventType = 'center';
+                                centerEdge = (rootsC[0] <= rootsC[1]) ? 'front' : 'back';
+                            }
+                        }
                     }
 
                     if (Math.abs(vB) > 1e-9 && Math.abs(aB) > 1e-14) {
@@ -536,6 +573,11 @@
                         }
                     } else if (eventType === 'vbflip') {
                         vB = 0;
+                    } else if (eventType === 'center') {
+                        // 中心过缘事件：A 中心已滑离板缘，触发视觉下落
+                        centerEvent = true;
+                        const vRelAtCenter = Math.abs(vA - vB);
+                        tCenter = Math.max(0, t - (bw / 2) / Math.max(vRelAtCenter, 1e-6));
                     }
                     rec();
                     if (t1 === null && !onPlate) sRel1 = Math.abs(sRel - sRelStart);
@@ -589,7 +631,7 @@
             return {
                 T, VA, VB, XA, XB, ON,
                 t1, vCommon, sRel1: sRel1 || 0,
-                willSlideOff: tOff !== null, tOff, offEdge,
+                willSlideOff: tOff !== null, tOff, offEdge, tCenter,
                 slipAfter, tStop, tEnd, heat: Q,
                 bMovedEver, mu2,
             };
@@ -654,23 +696,30 @@
                 const isSliding = Math.abs(vRel) > 1e-6;
                 const sig = Math.sign(vRel) || 1;
 
+                // 下落过渡期（需求 18）：f₁/f₁′ 箭头透明度随下落进度渐隐
+                let dropFrac = 0;
+                if (sim && sim.tCenter !== null && t >= sim.tCenter) {
+                    dropFrac = Math.min(1, (t - sim.tCenter) / 0.15);
+                }
+                const fAlpha = 1 - dropFrac * 0.85;
+
                 if (isSliding) {
                     const fMag = mu1 * P.mA * g;
                     if (fMag > 0.1) {
                         const fDir = -sig;
                         const aMidY = groundY - PLATE_H - BLOCK_H / 2;
-                        drawArrow(aScreenX, aMidY, fDir, arrowLen(fMag), '#ffdd57', 'f₁');
+                        drawArrow(aScreenX, aMidY, fDir, arrowLen(fMag), `rgba(255,221,87,${fAlpha})`, 'f₁');
                         const bTopY = groundY - PLATE_H - 6;
-                        drawArrow(aScreenX, bTopY, -fDir, arrowLen(fMag), '#ffdd57', "f₁'");
+                        drawArrow(aScreenX, bTopY, -fDir, arrowLen(fMag), `rgba(255,221,87,${fAlpha})`, "f₁'");
                     }
                 } else if (mu2 > 0 && Math.abs(drawA.v) > 1e-6) {
                     const fStat = P.mA * mu2 * g;
                     if (fStat > 0.1) {
                         const fDir = Math.sign(drawA.v) > 0 ? -1 : 1;
                         const aMidY = groundY - PLATE_H - BLOCK_H / 2;
-                        drawArrow(aScreenX, aMidY, fDir, arrowLen(fStat), '#ffdd57', 'f₁');
+                        drawArrow(aScreenX, aMidY, fDir, arrowLen(fStat), `rgba(255,221,87,${fAlpha})`, 'f₁');
                         const bTopY = groundY - PLATE_H - 6;
-                        drawArrow(aScreenX, bTopY, -fDir, arrowLen(fStat), '#ffdd57', "f₁'");
+                        drawArrow(aScreenX, bTopY, -fDir, arrowLen(fStat), `rgba(255,221,87,${fAlpha})`, "f₁'");
                     }
                 }
 
@@ -693,7 +742,7 @@
                 if (mu2 > 0 && Math.abs(drawA.v) > 1e-6) {
                     const fA = mu2 * P.mA * g;
                     const fDir = Math.sign(drawA.v) > 0 ? -1 : 1;
-                    const aMidY = groundY - 24;
+                    const aMidY = groundY - BLOCK_H / 2;
                     drawArrow(aScreenX, aMidY, fDir, arrowLen(fA), '#ff6644', 'f₂');
                 }
                 if (mu2 > 0 && Math.abs(drawB.v) > 1e-6) {
@@ -778,48 +827,47 @@
             ctx.fillStyle = '#fff';
             ctx.font = 'bold 11px system-ui';
             ctx.textAlign = 'center';
-            ctx.fillText(`板块 B · vᵦ = ${drawB.v.toFixed(1)} m/s · L = ${P.L.toFixed(1)} m`, (bLeft + bRight) / 2, bTop + 19);
+            ctx.fillText(`板块 B · vᵦ = ${drawB.v.toFixed(1)} m/s · L = ${P.L.toFixed(1)} m`, (bLeft + bRight) / 2, bTop + 16);
 
             // 物块 A
             const blockWm = P.L * BLOCK_W_FRAC;
             const blockW = blockWm * s;
 
+            // 下落过渡（需求 三.4）：A 中心滑离板缘（tCenter）后 0.15s 内
+            // 从板面平滑降至地面；物理滑出事件（相对滑移 = 板长）不受影响
+            let dropFrac = 0;
+            if (sim && sim.tCenter !== null && t >= sim.tCenter) {
+                dropFrac = Math.min(1, (t - sim.tCenter) / 0.15);
+            }
+            dropFrac *= dropFrac;
+            const aBot = bTop + PLATE_H * dropFrac;
+            const aTopY = aBot - BLOCK_H;
+
             if (drawA.onPlate) {
                 const aLeft = SX(drawA.x);
-                const aTop  = bTop - BLOCK_H;
-                const aBot  = bTop;
 
                 ctx.fillStyle = 'rgba(0,0,0,0.3)';
                 ctx.fillRect(aLeft + 3, aBot + 3, blockW, 5);
 
-                const ag = ctx.createLinearGradient(aLeft, aTop, aLeft, aBot);
+                const ag = ctx.createLinearGradient(aLeft, aTopY, aLeft, aBot);
                 ag.addColorStop(0, '#4db8ff');
                 ag.addColorStop(1, '#1170cc');
                 ctx.fillStyle = ag;
-                ctx.fillRect(aLeft, aTop, blockW, aBot - aTop);
+                ctx.fillRect(aLeft, aTopY, blockW, aBot - aTopY);
 
                 ctx.strokeStyle = '#7dd0ff';
                 ctx.lineWidth = 2;
-                ctx.strokeRect(aLeft, aTop, blockW, aBot - aTop);
+                ctx.strokeRect(aLeft, aTopY, blockW, aBot - aTopY);
 
                 ctx.fillStyle = '#fff';
                 ctx.font = 'bold 11px system-ui';
                 ctx.textAlign = 'center';
-                ctx.fillText('物块 A', aLeft + blockW / 2, aTop + 17);
+                ctx.fillText('物块 A', aLeft + blockW / 2, aTopY + 14);
                 ctx.fillStyle = '#cceaff';
                 ctx.font = '10px system-ui';
-                ctx.fillText(`${drawA.v.toFixed(1)} m/s`, aLeft + blockW / 2, aTop + 33);
+                ctx.fillText(`${drawA.v.toFixed(1)} m/s`, aLeft + blockW / 2, aTopY + 27);
             } else {
-                const dropDur = 0.15;
-                const dropT = Math.min(t - (sim ? sim.tOff : 0), dropDur);
-                const frac = dropT > 0 ? dropT / dropDur : 0;
-                const easeFrac = frac * frac;
-                const plateTop = groundY - PLATE_H;
-                const aBotY = plateTop + (groundY - plateTop) * easeFrac;
-
                 const ax = Math.max(4, Math.min(SX(drawA.x), view.width - blockW - 4));
-                const aBot = aBotY;
-                const aTopY = aBot - BLOCK_H;
 
                 ctx.fillStyle = 'rgba(0,0,0,0.3)';
                 ctx.fillRect(ax + 3, aBot + 3, blockW, 5);
@@ -837,10 +885,10 @@
                 ctx.fillStyle = '#fff';
                 ctx.font = 'bold 11px system-ui';
                 ctx.textAlign = 'center';
-                ctx.fillText('A', ax + blockW / 2, aTopY + 17);
+                ctx.fillText('A', ax + blockW / 2, aTopY + 14);
                 ctx.fillStyle = '#cceaff';
                 ctx.font = '10px system-ui';
-                ctx.fillText(`${drawA.v.toFixed(1)} m/s`, ax + blockW / 2, aTopY + 33);
+                ctx.fillText(`${drawA.v.toFixed(1)} m/s`, ax + blockW / 2, aTopY + 27);
             }
 
             // 摩擦力
@@ -1139,6 +1187,22 @@
             }
             stctx.stroke();
 
+            // 末端位移标注（需求 20）
+            if (endIdx > 1) {
+                const lastEI = endIdx - 1;
+                const sAEnd = sim.XA[lastEI] - s0A;
+                const sBEnd = sim.XB[lastEI] - s0B;
+                const pxEndA = TX(sim.T[lastEI]);
+                const pxEndB = TX(sim.T[lastEI]);
+
+                stctx.font = '9px system-ui';
+                stctx.textAlign = 'left';
+                stctx.fillStyle = '#3399ff';
+                stctx.fillText(sAEnd.toFixed(1) + 'm', pxEndA + 5, SY(sAEnd) + 3);
+                stctx.fillStyle = '#ff9933';
+                stctx.fillText(sBEnd.toFixed(1) + 'm', pxEndB + 5, SY(sBEnd) + 3);
+            }
+
             // 播放头
             const ci = Math.min(playIdx, sim.T.length - 1);
             const pxNow = TX(sim.T[ci]);
@@ -1325,8 +1389,18 @@
         // ========== 数据面板 ==========
         function updateDataPanel() {
             if (!sim) return;
-            elTEnd.textContent = sim.willSlideOff ? '—' : (sim.t1 !== null ? sim.t1.toFixed(2) + ' s' : '—');
-            elVFin.textContent = sim.willSlideOff ? '—' : (sim.vCommon !== null ? sim.vCommon.toFixed(2) + ' m/s' : '—');
+            const elTEndLabel = elTEnd.parentElement?.querySelector('span');
+
+            // B 静止、A 停板上（需求 19）：显示 A 停止时刻与 0.00 m/s
+            if (!sim.bMovedEver && !sim.willSlideOff && sim.tStop !== null) {
+                elTEnd.textContent = sim.tStop.toFixed(2) + ' s';
+                elVFin.textContent = '0.00 m/s';
+                if (elTEndLabel) elTEndLabel.textContent = 'A 停止时刻';
+            } else {
+                elTEnd.textContent = sim.willSlideOff ? '—' : (sim.t1 !== null ? sim.t1.toFixed(2) + ' s' : '—');
+                elVFin.textContent = sim.willSlideOff ? '—' : (sim.vCommon !== null ? sim.vCommon.toFixed(2) + ' m/s' : '—');
+                if (elTEndLabel) elTEndLabel.textContent = '共速时刻';
+            }
             elRel.textContent  = sim.sRel1.toFixed(2) + ' m';
             elSlide.textContent = sim.willSlideOff ? '✓ 滑出' : '✗ 未滑出';
             elSlide.style.color = sim.willSlideOff ? '#ff6644' : '#33dd66';
@@ -1443,6 +1517,12 @@
             elState.textContent = '待开始';
             elState.style.color = '#99aabb';
             elStatus.textContent = '';
+
+            // 重置数据面板标签（需求 19）
+            const elTEndLabel = elTEnd.parentElement?.querySelector('span');
+            if (elTEndLabel) elTEndLabel.textContent = '共速时刻';
+            elTEnd.textContent = '—';
+            elVFin.textContent = '—';
 
             elV0A.disabled = false;
             elV0B.disabled = false;
