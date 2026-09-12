@@ -49,16 +49,24 @@
             background-color: #0b1828;
         }
         canvas#scene { aspect-ratio: 880 / 520; }
-        .chart-panel {
+        .charts-row {
             margin-top: 16px;
             width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+        @media (max-width: 720px) {
+            .charts-row { grid-template-columns: 1fr; }
+        }
+        .chart-panel {
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 10px;
             padding: 14px 16px;
         }
         .chart-panel canvas {
-            aspect-ratio: 880 / 200;
+            aspect-ratio: 20 / 9;
             border-width: 2px;
         }
         .group-title {
@@ -105,34 +113,29 @@
             font-variant-numeric: tabular-nums;
             color: #ccd;
         }
-        .state-rows .param-row .val { min-width: 110px; }
-        .data-row {
-            margin-top: 14px;
-            width: 100%;
+        .data-grid {
             display: grid;
-            grid-template-columns: repeat(6, minmax(0, 1fr));
+            grid-template-columns: repeat(3, minmax(0, 1fr));
             gap: 9px;
         }
-        @media (max-width: 720px) {
-            .data-row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        @media (max-width: 560px) {
+            .data-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         }
-        .data-card {
+        .data-item {
             background: rgba(255, 255, 255, 0.035);
             border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 8px;
             padding: 8px 10px;
-            text-align: center;
         }
-        .data-card span {
+        .data-item span {
             display: block;
             font-size: 11px;
             color: #8899aa;
             margin-bottom: 4px;
         }
-        .data-card .num {
+        .data-item b {
             display: block;
-            font-size: 14px;
-            font-weight: 600;
+            font-size: 13px;
             color: #ffffff;
             font-variant-numeric: tabular-nums;
         }
@@ -182,10 +185,16 @@
         <div class="canvas-wrap">
             <canvas id="scene" role="img" aria-label="板块运动演示：物块 A 在板块 B 上相对滑动"></canvas>
         </div>
-        <section class="chart-panel">
-            <div class="group-title">速度-时间图 (v-t)</div>
-            <canvas id="graphCanvas" role="img" aria-label="物块 A 与板块 B 的速度-时间图像"></canvas>
-        </section>
+        <div class="charts-row">
+            <section class="chart-panel">
+                <div class="group-title">速度-时间图 (v-t)</div>
+                <canvas id="graphCanvas" role="img" aria-label="物块 A 与板块 B 的速度-时间图像"></canvas>
+            </section>
+            <section class="chart-panel">
+                <div class="group-title">位移-时间图 (s-t)</div>
+                <canvas id="stChart" role="img" aria-label="物块 A 与板块 B 的位移-时间图像"></canvas>
+            </section>
+        </div>
         <div class="control-panel">
             <section class="param-group" aria-labelledby="parameterTitle">
                 <div class="group-title" id="parameterTitle">参数设定</div>
@@ -230,33 +239,21 @@
                     <div class="val" id="tsVal">1.0×</div>
                 </div>
             </section>
-            <section class="data-group state-rows" aria-labelledby="dataTitle" aria-live="polite">
-                <div class="group-title" id="dataTitle">速度显示（与 v-t 图同步）</div>
-                <div class="param-row">
-                    <label>物块 A v<sub>A</sub></label>
-                    <div class="val" id="dVA">— m/s</div>
-                </div>
-                <div class="param-row">
-                    <label>板块 B v<sub>B</sub></label>
-                    <div class="val" id="dVB">— m/s</div>
-                </div>
-                <div class="param-row">
-                    <label>相对速度</label>
-                    <div class="val" id="dVR">— m/s</div>
-                </div>
-                <div class="param-row">
-                    <label>运动状态</label>
-                    <div class="val" id="dState">待开始</div>
+            <section class="data-group" aria-labelledby="dataTitle" aria-live="polite">
+                <div class="group-title" id="dataTitle">实时数据显示</div>
+                <div class="data-grid">
+                    <div class="data-item"><span>物块 A v<sub>A</sub></span><b id="dVA">— m/s</b></div>
+                    <div class="data-item"><span>板块 B v<sub>B</sub></span><b id="dVB">— m/s</b></div>
+                    <div class="data-item"><span>相对速度</span><b id="dVR">— m/s</b></div>
+                    <div class="data-item"><span>运动状态</span><b id="dState">待开始</b></div>
+                    <div class="data-item"><span>共速时刻</span><b id="dTEnd">—</b></div>
+                    <div class="data-item"><span>共速后速度</span><b id="dVFinal">—</b></div>
+                    <div class="data-item"><span>相对滑移</span><b id="dRelDisp">—</b></div>
+                    <div class="data-item"><span>是否滑出</span><b id="dSlideOff">—</b></div>
+                    <div class="data-item"><span>摩擦生热（总）</span><b id="dHeat">—</b></div>
+                    <div class="data-item"><span>质量 (m<sub>A</sub>+m<sub>B</sub>)</span><b id="dMass">—</b></div>
                 </div>
             </section>
-        </div>
-        <div class="data-row">
-            <div class="data-card"><span>共速时刻</span><div class="num" id="dTEnd">—</div></div>
-            <div class="data-card"><span>共速后速度</span><div class="num" id="dVFinal">—</div></div>
-            <div class="data-card"><span>相对滑移</span><div class="num" id="dRelDisp">—</div></div>
-            <div class="data-card"><span>是否滑出</span><div class="num" id="dSlideOff">—</div></div>
-            <div class="data-card"><span>摩擦生热（总）</span><div class="num" id="dHeat">—</div></div>
-            <div class="data-card"><span>质量 (m<sub>A</sub>+m<sub>B</sub>)</span><div class="num" id="dMass">—</div></div>
         </div>
         <div class="actions">
             <button id="btnStart" type="button">开始</button>
@@ -266,11 +263,11 @@
         <div class="legend">
             <span>🟦 物块 A</span>
             <span>🟧 板块 B</span>
-            <span style="color:#3399ff">— v<sub>A</sub> 蓝线</span>
-            <span style="color:#ff9933">— v<sub>B</sub> 橙线</span>
+            <span style="color:#3399ff">— v<sub>A</sub>/s<sub>A</sub> 蓝线</span>
+            <span style="color:#ff9933">— v<sub>B</sub>/s<sub>B</sub> 橙线</span>
             <span style="color:#ffdd57">→ f₁（A-B）</span>
             <span style="color:#ff6644">→ f₂（地面）</span>
-            <span>虚线：共速/滑出时刻</span>
+            <span>虚线：共速/滑出时刻（v-t 与 s-t 同步）</span>
         </div>
     </main>
 
@@ -281,6 +278,8 @@
         const ctx = canvas.getContext('2d');
         const graphCanvas = document.getElementById('graphCanvas');
         const gctx = graphCanvas.getContext('2d');
+        const stCanvas = document.getElementById('stChart');
+        const stctx = stCanvas.getContext('2d');
 
         const elV0A   = document.getElementById('v0A');
         const elV0B   = document.getElementById('v0B');
@@ -315,17 +314,19 @@
         const g = 9.8;
         const BASE_WIDTH = 880;
         const BASE_HEIGHT = 520;
-        const GRAPH_WIDTH = 880;
-        const GRAPH_HEIGHT = 200;
+        const GRAPH_WIDTH = 440;
+        const GRAPH_HEIGHT = 198;
         const view  = { width: BASE_WIDTH, height: BASE_HEIGHT };
         const gview = { width: GRAPH_WIDTH, height: GRAPH_HEIGHT };
+        const sview = { width: GRAPH_WIDTH, height: GRAPH_HEIGHT };
 
         // ========== 场景视图 ==========
         const PAD_X = 90;
         const PAD_RIGHT = 70;
         const PAD_BOTTOM = 58;
-        const PLATE_H = 40;
-        const BLOCK_H = 54;
+        const PLATE_H = 30;
+        const BLOCK_H = 42;
+        const BLOCK_W_FRAC = 0.09;
 
         function plateScale() {
             return Math.max(8, (view.width - PAD_X - PAD_RIGHT) / P.L * 0.92);
@@ -344,7 +345,7 @@
         // ========== 事件驱动精确积分预仿真 ==========
         function simulate() {
             const { mA, mB, v0A, v0B, mu: mu1, mu2, L } = P;
-            const bw = L * 0.12;
+            const bw = L * BLOCK_W_FRAC;
             const T_CAP = 32;
             const dtMax = 0.02;
             let t = 0;
@@ -590,7 +591,7 @@
                 t1, vCommon, sRel1: sRel1 || 0,
                 willSlideOff: tOff !== null, tOff, offEdge,
                 slipAfter, tStop, tEnd, heat: Q,
-                bMovedEver,
+                bMovedEver, mu2,
             };
         }
 
@@ -643,7 +644,7 @@
             const camX = drawB.x;
             const SX = x => PAD_X + (x - camX) * s;
 
-            const aCX = drawA.x + (P.L * 0.12) / 2;
+            const aCX = drawA.x + (P.L * BLOCK_W_FRAC) / 2;
             const bCX = drawB.x + P.L / 2;
             const aScreenX = SX(aCX);
             const bScreenX = SX(bCX);
@@ -674,20 +675,8 @@
                 }
 
                 if (Math.abs(drawB.v) > 1e-6) {
-                    let fGnd, fDir;
-                    if (Math.abs(drawB.v) > 1e-6) {
-                        fGnd = mu2 * (P.mA + P.mB) * g;
-                        fDir = Math.sign(drawB.v) > 0 ? -1 : 1;
-                    } else {
-                        const driveF = mu1 * P.mA * g;
-                        if (driveF > mu2 * (P.mA + P.mB) * g) {
-                            fGnd = mu2 * (P.mA + P.mB) * g;
-                            fDir = Math.sign(drawA.v - drawB.v) > 0 ? -1 : 1;
-                        } else {
-                            fGnd = Math.min(driveF, mu2 * (P.mA + P.mB) * g);
-                            fDir = Math.sign(drawA.v - drawB.v) > 0 ? -1 : 1;
-                        }
-                    }
+                    const fGnd = mu2 * (P.mA + P.mB) * g;
+                    const fDir = Math.sign(drawB.v) > 0 ? -1 : 1;
                     if (fGnd > 0.1) {
                         const fGndY = groundY + 12;
                         drawArrow(bScreenX, fGndY, fDir, arrowLen(fGnd), '#ff6644', 'f₂');
@@ -789,10 +778,10 @@
             ctx.fillStyle = '#fff';
             ctx.font = 'bold 11px system-ui';
             ctx.textAlign = 'center';
-            ctx.fillText(`板块 B · vᵦ = ${drawB.v.toFixed(1)} m/s · L = ${P.L.toFixed(1)} m`, (bLeft + bRight) / 2, bTop + 25);
+            ctx.fillText(`板块 B · vᵦ = ${drawB.v.toFixed(1)} m/s · L = ${P.L.toFixed(1)} m`, (bLeft + bRight) / 2, bTop + 19);
 
             // 物块 A
-            const blockWm = P.L * 0.12;
+            const blockWm = P.L * BLOCK_W_FRAC;
             const blockW = blockWm * s;
 
             if (drawA.onPlate) {
@@ -816,10 +805,10 @@
                 ctx.fillStyle = '#fff';
                 ctx.font = 'bold 11px system-ui';
                 ctx.textAlign = 'center';
-                ctx.fillText('物块 A', aLeft + blockW / 2, aTop + 19);
+                ctx.fillText('物块 A', aLeft + blockW / 2, aTop + 17);
                 ctx.fillStyle = '#cceaff';
                 ctx.font = '10px system-ui';
-                ctx.fillText(`${drawA.v.toFixed(1)} m/s`, aLeft + blockW / 2, aTop + 37);
+                ctx.fillText(`${drawA.v.toFixed(1)} m/s`, aLeft + blockW / 2, aTop + 33);
             } else {
                 const dropDur = 0.15;
                 const dropT = Math.min(t - (sim ? sim.tOff : 0), dropDur);
@@ -848,10 +837,10 @@
                 ctx.fillStyle = '#fff';
                 ctx.font = 'bold 11px system-ui';
                 ctx.textAlign = 'center';
-                ctx.fillText('A', ax + blockW / 2, aTopY + 19);
+                ctx.fillText('A', ax + blockW / 2, aTopY + 17);
                 ctx.fillStyle = '#cceaff';
                 ctx.font = '10px system-ui';
-                ctx.fillText(`${drawA.v.toFixed(1)} m/s`, ax + blockW / 2, aTopY + 37);
+                ctx.fillText(`${drawA.v.toFixed(1)} m/s`, ax + blockW / 2, aTopY + 33);
             }
 
             // 摩擦力
@@ -890,7 +879,7 @@
                 vLo = Math.min(vLo, sim.VA[i], sim.VB[i]);
             }
             vHi = Math.max(vHi, P.v0A, Math.abs(P.v0B), 1) * 1.2;
-            vLo = Math.min(vLo, -1) * 1.2;
+            vLo = Math.min(vLo, 0) * 1.2;
             if (vLo >= 0) vLo = 0;
 
             const TX = t => padL + (t / tMax) * plotW;
@@ -1023,6 +1012,177 @@
             gctx.fillText('vᵦ', padL + 70, padT + 28);
         }
 
+        // ========== 绘制：s-t 图 ==========
+        function drawST() {
+            const w = sview.width, h = sview.height;
+            stctx.clearRect(0, 0, w, h);
+
+            const padL = 50, padR = 18, padT = 16, padB = 32;
+            const plotW = w - padL - padR;
+            const plotH = h - padT - padB;
+
+            stctx.strokeStyle = '#7b8ea3';
+            stctx.lineWidth = 2;
+            stctx.beginPath();
+            stctx.moveTo(padL, padT);
+            stctx.lineTo(padL, padT + plotH);
+            stctx.lineTo(padL + plotW, padT + plotH);
+            stctx.stroke();
+
+            if (!sim || playIdx < 1) {
+                stctx.fillStyle = '#44586c';
+                stctx.font = '12px system-ui';
+                stctx.textAlign = 'center';
+                stctx.fillText('开始后将显示 s-t 图', w / 2, h / 2);
+                return;
+            }
+
+            const tMax = Math.max(6, sim.tEnd, sim.T[sim.T.length - 1] || 0);
+            const s0A = sim.XA[0], s0B = sim.XB[0];
+            let sHi = -Infinity, sLo = Infinity;
+            for (let i = 0; i < sim.XA.length; i++) {
+                sHi = Math.max(sHi, sim.XA[i] - s0A, sim.XB[i] - s0B);
+                sLo = Math.min(sLo, sim.XA[i] - s0A, sim.XB[i] - s0B);
+            }
+            sHi = Math.max(sHi, 0.5) * 1.15;
+            sLo = Math.min(sLo, 0) * 1.15;
+            if (sHi <= 0) sHi = 1;
+
+            const TX = t => padL + (t / tMax) * plotW;
+            const SY = s => padT + plotH - ((s - sLo) / (sHi - sLo)) * plotH;
+
+            // 时间网格（与 v-t 图一致）
+            stctx.strokeStyle = '#1f2d3d';
+            stctx.lineWidth = 1;
+            const tStep = tMax <= 6 ? 1 : 2;
+            for (let t = 0; t <= tMax; t += tStep) {
+                const x = TX(t);
+                stctx.beginPath(); stctx.moveTo(x, padT); stctx.lineTo(x, padT + plotH); stctx.stroke();
+                stctx.fillStyle = '#8899aa';
+                stctx.font = '10px system-ui';
+                stctx.textAlign = 'center';
+                stctx.fillText(t.toFixed(0) + 's', x, padT + plotH + 14);
+            }
+            // 位移网格
+            const sRange = sHi - sLo;
+            const rawS = sRange / 4;
+            const magS = Math.pow(10, Math.floor(Math.log10(rawS)));
+            let sStep = magS;
+            if (rawS / magS > 5) sStep = magS * 10;
+            else if (rawS / magS > 2) sStep = magS * 5;
+            else if (rawS / magS > 1) sStep = magS * 2;
+            const sDec = sStep < 1 ? 1 : 0;
+            const sStart = Math.ceil(sLo / sStep) * sStep;
+            for (let s = sStart; s <= sHi; s += sStep) {
+                const y = SY(s);
+                stctx.beginPath(); stctx.moveTo(padL, y); stctx.lineTo(padL + plotW, y); stctx.stroke();
+                stctx.fillStyle = '#8899aa';
+                stctx.font = '10px system-ui';
+                stctx.textAlign = 'right';
+                stctx.fillText(s.toFixed(sDec), padL - 5, y + 3);
+            }
+            // 零线
+            if (sLo < 0 && sHi > 0) {
+                const y0 = SY(0);
+                stctx.strokeStyle = 'rgba(255,255,255,0.25)';
+                stctx.lineWidth = 1;
+                stctx.beginPath(); stctx.moveTo(padL, y0); stctx.lineTo(padL + plotW, y0); stctx.stroke();
+            }
+
+            // 事件标注
+            if (sim.t1 !== null && sim.t1 <= tMax) {
+                stctx.strokeStyle = 'rgba(255,255,255,0.18)';
+                stctx.setLineDash([4, 4]);
+                stctx.beginPath();
+                stctx.moveTo(TX(sim.t1), padT);
+                stctx.lineTo(TX(sim.t1), padT + plotH);
+                stctx.stroke();
+                stctx.setLineDash([]);
+                stctx.fillStyle = sim.slipAfter ? '#ffdd57' : '#ffaa22';
+                stctx.font = '10px system-ui';
+                stctx.textAlign = 'center';
+                stctx.fillText(sim.slipAfter ? '共速后滑' : '共速', TX(sim.t1), padT + 10);
+            }
+            if (sim.willSlideOff && sim.tOff !== null && sim.tOff <= tMax) {
+                stctx.strokeStyle = 'rgba(255,102,68,0.35)';
+                stctx.setLineDash([4, 4]);
+                stctx.beginPath();
+                stctx.moveTo(TX(sim.tOff), padT);
+                stctx.lineTo(TX(sim.tOff), padT + plotH);
+                stctx.stroke();
+                stctx.setLineDash([]);
+                stctx.fillStyle = '#ff8866';
+                stctx.font = '10px system-ui';
+                stctx.textAlign = 'center';
+                stctx.fillText('滑出', TX(sim.tOff), padT + 10);
+            }
+
+            // 曲线 A（位移 = XA - XA[0]）
+            stctx.strokeStyle = '#3399ff';
+            stctx.lineWidth = 2;
+            stctx.lineJoin = 'round';
+            stctx.beginPath();
+            stctx.moveTo(TX(sim.T[0]), SY(sim.XA[0] - s0A));
+            const endIdx = Math.min(playIdx + 1, sim.XA.length);
+            for (let i = 1; i < endIdx; i++) {
+                stctx.lineTo(TX(sim.T[i]), SY(sim.XA[i] - s0A));
+            }
+            stctx.stroke();
+
+            // 曲线 B（位移 = XB - XB[0]）
+            stctx.strokeStyle = '#ff9933';
+            stctx.lineWidth = 2;
+            stctx.beginPath();
+            stctx.moveTo(TX(sim.T[0]), SY(sim.XB[0] - s0B));
+            for (let i = 1; i < endIdx; i++) {
+                stctx.lineTo(TX(sim.T[i]), SY(sim.XB[i] - s0B));
+            }
+            stctx.stroke();
+
+            // 播放头
+            const ci = Math.min(playIdx, sim.T.length - 1);
+            const pxNow = TX(sim.T[ci]);
+            stctx.strokeStyle = 'rgba(51, 136, 221, 0.4)';
+            stctx.lineWidth = 1;
+            stctx.beginPath();
+            stctx.moveTo(pxNow, padT);
+            stctx.lineTo(pxNow, padT + plotH);
+            stctx.stroke();
+            stctx.fillStyle = '#3399ff';
+            stctx.beginPath(); stctx.arc(pxNow, SY(sim.XA[ci] - s0A), 3.5, 0, Math.PI * 2); stctx.fill();
+            stctx.fillStyle = '#ff9933';
+            stctx.beginPath(); stctx.arc(pxNow, SY(sim.XB[ci] - s0B), 3.5, 0, Math.PI * 2); stctx.fill();
+
+            // 轴标签
+            stctx.fillStyle = '#8899aa';
+            stctx.font = '11px system-ui';
+            stctx.textAlign = 'center';
+            stctx.fillText('t (s)', padL + plotW / 2, h - 4);
+            stctx.save();
+            stctx.translate(9, padT + plotH / 2);
+            stctx.rotate(-Math.PI / 2);
+            stctx.fillText('s (m)', 0, 0);
+            stctx.restore();
+
+            // 图例
+            stctx.textAlign = 'left';
+            stctx.fillStyle = '#3399ff';
+            stctx.fillRect(padL + 6, padT + 22, 14, 3);
+            stctx.fillStyle = '#8899aa';
+            stctx.font = '10px system-ui';
+            stctx.fillText('sₐ', padL + 24, padT + 28);
+            stctx.fillStyle = '#ff9933';
+            stctx.fillRect(padL + 52, padT + 22, 14, 3);
+            stctx.fillStyle = '#8899aa';
+            stctx.fillText('sᵦ', padL + 70, padT + 28);
+        }
+
+        // ========== 双图同步绘制 ==========
+        function drawCharts() {
+            drawGraph();
+            drawST();
+        }
+
         // ========== 动画帧 ==========
         function frame(ts) {
             if (state !== 'running') return;
@@ -1087,7 +1247,7 @@
                 }
             }
 
-            drawGraph();
+            drawCharts();
             animId = requestAnimationFrame(frame);
         }
 
@@ -1102,12 +1262,21 @@
             playIdx = lastI;
 
             drawScene(sim.T[lastI], drawA, drawB);
-            drawGraph();
+            drawCharts();
 
             elState.textContent = '结束';
             elState.style.color = '#aab';
             btnStart.disabled = true;
             btnReset.disabled = false;
+
+            elV0A.disabled = false;
+            elV0B.disabled = false;
+            elMA.disabled = false;
+            elMB.disabled = false;
+            elMu.disabled = false;
+            elMu2.disabled = false;
+            elL.disabled = false;
+            elTs.disabled = false;
 
             let msg;
             if (sim.willSlideOff) {
@@ -1142,14 +1311,15 @@
         function resizeAll() {
             setupCanvas(canvas, view, BASE_WIDTH, BASE_HEIGHT);
             setupCanvas(graphCanvas, gview, GRAPH_WIDTH, GRAPH_HEIGHT);
+            setupCanvas(stCanvas, sview, GRAPH_WIDTH, GRAPH_HEIGHT);
             if (lastDraw) {
                 drawScene(simT, lastDraw.drawA, lastDraw.drawB);
             } else {
-                const bw = P.L * 0.12;
+                const bw = P.L * BLOCK_W_FRAC;
                 const sx0 = P.v0A >= P.v0B ? 0 : P.L - bw;
                 drawScene(0, { x: sx0, v: P.v0A, onPlate: true }, { x: 0, v: P.v0B });
             }
-            drawGraph();
+            drawCharts();
         }
 
         // ========== 数据面板 ==========
@@ -1179,6 +1349,31 @@
             }
         }
 
+        // ========== 参数预览守卫：结束态拖动滑条时自动回到预览态 ==========
+        function previewGuard() {
+            if (state === 'running') return false;
+            if (state === 'ended') {
+                state = 'idle';
+                simT = 0;
+                playIdx = 0;
+                slideOffTriggered = false;
+                elVA.textContent = P.v0A.toFixed(2) + ' m/s';
+                elVB.textContent = P.v0B.toFixed(2) + ' m/s';
+                elVR.textContent = '—';
+                elState.textContent = '待开始';
+                elState.style.color = '#99aabb';
+                elStatus.textContent = '';
+                btnStart.disabled = false;
+                btnReset.disabled = true;
+                const bw = P.L * BLOCK_W_FRAC;
+                const sx0 = P.v0A >= P.v0B ? 0 : P.L - bw;
+                lastDraw = { drawA: { x: sx0, v: P.v0A, onPlate: true }, drawB: { x: 0, v: P.v0B } };
+                drawScene(0, lastDraw.drawA, lastDraw.drawB);
+                drawCharts();
+            }
+            return true;
+        }
+
         // ========== 控制 ==========
         function start() {
             if (state === 'running') return;
@@ -1205,13 +1400,13 @@
             elL.disabled = true;
             elTs.disabled = true;
 
-            const bw = P.L * 0.12;
+            const bw = P.L * BLOCK_W_FRAC;
             const sx0 = P.v0A >= P.v0B ? 0 : P.L - bw;
             const drawA = { x: sx0, v: P.v0A, onPlate: true };
             const drawB = { x: 0, v: P.v0B };
             lastDraw = { drawA, drawB };
             drawScene(0, drawA, drawB);
-            drawGraph();
+            drawCharts();
 
             animId = requestAnimationFrame(frame);
         }
@@ -1264,100 +1459,93 @@
             btnStart.disabled = false;
             btnReset.disabled = true;
 
-            const bw = P.L * 0.12;
+            const bw = P.L * BLOCK_W_FRAC;
             const sx0 = P.v0A >= P.v0B ? 0 : P.L - bw;
             const drawA = { x: sx0, v: P.v0A, onPlate: true };
             const drawB = { x: 0, v: P.v0B };
             lastDraw = { drawA, drawB };
             drawScene(0, drawA, drawB);
-            drawGraph();
+            drawCharts();
         }
 
         // ========== 事件绑定 ==========
         elV0A.addEventListener('input', () => {
             P.v0A = parseFloat(elV0A.value);
             elV0AVal.textContent = P.v0A.toFixed(1) + ' m/s';
-            if (state === 'idle') {
-                elVA.textContent = P.v0A.toFixed(2) + ' m/s';
-                sim = simulate();
-                updateDataPanel();
-                const bw = P.L * 0.12;
-                const sx0 = P.v0A >= P.v0B ? 0 : P.L - bw;
-                const drawA = { x: sx0, v: P.v0A, onPlate: true };
-                const drawB = { x: 0, v: P.v0B };
-                lastDraw = { drawA, drawB };
-                drawScene(0, drawA, drawB);
-                drawGraph();
-            }
+            if (!previewGuard()) return;
+            elVA.textContent = P.v0A.toFixed(2) + ' m/s';
+            sim = simulate();
+            updateDataPanel();
+            const bw = P.L * BLOCK_W_FRAC;
+            const sx0 = P.v0A >= P.v0B ? 0 : P.L - bw;
+            const drawA = { x: sx0, v: P.v0A, onPlate: true };
+            const drawB = { x: 0, v: P.v0B };
+            lastDraw = { drawA, drawB };
+            drawScene(0, drawA, drawB);
+            drawCharts();
         });
 
         elV0B.addEventListener('input', () => {
             P.v0B = parseFloat(elV0B.value) / 10;
             elV0BVal.textContent = P.v0B.toFixed(1) + ' m/s';
-            if (state === 'idle') {
-                elVB.textContent = P.v0B.toFixed(2) + ' m/s';
-                sim = simulate();
-                updateDataPanel();
-                const bw = P.L * 0.12;
-                const sx0 = P.v0A >= P.v0B ? 0 : P.L - bw;
-                const drawA = { x: sx0, v: P.v0A, onPlate: true };
-                const drawB = { x: 0, v: P.v0B };
-                lastDraw = { drawA, drawB };
-                drawScene(0, drawA, drawB);
-                drawGraph();
-            }
+            if (!previewGuard()) return;
+            elVB.textContent = P.v0B.toFixed(2) + ' m/s';
+            sim = simulate();
+            updateDataPanel();
+            const bw = P.L * BLOCK_W_FRAC;
+            const sx0 = P.v0A >= P.v0B ? 0 : P.L - bw;
+            const drawA = { x: sx0, v: P.v0A, onPlate: true };
+            const drawB = { x: 0, v: P.v0B };
+            lastDraw = { drawA, drawB };
+            drawScene(0, drawA, drawB);
+            drawCharts();
         });
 
         elMA.addEventListener('input', () => {
             P.mA = parseFloat(elMA.value) / 10;
             elMAVal.textContent = P.mA.toFixed(1) + ' kg';
-            if (state === 'idle') {
-                sim = simulate();
-                updateDataPanel();
-            }
+            if (!previewGuard()) return;
+            sim = simulate();
+            updateDataPanel();
         });
 
         elMB.addEventListener('input', () => {
             P.mB = parseFloat(elMB.value) / 10;
             elMBVal.textContent = P.mB.toFixed(1) + ' kg';
-            if (state === 'idle') {
-                sim = simulate();
-                updateDataPanel();
-            }
+            if (!previewGuard()) return;
+            sim = simulate();
+            updateDataPanel();
         });
 
         elMu.addEventListener('input', () => {
             P.mu = parseFloat(elMu.value) / 100;
             elMuVal.textContent = P.mu.toFixed(2);
-            if (state === 'idle') {
-                sim = simulate();
-                updateDataPanel();
-            }
+            if (!previewGuard()) return;
+            sim = simulate();
+            updateDataPanel();
         });
 
         elMu2.addEventListener('input', () => {
             P.mu2 = parseFloat(elMu2.value) / 100;
             elMu2Val.textContent = P.mu2.toFixed(2);
-            if (state === 'idle') {
-                sim = simulate();
-                updateDataPanel();
-            }
+            if (!previewGuard()) return;
+            sim = simulate();
+            updateDataPanel();
         });
 
         elL.addEventListener('input', () => {
             P.L = parseFloat(elL.value);
             elLVal.textContent = P.L.toFixed(1) + ' m';
-            if (state === 'idle') {
-                sim = simulate();
-                updateDataPanel();
-                const bw = P.L * 0.12;
-                const sx0 = P.v0A >= P.v0B ? 0 : P.L - bw;
-                const drawA = { x: sx0, v: P.v0A, onPlate: true };
-                const drawB = { x: 0, v: P.v0B };
-                lastDraw = { drawA, drawB };
-                drawScene(0, drawA, drawB);
-                drawGraph();
-            }
+            if (!previewGuard()) return;
+            sim = simulate();
+            updateDataPanel();
+            const bw = P.L * BLOCK_W_FRAC;
+            const sx0 = P.v0A >= P.v0B ? 0 : P.L - bw;
+            const drawA = { x: sx0, v: P.v0A, onPlate: true };
+            const drawB = { x: 0, v: P.v0B };
+            lastDraw = { drawA, drawB };
+            drawScene(0, drawA, drawB);
+            drawCharts();
         });
 
         elTs.addEventListener('input', () => {
@@ -1372,6 +1560,7 @@
             const observer = new ResizeObserver(resizeAll);
             observer.observe(canvas);
             observer.observe(graphCanvas);
+            observer.observe(stCanvas);
         }
 
         // ========== 启动 ==========
