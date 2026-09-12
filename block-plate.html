@@ -329,7 +329,11 @@
         const BLOCK_W_FRAC = 0.08;
 
         function plateScale() {
-            return Math.max(8, (view.width - PAD_X - PAD_RIGHT) / P.L * 0.92);
+            if (!sim) return Math.max(8, (view.width - PAD_X - PAD_RIGHT) / P.L * 0.92);
+            const xMax = Math.max(...sim.XA, ...sim.XB, P.L);
+            const margin = 2;
+            const range = xMax + margin;
+            return Math.max(8, (view.width - PAD_X - PAD_RIGHT) / range * 0.92);
         }
 
         // ========== 物理参数 ==========
@@ -683,8 +687,7 @@
             if (!sim || sim.ON.length < 2) return;
             const mu1 = P.mu, mu2 = P.mu2;
             const groundY = view.height - PAD_BOTTOM;
-            const camX = drawB.x;
-            const SX = x => PAD_X + (x - camX) * s;
+            const SX = x => PAD_X + x * s;
 
             const aCX = drawA.x + (P.L * BLOCK_W_FRAC) / 2;
             const bCX = drawB.x + P.L / 2;
@@ -759,9 +762,8 @@
             ctx.clearRect(0, 0, view.width, view.height);
 
             const s = plateScale();
-            const camX = drawB.x;
             const groundY = view.height - PAD_BOTTOM;
-            const SX = x => PAD_X + (x - camX) * s;
+            const SX = x => PAD_X + x * s;
 
             // 水平网格
             ctx.strokeStyle = '#16222e';
@@ -769,10 +771,10 @@
             for (let gy = groundY - 44; gy > 24; gy -= 44) {
                 ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(view.width, gy); ctx.stroke();
             }
-            // 竖直网格
-            const wLeft  = camX - PAD_X / s;
-            const wRight = camX + (view.width - PAD_X) / s;
-            for (let m = Math.ceil(wLeft); m <= wRight; m++) {
+            // 竖直网格（世界坐标）
+            const wLeft  = 0;
+            const wRight = Math.max(...(sim ? [...sim.XA, ...sim.XB] : [drawB.x, drawB.x + P.L]), P.L);
+            for (let m = Math.ceil(wLeft); m <= Math.ceil(wRight); m++) {
                 const x = SX(m);
                 ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, groundY); ctx.stroke();
             }
@@ -785,12 +787,12 @@
             ctx.lineTo(view.width, groundY);
             ctx.stroke();
 
-            // 地面距离标注
+            // 地面距离标注（世界坐标）
             const labelStep = s >= 90 ? 2 : (s >= 40 ? 5 : 10);
             ctx.fillStyle = '#556677';
             ctx.font = '11px system-ui';
             ctx.textAlign = 'center';
-            for (let m = Math.ceil(wLeft / labelStep) * labelStep; m <= wRight; m += labelStep) {
+            for (let m = 0; m <= Math.ceil(wRight); m += labelStep) {
                 ctx.fillText(m + 'm', SX(m), groundY + 24);
             }
 
