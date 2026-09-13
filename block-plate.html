@@ -17,6 +17,11 @@
               红色 #ff4444 定长箭头（3×物块长，只示方向不示大小），
               摩擦力大小新增数据卡片"A 摩擦力 f₁"实时显示；
               物块放大 1/10（1.0m → 1.1m 正方形），默认板长跟随 20 倍关系为 22m。
+    v6 变更：新增"暂停/继续"按钮；预览态（未开始）物块与板块上无任何名称与箭头标识；
+              物块摩擦力箭头尾部锚定物块几何中心、标注红色小"f"；
+              参数滑条标签与界面文案全面汉化（去 A/B 字母），形体标注"物块"/"板"；
+              结束判定分情况：μ₂=0 时物块与板块都完全离开活动区域后结束
+              （废除固定 6 秒观察窗），μ₂>0 时两者停止后结束。
     适用场景：高中物理"板块模型"教学，可调 v₀A、v₀B、m_A、m_B、双动摩擦因数与板长 L，
               实时显示 v-t 图、相对位移、摩擦生热等数据，支持物块滑出后继续运动的情景。
     风格：与斜抛运动演示网页（oblique-throw-motion.html）统一的深色系列。
@@ -110,7 +115,7 @@
             font-size: 13px;
             color: #ccd;
             white-space: nowrap;
-            min-width: 96px;
+            min-width: 122px;
         }
         .param-row input[type=range] { flex: 1; }
         .param-row .val {
@@ -206,32 +211,32 @@
             <section class="param-group" aria-labelledby="parameterTitle">
                 <div class="group-title" id="parameterTitle">参数设定</div>
                 <div class="param-row">
-                    <label for="v0A">A 初速度 v₀A</label>
+                    <label for="v0A">物块初速度</label>
                     <input id="v0A" type="range" min="2" max="20" value="12" step="0.5">
                     <div class="val" id="v0AVal">12.0 m/s</div>
                 </div>
                 <div class="param-row">
-                    <label for="v0B">B 初速度 v₀B</label>
+                    <label for="v0B">板块初速度</label>
                     <input id="v0B" type="range" min="-100" max="100" value="20" step="5">
                     <div class="val" id="v0BVal">2.0 m/s</div>
                 </div>
                 <div class="param-row">
-                    <label for="mA">A 质量 m<sub>A</sub></label>
+                    <label for="mA">物块质量</label>
                     <input id="mA" type="range" min="10" max="50" value="20" step="1">
                     <div class="val" id="mAVal">2.0 kg</div>
                 </div>
                 <div class="param-row">
-                    <label for="mB">B 质量 m<sub>B</sub></label>
+                    <label for="mB">板块质量</label>
                     <input id="mB" type="range" min="10" max="100" value="40" step="1">
                     <div class="val" id="mBVal">4.0 kg</div>
                 </div>
                 <div class="param-row">
-                    <label for="mu">A-B 摩擦 μ₁</label>
+                    <label for="mu">物块-板块摩擦 μ₁</label>
                     <input id="mu" type="range" min="5" max="50" value="20" step="1">
                     <div class="val" id="muVal">0.20</div>
                 </div>
                 <div class="param-row">
-                    <label for="mu2">B-地摩擦 μ₂</label>
+                    <label for="mu2">板块-地面摩擦 μ₂</label>
                     <input id="mu2" type="range" min="0" max="50" value="0" step="1">
                     <div class="val" id="mu2Val">0.00</div>
                 </div>
@@ -249,14 +254,14 @@
             <section class="data-group" aria-labelledby="dataTitle" aria-live="polite">
                 <div class="group-title" id="dataTitle">实时数据显示</div>
                 <div class="data-grid">
-                    <div class="data-item"><span>物块 A v<sub>A</sub></span><b id="dVA">— m/s</b></div>
-                    <div class="data-item"><span>板块 B v<sub>B</sub></span><b id="dVB">— m/s</b></div>
+                    <div class="data-item"><span>物块速度</span><b id="dVA">— m/s</b></div>
+                    <div class="data-item"><span>板块速度</span><b id="dVB">— m/s</b></div>
                     <div class="data-item"><span>相对速度</span><b id="dVR">— m/s</b></div>
                     <div class="data-item"><span>运动状态</span><b id="dState">待开始</b></div>
                     <div class="data-item"><span>共速时刻</span><b id="dTEnd">—</b></div>
                     <div class="data-item"><span>共速后速度</span><b id="dVFinal">—</b></div>
                     <div class="data-item"><span>相对滑移</span><b id="dRelDisp">—</b></div>
-                    <div class="data-item"><span>A 摩擦力 f₁</span><b id="dFric">— N</b></div>
+                    <div class="data-item"><span>物块摩擦力 f</span><b id="dFric">— N</b></div>
                     <div class="data-item"><span>是否滑出</span><b id="dSlideOff">—</b></div>
                     <div class="data-item"><span>摩擦生热（总）</span><b id="dHeat">—</b></div>
                     <div class="data-item"><span>质量 (m<sub>A</sub>+m<sub>B</sub>)</span><b id="dMass">—</b></div>
@@ -265,16 +270,17 @@
         </div>
         <div class="actions">
             <button id="btnStart" type="button">开始</button>
+            <button id="btnPause" type="button" disabled>暂停</button>
             <button id="btnReset" type="button" disabled>重置</button>
         </div>
         <div class="status" id="status"></div>
         <div class="legend">
-            <span>🟦 物块 A</span>
-            <span>🟧 板块 B</span>
+            <span>🟦 物块</span>
+            <span>🟧 板块</span>
             <span style="color:#3399ff">— v<sub>A</sub>/s<sub>A</sub> 蓝线</span>
             <span style="color:#ff9933">— v<sub>B</sub>/s<sub>B</sub> 橙线</span>
-            <span style="color:#ffdd57">→ f₁（A-B）</span>
-            <span style="color:#ff6644">→ f₂（地面）</span>
+            <span style="color:#ff4444">→ f（物块受摩擦）</span>
+            <span style="color:#ffdd57">→ f₁′（板块受物块摩擦）</span><span style="color:#ff6644">→ f₂（地面）</span>
             <span>虚线：共速/滑出时刻（v-t 与 s-t 同步）</span>
         </div>
     </main>
@@ -318,6 +324,7 @@
         const elMass = document.getElementById('dMass');
         const elStatus = document.getElementById('status');
         const btnStart = document.getElementById('btnStart');
+        const btnPause = document.getElementById('btnPause');
         const btnReset = document.getElementById('btnReset');
 
         const g = 9.8;
@@ -380,7 +387,6 @@
             let sRelStart = sRel;
             let Q = 0;
             let bMovedEver = Math.abs(v0B) > 1e-9;
-            let horizon = Infinity;
 
             // 初始共速：需满足 μ₁≥μ₂ 才能锁死；否则立即再次相对滑动（slipAfter）
             if (locked) {
@@ -403,13 +409,16 @@
                 XA.push(xA);
                 XB.push(xB);
                 ON.push(onPlate ? 1 : 0);
-                // 需求三：物体未停止而完全越出运动区域 -> 整个演示立即结束
-                if (tExit === null &&
-                    (xA >= REGION_MAX || xA + bw <= REGION_MIN ||
-                     xB >= REGION_MAX || xB + L <= REGION_MIN)) {
-                    tExit = t;
-                    if (xA >= REGION_MAX || xA + bw <= REGION_MIN) exitObjs.push('物块 A');
-                    if (xB >= REGION_MAX || xB + L <= REGION_MIN) exitObjs.push('板块 B');
+                // 需求六（v6）：μ₂=0 时物体不会停止，物块与板块都完全离开活动区域后结束；
+                // μ₂>0 时由"双停"（tStop）结束，不在此判定
+                if (tExit === null && mu2 === 0) {
+                    const aGone = xA >= REGION_MAX || xA + bw <= REGION_MIN;
+                    const bGone = xB >= REGION_MAX || xB + L <= REGION_MIN;
+                    if (aGone && bGone) {
+                        tExit = t;
+                        if (aGone) exitObjs.push('物块');
+                        if (bGone) exitObjs.push('板块');
+                    }
                 }
             };
             rec();
@@ -420,16 +429,13 @@
                     const v = vA;
                     const dec = (mu2 > 0 && Math.abs(v) > 1e-9) ? -Math.sign(v) * mu2 * g : 0;
                     if (Math.abs(dec) < 1e-12) {
-                        if (!isFinite(horizon)) horizon = t + 6;
-                        const tau = Math.min(dtMax, horizon - t);
-                        if (tau <= 1e-12) break;
-                        xB += v * tau;
-                        xA += v * tau;
+                        // μ₂=0 锁死匀速：一直匀速，直至物块与板块都离开活动区域（需求六）
+                        xB += v * dtMax;
+                        xA += v * dtMax;
                         sRel = xA - xB;
                         if (!bMovedEver && Math.abs(xB) > 1e-9) bMovedEver = true;
-                        t += tau;
+                        t += dtMax;
                         rec();
-                        if (t >= horizon) break;
                         continue;
                     }
                     const tauStop = Math.abs(v / dec);
@@ -632,9 +638,7 @@
                 if (Math.abs(vA) < 1e-9) vA = 0;
                 if (Math.abs(vB) < 1e-9) vB = 0;
 
-                if (mu2 === 0 && !isFinite(horizon)) horizon = (tOff || t1 || 0) + 6;
                 rec();
-                if (isFinite(horizon) && t >= horizon) break;
             }
 
             if (t1 === null && !onPlate && sRel1 === null) {
@@ -646,8 +650,6 @@
                 tEnd = tExit;
             } else if (tStop !== null) {
                 tEnd = tStop + 1.0;
-            } else if (isFinite(horizon)) {
-                tEnd = horizon;
             } else {
                 tEnd = t;
             }
@@ -690,9 +692,11 @@
             return Math.max(ARROW_MIN, Math.min(ARROW_MAX, len));
         }
 
-        function drawArrow(cx, cy, dir, len, color, label) {
-            const backX = cx - dir * (len / 2);
-            const tipX = cx + dir * (len / 2);
+        function drawArrow(cx, cy, dir, len, color, label, anchor) {
+            // 需求三（v6）：anchor='tail' 时箭头尾部（起点）位于 cx（物块几何中心），
+            // 默认 'center' 为箭头中点对准 cx（板上/地面箭头维持原样）
+            const backX = anchor === 'tail' ? cx : cx - dir * (len / 2);
+            const tipX = anchor === 'tail' ? cx + dir * len : cx + dir * (len / 2);
             ctx.strokeStyle = color;
             ctx.fillStyle = color;
             ctx.lineWidth = 2.5;
@@ -706,13 +710,15 @@
             ctx.lineTo(tipX - dir * 8, cy + 5);
             ctx.closePath();
             ctx.fill();
-            ctx.font = 'bold 12px system-ui';
+            ctx.font = 'bold 11px system-ui';
             ctx.textAlign = 'center';
             ctx.fillText(label, tipX - dir * 16, cy + 4);
         }
 
         function drawForces(t, drawA, drawB, s) {
             if (!sim || sim.ON.length < 2) return;
+            // 需求二（v6）：预览态（未开始）不绘制任何摩擦力箭头
+            if (state === 'idle') return;
             const mu1 = P.mu, mu2 = P.mu2;
             const groundY = view.height - PAD_BOTTOM;
             const blockH = BLOCK_W_M * s;
@@ -738,18 +744,18 @@
                         const fDir = -sig;
                         const aMidY = groundY - PLATE_H - blockH / 2;
                         // 需求二：物块摩擦力箭头红色定长（3×物块长），只示方向
-                        drawArrow(aScreenX, aMidY, fDir, 3 * BLOCK_W_M * s, `rgba(255,68,68,${fAlpha})`, 'f₁');
+                        drawArrow(aScreenX, aMidY, fDir, 3 * BLOCK_W_M * s, `rgba(255,68,68,${fAlpha})`, 'f', 'tail');
                         const bTopY = groundY - PLATE_H - 6;
-                        drawArrow(aScreenX, bTopY, -fDir, arrowLen(fMag), `rgba(255,221,87,${fAlpha})`, "f₁'");
+                        drawArrow(bScreenX, bTopY, -fDir, arrowLen(fMag), `rgba(255,221,87,${fAlpha})`, "f₁'");
                     }
                 } else if (mu2 > 0 && Math.abs(drawA.v) > 1e-6) {
                     const fStat = P.mA * mu2 * g;
                     if (fStat > 0.1) {
                         const fDir = Math.sign(drawA.v) > 0 ? -1 : 1;
                         const aMidY = groundY - PLATE_H - blockH / 2;
-                        drawArrow(aScreenX, aMidY, fDir, 3 * BLOCK_W_M * s, `rgba(255,68,68,${fAlpha})`, 'f₁');
+                        drawArrow(aScreenX, aMidY, fDir, 3 * BLOCK_W_M * s, `rgba(255,68,68,${fAlpha})`, 'f', 'tail');
                         const bTopY = groundY - PLATE_H - 6;
-                        drawArrow(aScreenX, bTopY, -fDir, arrowLen(fStat), `rgba(255,221,87,${fAlpha})`, "f₁'");
+                        drawArrow(bScreenX, bTopY, -fDir, arrowLen(fStat), `rgba(255,221,87,${fAlpha})`, "f₁'");
                     }
                 }
 
@@ -778,7 +784,7 @@
                     const aBotNow = groundY - PLATE_H + PLATE_H * dropFrac;
                     const aMidY = aBotNow - blockH / 2;
                     const alpha = (0.15 + 0.85 * dropFrac).toFixed(2);
-                    drawArrow(aScreenX, aMidY, fDir, 3 * BLOCK_W_M * s, `rgba(255,68,68,${alpha})`, 'f₂');
+                    drawArrow(aScreenX, aMidY, fDir, 3 * BLOCK_W_M * s, `rgba(255,68,68,${alpha})`, 'f', 'tail');
                 }
                 if (mu2 > 0 && Math.abs(drawB.v) > 1e-6) {
                     const fB = mu2 * P.mB * g;
@@ -863,12 +869,13 @@
                 ctx.stroke();
             }
 
-            // 需求二：板厚 12px 不再容纳完整标签，板身内嵌短标记 "B"
-            // （速度/板长信息由参数滑条与数据面板承载）
-            ctx.fillStyle = '#fff';
-            ctx.font = 'bold 10px system-ui';
-            ctx.textAlign = 'center';
-            ctx.fillText('B', (bLeft + bRight) / 2, bTop + 9);
+            // 需求二/五（v6）：板身内嵌汉字"板"，预览态不显示任何标识
+            if (state !== 'idle') {
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 10px system-ui';
+                ctx.textAlign = 'center';
+                ctx.fillText('板', (bLeft + bRight) / 2, bTop + 9);
+            }
 
             // 物块 A
             // 物块 A：固定正方形（需求一），宽 = 高 = BLOCK_W_M × scale
@@ -883,7 +890,7 @@
 
             // 需求 21：块宽不足以容纳文字时（移动端窄块），名称/速度上移到块上方
             ctx.font = 'bold 11px system-ui';
-            const nameTooWide = ctx.measureText('物块 A').width > blockW;
+            const nameTooWide = ctx.measureText('物块').width > blockW;
 
             if (drawA.onPlate) {
                 const aLeft = SX(drawA.x);
@@ -901,14 +908,16 @@
                 ctx.lineWidth = 2;
                 ctx.strokeRect(aLeft, aTopY, blockW, aBot - aTopY);
 
-                ctx.fillStyle = '#fff';
-                ctx.font = 'bold 11px system-ui';
-                ctx.textAlign = 'center';
-                // 需求一（v5）：物块上只保留名称，速度移至数据面板
-                if (nameTooWide) {
-                    ctx.fillText('物块 A', aLeft + blockW / 2, aTopY - 16);
-                } else {
-                    ctx.fillText('物块 A', aLeft + blockW / 2, aTopY + 14);
+                // 需求五（v6）：标注"物块"（去字母），预览态不显示
+                if (state !== 'idle') {
+                    ctx.fillStyle = '#fff';
+                    ctx.font = 'bold 11px system-ui';
+                    ctx.textAlign = 'center';
+                    if (nameTooWide) {
+                        ctx.fillText('物块', aLeft + blockW / 2, aTopY - 16);
+                    } else {
+                        ctx.fillText('物块', aLeft + blockW / 2, aTopY + 14);
+                    }
                 }
             } else {
                 const ax = Math.max(4, Math.min(SX(drawA.x), view.width - blockW - 4));
@@ -926,11 +935,13 @@
                 ctx.lineWidth = 2;
                 ctx.strokeRect(ax, aTopY, blockW, blockH);
 
-                ctx.fillStyle = '#fff';
-                ctx.font = 'bold 11px system-ui';
-                ctx.textAlign = 'center';
-                // 需求一（v5）：滑出后物块仅保留名称 'A'
-                ctx.fillText('A', ax + blockW / 2, nameTooWide ? aTopY - 16 : aTopY + 14);
+                // 需求五（v6）：滑出后标注"物块"，预览态不显示
+                if (state !== 'idle') {
+                    ctx.fillStyle = '#fff';
+                    ctx.font = 'bold 11px system-ui';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('物块', ax + blockW / 2, nameTooWide ? aTopY - 16 : aTopY + 14);
+                }
             }
 
             // 摩擦力
@@ -1323,7 +1334,7 @@
 
             if (!onPlate && !slideOffTriggered) {
                 slideOffTriggered = true;
-                elStatus.textContent = '⚠ 物块 A 已滑出板块 B，两者以各自速度继续运动...';
+                elStatus.textContent = '⚠ 物块已滑出板块，两者以各自速度继续运动...';
             }
 
             drawScene(simT, drawA, drawB);
@@ -1384,6 +1395,8 @@
             elState.textContent = '结束';
             elState.style.color = '#aab';
             btnStart.disabled = true;
+            btnPause.disabled = true;
+            btnPause.textContent = '暂停';
             btnReset.disabled = false;
 
             elV0A.disabled = false;
@@ -1397,22 +1410,22 @@
 
             let msg;
             if (sim.tExit !== null) {
-                msg = `${sim.exitObjs.join('、')} 未停止即穿过活动区域，演示结束。`;
+                msg = `${sim.exitObjs.join('、')}未停止即穿过活动区域，`;
             } else if (sim.willSlideOff) {
                 const edge = sim.offEdge === 'back' ? '后' : '前';
                 msg = sim.mu2 > 0
-                    ? `物块 A 于 t = ${sim.tOff.toFixed(2)} s 从板块${edge}缘滑出，随后 A、B 均在地面摩擦下减速停止。`
-                    : `物块 A 于 t = ${sim.tOff.toFixed(2)} s 从板块${edge}缘滑出，A、B 分别以 ${sim.VA[Math.min(playIdx, lastI)].toFixed(2)} m/s 与 ${sim.VB[Math.min(playIdx, lastI)].toFixed(2)} m/s 匀速运动。`;
+                    ? `物块于 t = ${sim.tOff.toFixed(2)} s 从板块${edge}缘滑出，随后物块与板块均在地面摩擦下减速停止，`
+                    : `物块于 t = ${sim.tOff.toFixed(2)} s 从板块${edge}缘滑出，物块、板块分别以 ${sim.VA[Math.min(playIdx, lastI)].toFixed(2)} m/s 与 ${sim.VB[Math.min(playIdx, lastI)].toFixed(2)} m/s 匀速运动，`;
             } else if (!sim.bMovedEver) {
-                msg = `地面摩擦足够大（μ₁m_A ≤ μ₂(m_A+m_B)），B 保持静止；物块 A 在板上滑行 ${sim.sRel1.toFixed(2)} m 后停下。`;
+                msg = `地面摩擦足够大（μ₁m_A ≤ μ₂(m_A+m_B)），板块保持静止；物块在板上滑行 ${sim.sRel1.toFixed(2)} m 后停下，`;
             } else if (sim.slipAfter) {
-                msg = `两者于 t = ${(sim.t1 ?? 0).toFixed(2)} s 达到共同速度 ${(sim.vCommon ?? 0).toFixed(2)} m/s，但 μ₁ < μ₂，静摩擦不足以锁死，随后再次相对滑动。`;
+                msg = `两者于 t = ${(sim.t1 ?? 0).toFixed(2)} s 达到共同速度 ${(sim.vCommon ?? 0).toFixed(2)} m/s，但 μ₁ < μ₂，静摩擦不足以锁死，随后再次相对滑动，`;
             } else if (sim.mu2 > 0) {
-                msg = `两者于 t = ${(sim.t1 ?? 0).toFixed(2)} s 达到共同速度 ${(sim.vCommon ?? 0).toFixed(2)} m/s（μ₁≥μ₂，可锁死），随后一起匀减速停止。`;
+                msg = `两者于 t = ${(sim.t1 ?? 0).toFixed(2)} s 达到共同速度 ${(sim.vCommon ?? 0).toFixed(2)} m/s（μ₁≥μ₂，可锁死），随后一起匀减速停止，`;
             } else {
-                msg = `物块 A 与板块 B 达到共同速度 ${(sim.vCommon ?? 0).toFixed(2)} m/s，一起匀速运动。`;
+                msg = `物块与板块达到共同速度 ${(sim.vCommon ?? 0).toFixed(2)} m/s，一起匀速运动，`;
             }
-            elStatus.textContent = msg;
+            elStatus.textContent = msg + '演示结束。';
         }
 
         // ========== 自适应尺寸 ==========
@@ -1507,6 +1520,8 @@
                 elState.style.color = '#99aabb';
                 elStatus.textContent = '';
                 btnStart.disabled = false;
+                btnPause.disabled = true;
+                btnPause.textContent = '暂停';
                 btnReset.disabled = true;
                 redrawPreview();
             }
@@ -1529,6 +1544,8 @@
 
             state = 'running';
             btnStart.disabled = true;
+            btnPause.disabled = false;
+            btnPause.textContent = '暂停';
             btnReset.disabled = false;
             elV0A.disabled = true;
             elV0B.disabled = true;
@@ -1597,6 +1614,8 @@
             updateDataPanel();
 
             btnStart.disabled = false;
+            btnPause.disabled = true;
+            btnPause.textContent = '暂停';
             btnReset.disabled = true;
 
             redrawPreview();
@@ -1675,6 +1694,20 @@
 
         btnStart.addEventListener('click', start);
         btnReset.addEventListener('click', () => reset(false));
+        // 需求一（v6）：暂停/继续
+        btnPause.addEventListener('click', () => {
+            if (state === 'running') {
+                state = 'paused';
+                if (animId) { cancelAnimationFrame(animId); animId = null; }
+                lastTs = null;
+                btnPause.textContent = '继续';
+            } else if (state === 'paused') {
+                state = 'running';
+                lastTs = null;
+                btnPause.textContent = '暂停';
+                animId = requestAnimationFrame(frame);
+            }
+        });
         window.addEventListener('resize', resizeAll);
         if (typeof ResizeObserver !== 'undefined') {
             const observer = new ResizeObserver(resizeAll);
