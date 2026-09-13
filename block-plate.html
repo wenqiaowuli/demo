@@ -17,6 +17,8 @@
               红色 #ff4444 定长箭头（3×物块长，只示方向不示大小），
               摩擦力大小新增数据卡片"A 摩擦力 f₁"实时显示；
               物块放大 1/10（1.0m → 1.1m 正方形），默认板长跟随 20 倍关系为 22m。
+    v8 修订（第二批）：共速锁定后 A-B 间摩擦标记消失（数据面板同步 0.00）；
+              v₀B 默认值 2→0（板块默认静止，修正"板块闪现运动/动摩擦箭头"问题）。
     v6 变更：新增"暂停/继续"按钮；预览态（未开始）物块与板块上无任何名称与箭头标识；
               物块摩擦力箭头尾部锚定物块几何中心、标注红色小"f"；
               参数滑条标签与界面文案全面汉化（去 A/B 字母），形体标注"物块"/"板"；
@@ -217,8 +219,8 @@
                 </div>
                 <div class="param-row">
                     <label for="v0B">板块初速度</label>
-                    <input id="v0B" type="range" min="-100" max="100" value="20" step="5">
-                    <div class="val" id="v0BVal">2.0 m/s</div>
+                    <input id="v0B" type="range" min="-100" max="100" value="0" step="5">
+                    <div class="val" id="v0BVal">0.0 m/s</div>
                 </div>
                 <div class="param-row">
                     <label for="mA">物块质量</label>
@@ -359,7 +361,7 @@
         const P = {
             mA: 2, mB: 4,
             v0A: 12,
-            v0B: 2,
+            v0B: 0,
             mu: 0.2,
             mu2: 0,
             L: 22,
@@ -751,16 +753,8 @@
                         const bTopY = groundY - PLATE_H - 6;
                         drawArrow(bScreenX, groundY - PLATE_H / 2, -fDir, arrowLen(fMag), `rgba(255,221,87,${fAlpha})`, 'f', 'tail');
                     }
-                } else if (mu2 > 0 && Math.abs(drawA.v) > 1e-6) {
-                    const fStat = P.mA * mu2 * g;
-                    if (fStat > 0.1) {
-                        const fDir = Math.sign(drawA.v) > 0 ? -1 : 1;
-                        const aMidY = groundY - PLATE_H - blockH / 2;
-                        drawArrow(aScreenX, aMidY, fDir, arrowLen(fStat), `rgba(255,68,68,${fAlpha})`, 'f', 'tail');
-                        const bTopY = groundY - PLATE_H - 6;
-                        drawArrow(bScreenX, groundY - PLATE_H / 2, -fDir, arrowLen(fStat), `rgba(255,221,87,${fAlpha})`, 'f', 'tail');
-                    }
                 }
+                // 需求修订 4（v8）：共速锁定后 A-B 间摩擦标记消失（整体分析口径），不再绘制
 
                 if (Math.abs(drawB.v) > 1e-6) {
                     const fGnd = mu2 * (P.mA + P.mB) * g;
@@ -1331,9 +1325,8 @@
                 fA = (P.mu2 > 0 && Math.abs(vA) > 1e-6) ? P.mu2 * P.mA * g : 0;
             } else if (Math.abs(vA - vB) > 1e-6) {
                 fA = P.mu * P.mA * g;
-            } else if (P.mu2 > 0 && Math.abs(vA) > 1e-6) {
-                fA = P.mu2 * P.mA * g;
             }
+            // 需求修订 4（v8）：共速锁定阶段 A-B 摩擦消失（教学口径）→ fA 保持 0
             elFric.textContent = fA.toFixed(2) + ' N';
 
             if (!onPlate) {
