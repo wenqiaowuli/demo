@@ -756,7 +756,7 @@
                     if (fStat > 0.1) {
                         const fDir = Math.sign(drawA.v) > 0 ? -1 : 1;
                         const aMidY = groundY - PLATE_H - blockH / 2;
-                        drawArrow(aScreenX, aMidY, fDir, arrowLen(fMag), `rgba(255,68,68,${fAlpha})`, 'f', 'tail');
+                        drawArrow(aScreenX, aMidY, fDir, arrowLen(fStat), `rgba(255,68,68,${fAlpha})`, 'f', 'tail');
                         const bTopY = groundY - PLATE_H - 6;
                         drawArrow(bScreenX, groundY - PLATE_H / 2, -fDir, arrowLen(fStat), `rgba(255,221,87,${fAlpha})`, 'f', 'tail');
                     }
@@ -917,6 +917,17 @@
 
             // 摩擦力
             drawForces(t, drawA, drawB, s);
+
+            // 需求修订 3（v8）：几何中心标记点——直观标示摩擦力箭头起点（预览态不显示）
+            if (state !== 'idle') {
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(SX(drawA.x + BLOCK_W_M / 2), aTopY + blockH / 2, 2.5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc((bLeft + bRight) / 2, groundY - PLATE_H / 2, 2.5, 0, Math.PI * 2);
+                ctx.fill();
+            }
         }
 
         // ========== 绘制：v-t 图 ==========
