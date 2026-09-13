@@ -328,11 +328,18 @@
         const BLOCK_H = 34;
         const BLOCK_W_FRAC = 0.08;
 
+        // 世界坐标左界：支持 v₀B < 0 时 B 向左运动出负半轴（需求 二.2 反向场景）
+        function worldLeft() {
+            if (!sim) return 0;
+            return Math.min(0, ...sim.XA, ...sim.XB);
+        }
+
         function plateScale() {
             if (!sim) return Math.max(8, (view.width - PAD_X - PAD_RIGHT) / P.L * 0.92);
             const xMax = Math.max(...sim.XA, ...sim.XB, P.L);
+            const xMin = worldLeft();
             const margin = 2;
-            const range = xMax + margin;
+            const range = xMax - xMin + margin;
             return Math.max(8, (view.width - PAD_X - PAD_RIGHT) / range * 0.92);
         }
 
@@ -536,10 +543,11 @@
 
                     const dxB = vB * tau + 0.5 * aB * tau * tau;
                     const dxRel = vRel0 * tau + 0.5 * arel * tau * tau;
-                    const dsA = aA * tau;
+                    const dxA = vA * tau + 0.5 * aA * tau * tau;
 
                     Q += mu1 * mA * g * Math.abs(dxRel) + mu2 * (mA + mB) * g * Math.abs(dxB);
 
+                    xA += dxA;
                     xB += dxB;
                     if (!bMovedEver && Math.abs(xB) > 1e-9) bMovedEver = true;
                     vA += aA * tau;
@@ -553,38 +561,35 @@
                         if (sRel >= L - 1e-9) offEdge = 'front';
                         else offEdge = 'back';
                         tOff = t;
-                        sRel1 = Math.abs(sRel - sRelStart);
+                        sRel1 = (sRel1 || 0) + Math.abs(sRel - sRelStart);
                     } else if (eventType === 'rel') {
-                        vA = vA; vB = vB;
                         if (Math.abs(vA - vB) > 1e-9) {
                             sigma = Math.sign(vA - vB) || sigma;
                         } else {
                             const vcm = vA;
                             if (Math.abs(vcm) < 1e-9) {
-                                if (sRel1 === null) sRel1 = Math.abs(sRel - sRelStart);
+                                sRel1 = (sRel1 || 0) + Math.abs(sRel - sRelStart);
                                 vA = 0; vB = 0; tStop = t;
                                 rec(); break;
                             }
-                            if (t1 === null) { t1 = t; vCommon = vcm; sRel1 = Math.abs(sRel - sRelStart); }
+                            if (t1 === null) { t1 = t; vCommon = vcm; }
+                            sRel1 = (sRel1 || 0) + Math.abs(sRel - sRelStart);
                             if (mu1 + 1e-12 >= mu2) {
                                 locked = true;
-                                sRelStart = sRel;
                             } else {
                                 slipAfter = true;
                                 sigma = Math.sign(vcm) || 1;
-                                sRelStart = sRel;
                             }
+                            sRelStart = sRel;
                         }
                     } else if (eventType === 'vbflip') {
                         vB = 0;
                     } else if (eventType === 'center') {
-                        // 中心过缘事件：A 中心已滑离板缘，触发视觉下落
+                        // 中心过缘事件（需求 17）：事件驱动已精确求解，t 即精确时刻
                         centerEvent = true;
-                        const vRelAtCenter = Math.abs(vA - vB);
-                        tCenter = Math.max(0, t - (bw / 2) / Math.max(vRelAtCenter, 1e-6));
+                        tCenter = t;
                     }
                     rec();
-                    if (t1 === null && !onPlate) sRel1 = Math.abs(sRel - sRelStart);
                     continue;
                 }
 
@@ -657,6 +662,13 @@
         const ARROW_MIN = 10;
         const ARROW_MAX = 60;
 
+        // 下落过渡进度（需求 三.4 / 18）：tCenter 后 0.15s 内 0→1（二次缓动）
+        function dropFraction(t) {
+            if (!sim || sim.tCenter === null || t < sim.tCenter) return 0;
+            const f = Math.min(1, (t - sim.tCenter) / 0.15);
+            return f * f;
+        }
+
         function arrowLen(N) {
             const len = Math.abs(N) * ARROW_K;
             return Math.max(ARROW_MIN, Math.min(ARROW_MAX, len));
@@ -687,7 +699,8 @@
             if (!sim || sim.ON.length < 2) return;
             const mu1 = P.mu, mu2 = P.mu2;
             const groundY = view.height - PAD_BOTTOM;
-            const SX = x => PAD_X + x * s;
+            const wL = worldLeft();
+            const SX = x => PAD_X + (x - wL) * s;
 
             const aCX = drawA.x + (P.L * BLOCK_W_FRAC) / 2;
             const bCX = drawB.x + P.L / 2;
@@ -700,10 +713,7 @@
                 const sig = Math.sign(vRel) || 1;
 
                 // 下落过渡期（需求 18）：f₁/f₁′ 箭头透明度随下落进度渐隐
-                let dropFrac = 0;
-                if (sim && sim.tCenter !== null && t >= sim.tCenter) {
-                    dropFrac = Math.min(1, (t - sim.tCenter) / 0.15);
-                }
+                const dropFrac = dropFraction(t);
                 const fAlpha = 1 - dropFrac * 0.85;
 
                 if (isSliding) {
@@ -742,11 +752,15 @@
                     }
                 }
             } else {
+                // 需求 18：滑出后 f₂ 箭头随物块视觉位置（含下落过渡）同步下降、透明度渐入
+                const dropFrac = dropFraction(t);
                 if (mu2 > 0 && Math.abs(drawA.v) > 1e-6) {
                     const fA = mu2 * P.mA * g;
                     const fDir = Math.sign(drawA.v) > 0 ? -1 : 1;
-                    const aMidY = groundY - BLOCK_H / 2;
-                    drawArrow(aScreenX, aMidY, fDir, arrowLen(fA), '#ff6644', 'f₂');
+                    const aBotNow = groundY - PLATE_H + PLATE_H * dropFrac;
+                    const aMidY = aBotNow - BLOCK_H / 2;
+                    const alpha = (0.15 + 0.85 * dropFrac).toFixed(2);
+                    drawArrow(aScreenX, aMidY, fDir, arrowLen(fA), `rgba(255,102,68,${alpha})`, 'f₂');
                 }
                 if (mu2 > 0 && Math.abs(drawB.v) > 1e-6) {
                     const fB = mu2 * P.mB * g;
@@ -763,7 +777,8 @@
 
             const s = plateScale();
             const groundY = view.height - PAD_BOTTOM;
-            const SX = x => PAD_X + x * s;
+            const wLeft = worldLeft();
+            const SX = x => PAD_X + (x - wLeft) * s;
 
             // 水平网格
             ctx.strokeStyle = '#16222e';
@@ -771,8 +786,7 @@
             for (let gy = groundY - 44; gy > 24; gy -= 44) {
                 ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(view.width, gy); ctx.stroke();
             }
-            // 竖直网格（世界坐标）
-            const wLeft  = 0;
+            // 竖直网格（世界坐标，含负半轴）
             const wRight = Math.max(...(sim ? [...sim.XA, ...sim.XB] : [drawB.x, drawB.x + P.L]), P.L);
             for (let m = Math.ceil(wLeft); m <= Math.ceil(wRight); m++) {
                 const x = SX(m);
@@ -792,7 +806,7 @@
             ctx.fillStyle = '#556677';
             ctx.font = '11px system-ui';
             ctx.textAlign = 'center';
-            for (let m = 0; m <= Math.ceil(wRight); m += labelStep) {
+            for (let m = Math.ceil(wLeft); m <= Math.ceil(wRight); m += labelStep) {
                 ctx.fillText(m + 'm', SX(m), groundY + 24);
             }
 
@@ -837,11 +851,7 @@
 
             // 下落过渡（需求 三.4）：A 中心滑离板缘（tCenter）后 0.15s 内
             // 从板面平滑降至地面；物理滑出事件（相对滑移 = 板长）不受影响
-            let dropFrac = 0;
-            if (sim && sim.tCenter !== null && t >= sim.tCenter) {
-                dropFrac = Math.min(1, (t - sim.tCenter) / 0.15);
-            }
-            dropFrac *= dropFrac;
+            const dropFrac = dropFraction(t);
             const aBot = bTop + PLATE_H * dropFrac;
             const aTopY = aBot - BLOCK_H;
 
@@ -928,7 +938,7 @@
                 vHi = Math.max(vHi, sim.VA[i], sim.VB[i]);
                 vLo = Math.min(vLo, sim.VA[i], sim.VB[i]);
             }
-            vHi = Math.max(vHi, P.v0A, Math.abs(P.v0B), 1) * 1.2;
+            vHi = Math.max(vHi, P.v0A, P.v0B, 1) * 1.2;
             vLo = Math.min(vLo, 0) * 1.2;
             if (vLo >= 0) vLo = 0;
 
@@ -961,7 +971,7 @@
                 gctx.fillStyle = '#8899aa';
                 gctx.font = '10px system-ui';
                 gctx.textAlign = 'right';
-                gctx.fillText(v.toFixed(v >= 0 ? 0 : 0), padL - 5, y + 3);
+                gctx.fillText(v.toFixed(0), padL - 5, y + 3);
             }
             // 零线
             if (vLo < 0 && vHi > 0) {
@@ -1425,6 +1435,17 @@
             }
         }
 
+        // ========== 预览态重绘：初始布局 + 图表（idle 参数联动共用） ==========
+        function redrawPreview() {
+            const bw = P.L * BLOCK_W_FRAC;
+            const sx0 = P.v0A >= P.v0B ? 0 : P.L - bw;
+            const drawA = { x: sx0, v: P.v0A, onPlate: true };
+            const drawB = { x: 0, v: P.v0B };
+            lastDraw = { drawA, drawB };
+            drawScene(0, drawA, drawB);
+            drawCharts();
+        }
+
         // ========== 参数预览守卫：结束态拖动滑条时自动回到预览态 ==========
         function previewGuard() {
             if (state === 'running') return false;
@@ -1441,11 +1462,7 @@
                 elStatus.textContent = '';
                 btnStart.disabled = false;
                 btnReset.disabled = true;
-                const bw = P.L * BLOCK_W_FRAC;
-                const sx0 = P.v0A >= P.v0B ? 0 : P.L - bw;
-                lastDraw = { drawA: { x: sx0, v: P.v0A, onPlate: true }, drawB: { x: 0, v: P.v0B } };
-                drawScene(0, lastDraw.drawA, lastDraw.drawB);
-                drawCharts();
+                redrawPreview();
             }
             return true;
         }
@@ -1476,13 +1493,7 @@
             elL.disabled = true;
             elTs.disabled = true;
 
-            const bw = P.L * BLOCK_W_FRAC;
-            const sx0 = P.v0A >= P.v0B ? 0 : P.L - bw;
-            const drawA = { x: sx0, v: P.v0A, onPlate: true };
-            const drawB = { x: 0, v: P.v0B };
-            lastDraw = { drawA, drawB };
-            drawScene(0, drawA, drawB);
-            drawCharts();
+            redrawPreview();
 
             animId = requestAnimationFrame(frame);
         }
@@ -1541,13 +1552,7 @@
             btnStart.disabled = false;
             btnReset.disabled = true;
 
-            const bw = P.L * BLOCK_W_FRAC;
-            const sx0 = P.v0A >= P.v0B ? 0 : P.L - bw;
-            const drawA = { x: sx0, v: P.v0A, onPlate: true };
-            const drawB = { x: 0, v: P.v0B };
-            lastDraw = { drawA, drawB };
-            drawScene(0, drawA, drawB);
-            drawCharts();
+            redrawPreview();
         }
 
         // ========== 事件绑定 ==========
@@ -1558,13 +1563,7 @@
             elVA.textContent = P.v0A.toFixed(2) + ' m/s';
             sim = simulate();
             updateDataPanel();
-            const bw = P.L * BLOCK_W_FRAC;
-            const sx0 = P.v0A >= P.v0B ? 0 : P.L - bw;
-            const drawA = { x: sx0, v: P.v0A, onPlate: true };
-            const drawB = { x: 0, v: P.v0B };
-            lastDraw = { drawA, drawB };
-            drawScene(0, drawA, drawB);
-            drawCharts();
+            redrawPreview();
         });
 
         elV0B.addEventListener('input', () => {
@@ -1574,13 +1573,7 @@
             elVB.textContent = P.v0B.toFixed(2) + ' m/s';
             sim = simulate();
             updateDataPanel();
-            const bw = P.L * BLOCK_W_FRAC;
-            const sx0 = P.v0A >= P.v0B ? 0 : P.L - bw;
-            const drawA = { x: sx0, v: P.v0A, onPlate: true };
-            const drawB = { x: 0, v: P.v0B };
-            lastDraw = { drawA, drawB };
-            drawScene(0, drawA, drawB);
-            drawCharts();
+            redrawPreview();
         });
 
         elMA.addEventListener('input', () => {
@@ -1589,6 +1582,7 @@
             if (!previewGuard()) return;
             sim = simulate();
             updateDataPanel();
+            redrawPreview();
         });
 
         elMB.addEventListener('input', () => {
@@ -1597,6 +1591,7 @@
             if (!previewGuard()) return;
             sim = simulate();
             updateDataPanel();
+            redrawPreview();
         });
 
         elMu.addEventListener('input', () => {
@@ -1605,6 +1600,7 @@
             if (!previewGuard()) return;
             sim = simulate();
             updateDataPanel();
+            redrawPreview();
         });
 
         elMu2.addEventListener('input', () => {
@@ -1613,6 +1609,7 @@
             if (!previewGuard()) return;
             sim = simulate();
             updateDataPanel();
+            redrawPreview();
         });
 
         elL.addEventListener('input', () => {
@@ -1621,13 +1618,7 @@
             if (!previewGuard()) return;
             sim = simulate();
             updateDataPanel();
-            const bw = P.L * BLOCK_W_FRAC;
-            const sx0 = P.v0A >= P.v0B ? 0 : P.L - bw;
-            const drawA = { x: sx0, v: P.v0A, onPlate: true };
-            const drawB = { x: 0, v: P.v0B };
-            lastDraw = { drawA, drawB };
-            drawScene(0, drawA, drawB);
-            drawCharts();
+            redrawPreview();
         });
 
         elTs.addEventListener('input', () => {
