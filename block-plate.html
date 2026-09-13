@@ -328,17 +328,20 @@
         const BLOCK_H = 34;
         const BLOCK_W_FRAC = 0.08;
 
-        // 世界坐标左界：支持 v₀B < 0 时 B 向左运动出负半轴（需求 二.2 反向场景）
+        // 世界坐标窗口：按播放头当前位置动态取景（镜头随运动平滑拉远），
+        // 支持负半轴（v₀B < 0 反向场景）；避免滑出后长观察窗把画面压成远景
         function worldLeft() {
             if (!sim) return 0;
-            return Math.min(0, ...sim.XA, ...sim.XB);
+            const i = Math.min(playIdx, sim.T.length - 1);
+            return Math.min(0, sim.XA[i], sim.XB[i]);
         }
 
         function plateScale() {
-            if (!sim) return Math.max(8, (view.width - PAD_X - PAD_RIGHT) / P.L * 0.92);
-            const xMax = Math.max(...sim.XA, ...sim.XB, P.L);
+            const margin = 0.5;
+            if (!sim) return Math.max(8, (view.width - PAD_X - PAD_RIGHT) / (P.L + margin) * 0.92);
+            const i = Math.min(playIdx, sim.T.length - 1);
+            const xMax = Math.max(sim.XA[i], sim.XB[i] + P.L, P.L);
             const xMin = worldLeft();
-            const margin = 2;
             const range = xMax - xMin + margin;
             return Math.max(8, (view.width - PAD_X - PAD_RIGHT) / range * 0.92);
         }
@@ -786,8 +789,8 @@
             for (let gy = groundY - 44; gy > 24; gy -= 44) {
                 ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(view.width, gy); ctx.stroke();
             }
-            // 竖直网格（世界坐标，含负半轴）
-            const wRight = Math.max(...(sim ? [...sim.XA, ...sim.XB] : [drawB.x, drawB.x + P.L]), P.L);
+            // 竖直网格（世界坐标，含负半轴，按当前取景窗口）
+            const wRight = Math.max(drawA.x, drawB.x + P.L, P.L);
             for (let m = Math.ceil(wLeft); m <= Math.ceil(wRight); m++) {
                 const x = SX(m);
                 ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, groundY); ctx.stroke();
@@ -843,7 +846,12 @@
             ctx.fillStyle = '#fff';
             ctx.font = 'bold 11px system-ui';
             ctx.textAlign = 'center';
-            ctx.fillText(`板块 B · vᵦ = ${drawB.v.toFixed(1)} m/s · L = ${P.L.toFixed(1)} m`, (bLeft + bRight) / 2, bTop + 16);
+            // 需求 21：窄画布（移动端）板标签自动精简，避免超出板宽
+            let bLabel = `板块 B · vᵦ = ${drawB.v.toFixed(1)} m/s · L = ${P.L.toFixed(1)} m`;
+            if (ctx.measureText(bLabel).width > bRight - bLeft - 6) {
+                bLabel = `B · ${drawB.v.toFixed(1)} m/s`;
+            }
+            ctx.fillText(bLabel, (bLeft + bRight) / 2, bTop + 16);
 
             // 物块 A
             const blockWm = P.L * BLOCK_W_FRAC;
@@ -854,6 +862,10 @@
             const dropFrac = dropFraction(t);
             const aBot = bTop + PLATE_H * dropFrac;
             const aTopY = aBot - BLOCK_H;
+
+            // 需求 21：块宽不足以容纳文字时（移动端窄块），名称/速度上移到块上方
+            ctx.font = 'bold 11px system-ui';
+            const nameTooWide = ctx.measureText('物块 A').width > blockW;
 
             if (drawA.onPlate) {
                 const aLeft = SX(drawA.x);
@@ -874,10 +886,19 @@
                 ctx.fillStyle = '#fff';
                 ctx.font = 'bold 11px system-ui';
                 ctx.textAlign = 'center';
-                ctx.fillText('物块 A', aLeft + blockW / 2, aTopY + 14);
+                if (nameTooWide) {
+                    ctx.fillText('物块 A', aLeft + blockW / 2, aTopY - 16);
+                } else {
+                    ctx.fillText('物块 A', aLeft + blockW / 2, aTopY + 14);
+                }
                 ctx.fillStyle = '#cceaff';
                 ctx.font = '10px system-ui';
-                ctx.fillText(`${drawA.v.toFixed(1)} m/s`, aLeft + blockW / 2, aTopY + 27);
+                const spdText = `${drawA.v.toFixed(1)} m/s`;
+                if (nameTooWide || ctx.measureText(spdText).width > blockW) {
+                    ctx.fillText(spdText, aLeft + blockW / 2, aTopY - 5);
+                } else {
+                    ctx.fillText(spdText, aLeft + blockW / 2, aTopY + 27);
+                }
             } else {
                 const ax = Math.max(4, Math.min(SX(drawA.x), view.width - blockW - 4));
 
@@ -897,10 +918,16 @@
                 ctx.fillStyle = '#fff';
                 ctx.font = 'bold 11px system-ui';
                 ctx.textAlign = 'center';
-                ctx.fillText('A', ax + blockW / 2, aTopY + 14);
+                // 需求 21：窄块时文字上移（滑出后分支，名称为短标签 'A'）
+                ctx.fillText('A', ax + blockW / 2, nameTooWide ? aTopY - 16 : aTopY + 14);
                 ctx.fillStyle = '#cceaff';
                 ctx.font = '10px system-ui';
-                ctx.fillText(`${drawA.v.toFixed(1)} m/s`, ax + blockW / 2, aTopY + 27);
+                const spdText2 = `${drawA.v.toFixed(1)} m/s`;
+                if (nameTooWide || ctx.measureText(spdText2).width > blockW) {
+                    ctx.fillText(spdText2, ax + blockW / 2, aTopY - 5);
+                } else {
+                    ctx.fillText(spdText2, ax + blockW / 2, aTopY + 27);
+                }
             }
 
             // 摩擦力
