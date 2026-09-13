@@ -11,9 +11,12 @@
               支持 A、B 双初速度（v0B 可为负值，即反向），A、B 质量可调。
               事件驱动精确积分：每步解析求解，v-t 图从预计算序列回放。
     v4 变更：板与物块从活动区最左端（x=0）出发；板厚 24→12px（板身内嵌"B"标记）；
-              物块 A 缩小为 1.0m 正方形（体积 1/4）；板默认长 20m（=20×物块），
-              滑条 2–40m 步长 1；正方向标注移至左上角；
-              活动区域 [0, 60m] 不绘制边界线，物体未停止完全穿过即结束并提示。
+              板默认长随物块 20 倍关系调整，滑条 2–40m 步长 1；正方向标注移至左上角；
+              活动区域不绘制边界线，物体未停止完全穿过即结束并提示。
+    v5 变更：物块上不再显示速度（速度在数据面板）；物块摩擦力箭头改为
+              红色 #ff4444 定长箭头（3×物块长，只示方向不示大小），
+              摩擦力大小新增数据卡片"A 摩擦力 f₁"实时显示；
+              物块放大 1/10（1.0m → 1.1m 正方形），默认板长跟随 20 倍关系为 22m。
     适用场景：高中物理"板块模型"教学，可调 v₀A、v₀B、m_A、m_B、双动摩擦因数与板长 L，
               实时显示 v-t 图、相对位移、摩擦生热等数据，支持物块滑出后继续运动的情景。
     风格：与斜抛运动演示网页（oblique-throw-motion.html）统一的深色系列。
@@ -234,8 +237,8 @@
                 </div>
                 <div class="param-row">
                     <label for="plateLen">板长 L</label>
-                    <input id="plateLen" type="range" min="2" max="40" value="20" step="1">
-                    <div class="val" id="plateLenVal">20.0 m</div>
+                    <input id="plateLen" type="range" min="2" max="40" value="22" step="1">
+                    <div class="val" id="plateLenVal">22.0 m</div>
                 </div>
                 <div class="param-row">
                     <label for="ts">动画速度</label>
@@ -253,6 +256,7 @@
                     <div class="data-item"><span>共速时刻</span><b id="dTEnd">—</b></div>
                     <div class="data-item"><span>共速后速度</span><b id="dVFinal">—</b></div>
                     <div class="data-item"><span>相对滑移</span><b id="dRelDisp">—</b></div>
+                    <div class="data-item"><span>A 摩擦力 f₁</span><b id="dFric">— N</b></div>
                     <div class="data-item"><span>是否滑出</span><b id="dSlideOff">—</b></div>
                     <div class="data-item"><span>摩擦生热（总）</span><b id="dHeat">—</b></div>
                     <div class="data-item"><span>质量 (m<sub>A</sub>+m<sub>B</sub>)</span><b id="dMass">—</b></div>
@@ -309,6 +313,7 @@
         const elVFin = document.getElementById('dVFinal');
         const elRel  = document.getElementById('dRelDisp');
         const elSlide= document.getElementById('dSlideOff');
+        const elFric = document.getElementById('dFric');
         const elHeat = document.getElementById('dHeat');
         const elMass = document.getElementById('dMass');
         const elStatus = document.getElementById('status');
@@ -333,7 +338,7 @@
         // ========== v4 需求 ==========
         // 需求三：物块 A 世界尺寸固定 1.0 m（正方形，体积为 v3 的 1/4），
         // 不随板长/运动/缩放变化
-        const BLOCK_W_M = 1.0;
+        const BLOCK_W_M = 1.1;
         // 需求六：活动区域 [0, 60]（内部判定，不在画面绘制边界线）；
         // 任一物体未停止而完全穿出区域 -> 整个演示立即结束
         const REGION_MIN = 0;
@@ -350,7 +355,7 @@
             v0B: 2,
             mu: 0.2,
             mu2: 0,
-            L: 20,
+            L: 22,
         };
 
         // ========== 事件驱动精确积分预仿真 ==========
@@ -732,7 +737,8 @@
                     if (fMag > 0.1) {
                         const fDir = -sig;
                         const aMidY = groundY - PLATE_H - blockH / 2;
-                        drawArrow(aScreenX, aMidY, fDir, arrowLen(fMag), `rgba(255,221,87,${fAlpha})`, 'f₁');
+                        // 需求二：物块摩擦力箭头红色定长（3×物块长），只示方向
+                        drawArrow(aScreenX, aMidY, fDir, 3 * BLOCK_W_M * s, `rgba(255,68,68,${fAlpha})`, 'f₁');
                         const bTopY = groundY - PLATE_H - 6;
                         drawArrow(aScreenX, bTopY, -fDir, arrowLen(fMag), `rgba(255,221,87,${fAlpha})`, "f₁'");
                     }
@@ -741,7 +747,7 @@
                     if (fStat > 0.1) {
                         const fDir = Math.sign(drawA.v) > 0 ? -1 : 1;
                         const aMidY = groundY - PLATE_H - blockH / 2;
-                        drawArrow(aScreenX, aMidY, fDir, arrowLen(fStat), `rgba(255,221,87,${fAlpha})`, 'f₁');
+                        drawArrow(aScreenX, aMidY, fDir, 3 * BLOCK_W_M * s, `rgba(255,68,68,${fAlpha})`, 'f₁');
                         const bTopY = groundY - PLATE_H - 6;
                         drawArrow(aScreenX, bTopY, -fDir, arrowLen(fStat), `rgba(255,221,87,${fAlpha})`, "f₁'");
                     }
@@ -763,7 +769,8 @@
                     }
                 }
             } else {
-                // 需求 18：滑出后 f₂ 箭头随物块视觉位置（含下落过渡）同步下降、透明度渐入
+                // 需求 18：滑出后 f₂ 箭头随物块视觉位置（含下落过渡）同步下降、透明度渐入；
+                // 需求二（v5）：物块摩擦力箭头红色定长（3×物块长），只示方向
                 const dropFrac = dropFraction(t);
                 if (mu2 > 0 && Math.abs(drawA.v) > 1e-6) {
                     const fA = mu2 * P.mA * g;
@@ -771,7 +778,7 @@
                     const aBotNow = groundY - PLATE_H + PLATE_H * dropFrac;
                     const aMidY = aBotNow - blockH / 2;
                     const alpha = (0.15 + 0.85 * dropFrac).toFixed(2);
-                    drawArrow(aScreenX, aMidY, fDir, arrowLen(fA), `rgba(255,102,68,${alpha})`, 'f₂');
+                    drawArrow(aScreenX, aMidY, fDir, 3 * BLOCK_W_M * s, `rgba(255,68,68,${alpha})`, 'f₂');
                 }
                 if (mu2 > 0 && Math.abs(drawB.v) > 1e-6) {
                     const fB = mu2 * P.mB * g;
@@ -897,18 +904,11 @@
                 ctx.fillStyle = '#fff';
                 ctx.font = 'bold 11px system-ui';
                 ctx.textAlign = 'center';
+                // 需求一（v5）：物块上只保留名称，速度移至数据面板
                 if (nameTooWide) {
                     ctx.fillText('物块 A', aLeft + blockW / 2, aTopY - 16);
                 } else {
                     ctx.fillText('物块 A', aLeft + blockW / 2, aTopY + 14);
-                }
-                ctx.fillStyle = '#cceaff';
-                ctx.font = '10px system-ui';
-                const spdText = `${drawA.v.toFixed(1)} m/s`;
-                if (nameTooWide || ctx.measureText(spdText).width > blockW) {
-                    ctx.fillText(spdText, aLeft + blockW / 2, aTopY - 5);
-                } else {
-                    ctx.fillText(spdText, aLeft + blockW / 2, aTopY + 27);
                 }
             } else {
                 const ax = Math.max(4, Math.min(SX(drawA.x), view.width - blockW - 4));
@@ -929,16 +929,8 @@
                 ctx.fillStyle = '#fff';
                 ctx.font = 'bold 11px system-ui';
                 ctx.textAlign = 'center';
-                // 需求 21：窄块时文字上移（滑出后分支，名称为短标签 'A'）
+                // 需求一（v5）：滑出后物块仅保留名称 'A'
                 ctx.fillText('A', ax + blockW / 2, nameTooWide ? aTopY - 16 : aTopY + 14);
-                ctx.fillStyle = '#cceaff';
-                ctx.font = '10px system-ui';
-                const spdText2 = `${drawA.v.toFixed(1)} m/s`;
-                if (nameTooWide || ctx.measureText(spdText2).width > blockW) {
-                    ctx.fillText(spdText2, ax + blockW / 2, aTopY - 5);
-                } else {
-                    ctx.fillText(spdText2, ax + blockW / 2, aTopY + 27);
-                }
             }
 
             // 摩擦力
@@ -1340,6 +1332,17 @@
             elVB.textContent  = vB.toFixed(2) + ' m/s';
             elVR.textContent  = Math.abs(vA - vB).toFixed(2) + ' m/s';
 
+            // 需求三：物块受摩擦力大小（实时）
+            let fA = 0;
+            if (!onPlate) {
+                fA = (P.mu2 > 0 && Math.abs(vA) > 1e-6) ? P.mu2 * P.mA * g : 0;
+            } else if (Math.abs(vA - vB) > 1e-6) {
+                fA = P.mu * P.mA * g;
+            } else if (P.mu2 > 0 && Math.abs(vA) > 1e-6) {
+                fA = P.mu2 * P.mA * g;
+            }
+            elFric.textContent = fA.toFixed(2) + ' N';
+
             if (!onPlate) {
                 elState.textContent = 'A 已滑出（各自运动）';
                 elState.style.color = '#ff6644';
@@ -1499,6 +1502,7 @@
                 elVA.textContent = P.v0A.toFixed(2) + ' m/s';
                 elVB.textContent = P.v0B.toFixed(2) + ' m/s';
                 elVR.textContent = '—';
+                elFric.textContent = '— N';
                 elState.textContent = '待开始';
                 elState.style.color = '#99aabb';
                 elStatus.textContent = '';
@@ -1554,7 +1558,7 @@
             P.mB  = parseFloat(elMB.value) / 10;
             P.mu  = parseFloat(elMu.value) / 100;
             P.mu2 = parseFloat(elMu2.value) / 100;
-            P.L   = parseFloat(elL.value) || 20;
+            P.L   = parseFloat(elL.value) || 22;
             timeScale = parseFloat(elTs.value) / 10;
 
             elV0AVal.textContent = P.v0A.toFixed(1) + ' m/s';
@@ -1569,6 +1573,7 @@
             elVA.textContent = P.v0A.toFixed(2) + ' m/s';
             elVB.textContent = P.v0B.toFixed(2) + ' m/s';
             elVR.textContent = '—';
+            elFric.textContent = '— N';
             elState.textContent = '待开始';
             elState.style.color = '#99aabb';
             elStatus.textContent = '';
