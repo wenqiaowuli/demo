@@ -4,12 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!--
-    文件描述：板块运动演示（通用版 v2）
+    文件描述：板块运动演示（通用版 v3）
     物理内容：展示物块 A 在板块 B 上的相对滑动、共速、滑出及摩擦生热等完整过程，
               双摩擦系数建模（μ₁ = A-B 之间，μ₂ = B-地面之间，μ₂ 默认 0）。
               共速后按 μ_s=μ₁ 判断能否锁死：需 μ₁≥μ₂ 才能一起减速，否则继续相对滑动。
               支持 A、B 双初速度（v0B 可为负值，即反向），A、B 质量可调。
               事件驱动精确积分：每步解析求解，v-t 图从预计算序列回放。
+    v3 变更：物块 A 固定 2.0 m 正方形（不随板长/运动变化）；
+              正方向向右，v₀B 默认 +2.0 m/s（A、B 默认均向右运动）；
+              固定运动区域 [-10 m, +40 m]、固定比例尺（不动态取景），
+              物体未停止而完全越出区域 -> 整个演示立即结束。
     适用场景：高中物理"板块模型"教学，可调 v₀A、v₀B、m_A、m_B、双动摩擦因数与板长 L，
               实时显示 v-t 图、相对位移、摩擦生热等数据，支持物块滑出后继续运动的情景。
     风格：与斜抛运动演示网页（oblique-throw-motion.html）统一的深色系列。
@@ -205,8 +209,8 @@
                 </div>
                 <div class="param-row">
                     <label for="v0B">B 初速度 v₀B</label>
-                    <input id="v0B" type="range" min="-100" max="100" value="0" step="5">
-                    <div class="val" id="v0BVal">0.0 m/s</div>
+                    <input id="v0B" type="range" min="-100" max="100" value="20" step="5">
+                    <div class="val" id="v0BVal">2.0 m/s</div>
                 </div>
                 <div class="param-row">
                     <label for="mA">A 质量 m<sub>A</sub></label>
@@ -325,32 +329,24 @@
         const PAD_RIGHT = 70;
         const PAD_BOTTOM = 58;
         const PLATE_H = 24;
-        const BLOCK_H = 34;
-        const BLOCK_W_FRAC = 0.08;
 
-        // 世界坐标窗口：按播放头当前位置动态取景（镜头随运动平滑拉远），
-        // 支持负半轴（v₀B < 0 反向场景）；避免滑出后长观察窗把画面压成远景
-        function worldLeft() {
-            if (!sim) return 0;
-            const i = Math.min(playIdx, sim.T.length - 1);
-            return Math.min(0, sim.XA[i], sim.XB[i]);
-        }
+        // ========== v3 需求 ==========
+        // 需求一：物块 A 世界尺寸固定 2.0 m（正方形），不随板长/运动/缩放变化
+        const BLOCK_W_M = 2.0;
+        // 需求三：固定运动区域（世界坐标），比例尺固定，不再动态取景；
+        // 任一物体未停止而完全越出区域 -> 整个演示立即结束
+        const REGION_MIN = -10;
+        const REGION_MAX = 40;
 
-        function plateScale() {
-            const margin = 0.5;
-            if (!sim) return Math.max(8, (view.width - PAD_X - PAD_RIGHT) / (P.L + margin) * 0.92);
-            const i = Math.min(playIdx, sim.T.length - 1);
-            const xMax = Math.max(sim.XA[i], sim.XB[i] + P.L, P.L);
-            const xMin = worldLeft();
-            const range = xMax - xMin + margin;
-            return Math.max(8, (view.width - PAD_X - PAD_RIGHT) / range * 0.92);
+        function viewScale() {
+            return (view.width - PAD_X - PAD_RIGHT) / (REGION_MAX - REGION_MIN);
         }
 
         // ========== 物理参数 ==========
         const P = {
             mA: 2, mB: 4,
             v0A: 12,
-            v0B: 0,
+            v0B: 2,
             mu: 0.2,
             mu2: 0,
             L: 6,
@@ -359,7 +355,7 @@
         // ========== 事件驱动精确积分预仿真 ==========
         function simulate() {
             const { mA, mB, v0A, v0B, mu: mu1, mu2, L } = P;
-            const bw = L * BLOCK_W_FRAC;
+            const bw = BLOCK_W_M;
             const T_CAP = 32;
             const dtMax = 0.02;
             let t = 0;
@@ -393,6 +389,7 @@
             }
             const T = [], VA = [], VB = [], XA = [], XB = [], ON = [];
 
+            let tExit = null, exitObjs = [];
             const rec = () => {
                 T.push(t);
                 VA.push(vA);
@@ -400,11 +397,19 @@
                 XA.push(xA);
                 XB.push(xB);
                 ON.push(onPlate ? 1 : 0);
+                // 需求三：物体未停止而完全越出运动区域 -> 整个演示立即结束
+                if (tExit === null &&
+                    (xA >= REGION_MAX || xA + bw <= REGION_MIN ||
+                     xB >= REGION_MAX || xB + L <= REGION_MIN)) {
+                    tExit = t;
+                    if (xA >= REGION_MAX || xA + bw <= REGION_MIN) exitObjs.push('物块 A');
+                    if (xB >= REGION_MAX || xB + L <= REGION_MIN) exitObjs.push('板块 B');
+                }
             };
             rec();
 
             let guard = 0;
-            while (guard++ < 50000 && t < T_CAP) {
+            while (guard++ < 50000 && t < T_CAP && tExit === null) {
                 if (onPlate && locked) {
                     const v = vA;
                     const dec = (mu2 > 0 && Math.abs(v) > 1e-9) ? -Math.sign(v) * mu2 * g : 0;
@@ -631,7 +636,9 @@
             }
 
             let tEnd;
-            if (tStop !== null) {
+            if (tExit !== null) {
+                tEnd = tExit;
+            } else if (tStop !== null) {
                 tEnd = tStop + 1.0;
             } else if (isFinite(horizon)) {
                 tEnd = horizon;
@@ -645,7 +652,7 @@
                 t1, vCommon, sRel1: sRel1 || 0,
                 willSlideOff: tOff !== null, tOff, offEdge, tCenter,
                 slipAfter, tStop, tEnd, heat: Q,
-                bMovedEver, mu2,
+                bMovedEver, mu2, tExit, exitObjs,
             };
         }
 
@@ -702,10 +709,10 @@
             if (!sim || sim.ON.length < 2) return;
             const mu1 = P.mu, mu2 = P.mu2;
             const groundY = view.height - PAD_BOTTOM;
-            const wL = worldLeft();
-            const SX = x => PAD_X + (x - wL) * s;
+            const blockH = BLOCK_W_M * s;
+            const SX = x => PAD_X + (x - REGION_MIN) * s;
 
-            const aCX = drawA.x + (P.L * BLOCK_W_FRAC) / 2;
+            const aCX = drawA.x + BLOCK_W_M / 2;
             const bCX = drawB.x + P.L / 2;
             const aScreenX = SX(aCX);
             const bScreenX = SX(bCX);
@@ -723,7 +730,7 @@
                     const fMag = mu1 * P.mA * g;
                     if (fMag > 0.1) {
                         const fDir = -sig;
-                        const aMidY = groundY - PLATE_H - BLOCK_H / 2;
+                        const aMidY = groundY - PLATE_H - blockH / 2;
                         drawArrow(aScreenX, aMidY, fDir, arrowLen(fMag), `rgba(255,221,87,${fAlpha})`, 'f₁');
                         const bTopY = groundY - PLATE_H - 6;
                         drawArrow(aScreenX, bTopY, -fDir, arrowLen(fMag), `rgba(255,221,87,${fAlpha})`, "f₁'");
@@ -732,7 +739,7 @@
                     const fStat = P.mA * mu2 * g;
                     if (fStat > 0.1) {
                         const fDir = Math.sign(drawA.v) > 0 ? -1 : 1;
-                        const aMidY = groundY - PLATE_H - BLOCK_H / 2;
+                        const aMidY = groundY - PLATE_H - blockH / 2;
                         drawArrow(aScreenX, aMidY, fDir, arrowLen(fStat), `rgba(255,221,87,${fAlpha})`, 'f₁');
                         const bTopY = groundY - PLATE_H - 6;
                         drawArrow(aScreenX, bTopY, -fDir, arrowLen(fStat), `rgba(255,221,87,${fAlpha})`, "f₁'");
@@ -761,7 +768,7 @@
                     const fA = mu2 * P.mA * g;
                     const fDir = Math.sign(drawA.v) > 0 ? -1 : 1;
                     const aBotNow = groundY - PLATE_H + PLATE_H * dropFrac;
-                    const aMidY = aBotNow - BLOCK_H / 2;
+                    const aMidY = aBotNow - blockH / 2;
                     const alpha = (0.15 + 0.85 * dropFrac).toFixed(2);
                     drawArrow(aScreenX, aMidY, fDir, arrowLen(fA), `rgba(255,102,68,${alpha})`, 'f₂');
                 }
@@ -778,10 +785,9 @@
         function drawScene(t, drawA, drawB) {
             ctx.clearRect(0, 0, view.width, view.height);
 
-            const s = plateScale();
+            const s = viewScale();
             const groundY = view.height - PAD_BOTTOM;
-            const wLeft = worldLeft();
-            const SX = x => PAD_X + (x - wLeft) * s;
+            const SX = x => PAD_X + (x - REGION_MIN) * s;
 
             // 水平网格
             ctx.strokeStyle = '#16222e';
@@ -789,12 +795,29 @@
             for (let gy = groundY - 44; gy > 24; gy -= 44) {
                 ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(view.width, gy); ctx.stroke();
             }
-            // 竖直网格（世界坐标，含负半轴，按当前取景窗口）
-            const wRight = Math.max(drawA.x, drawB.x + P.L, P.L);
-            for (let m = Math.ceil(wLeft); m <= Math.ceil(wRight); m++) {
+            // 竖直网格（世界坐标，覆盖整个运动区域，步长随比例尺自适应）
+            const gridStep = s >= 40 ? 1 : (s >= 15 ? 2 : 5);
+            for (let m = Math.ceil(REGION_MIN / gridStep) * gridStep; m <= REGION_MAX; m += gridStep) {
                 const x = SX(m);
                 ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, groundY); ctx.stroke();
             }
+
+            // 运动区域边界（需求三）：左右边界醒目虚线
+            ctx.strokeStyle = 'rgba(255,102,68,0.8)';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([8, 6]);
+            for (const bx of [SX(REGION_MIN), SX(REGION_MAX)]) {
+                ctx.beginPath(); ctx.moveTo(bx, 14); ctx.lineTo(bx, groundY); ctx.stroke();
+            }
+            ctx.setLineDash([]);
+
+            // 正方向标注（需求二.1）
+            ctx.fillStyle = '#8899aa';
+            ctx.font = '11px system-ui';
+            ctx.textAlign = 'right';
+            ctx.fillText('正方向 →', SX(REGION_MAX) - 6, 24);
+            ctx.textAlign = 'left';
+            ctx.fillText('运动区域', SX(REGION_MIN) + 6, 24);
 
             // 地面
             ctx.strokeStyle = '#3a4a5a';
@@ -804,12 +827,12 @@
             ctx.lineTo(view.width, groundY);
             ctx.stroke();
 
-            // 地面距离标注（世界坐标）
+            // 地面距离标注（世界坐标，覆盖整个运动区域含负半轴）
             const labelStep = s >= 90 ? 2 : (s >= 40 ? 5 : 10);
             ctx.fillStyle = '#556677';
             ctx.font = '11px system-ui';
             ctx.textAlign = 'center';
-            for (let m = Math.ceil(wLeft); m <= Math.ceil(wRight); m += labelStep) {
+            for (let m = Math.ceil(REGION_MIN / labelStep) * labelStep; m <= REGION_MAX; m += labelStep) {
                 ctx.fillText(m + 'm', SX(m), groundY + 24);
             }
 
@@ -854,14 +877,15 @@
             ctx.fillText(bLabel, (bLeft + bRight) / 2, bTop + 16);
 
             // 物块 A
-            const blockWm = P.L * BLOCK_W_FRAC;
-            const blockW = blockWm * s;
+            // 物块 A：固定正方形（需求一），宽 = 高 = BLOCK_W_M × scale
+            const blockW = BLOCK_W_M * s;
+            const blockH = blockW;
 
             // 下落过渡（需求 三.4）：A 中心滑离板缘（tCenter）后 0.15s 内
             // 从板面平滑降至地面；物理滑出事件（相对滑移 = 板长）不受影响
             const dropFrac = dropFraction(t);
             const aBot = bTop + PLATE_H * dropFrac;
-            const aTopY = aBot - BLOCK_H;
+            const aTopY = aBot - blockH;
 
             // 需求 21：块宽不足以容纳文字时（移动端窄块），名称/速度上移到块上方
             ctx.font = 'bold 11px system-ui';
@@ -909,11 +933,11 @@
                 ag.addColorStop(0, '#4db8ff');
                 ag.addColorStop(1, '#1170cc');
                 ctx.fillStyle = ag;
-                ctx.fillRect(ax, aTopY, blockW, BLOCK_H);
+                ctx.fillRect(ax, aTopY, blockW, blockH);
 
                 ctx.strokeStyle = '#7dd0ff';
                 ctx.lineWidth = 2;
-                ctx.strokeRect(ax, aTopY, blockW, BLOCK_H);
+                ctx.strokeRect(ax, aTopY, blockW, blockH);
 
                 ctx.fillStyle = '#fff';
                 ctx.font = 'bold 11px system-ui';
@@ -1382,7 +1406,9 @@
             elTs.disabled = false;
 
             let msg;
-            if (sim.willSlideOff) {
+            if (sim.tExit !== null) {
+                msg = `${sim.exitObjs.join('、')} 未停止即越出运动区域（−10 m ～ +40 m），演示结束。`;
+            } else if (sim.willSlideOff) {
                 const edge = sim.offEdge === 'back' ? '后' : '前';
                 msg = sim.mu2 > 0
                     ? `物块 A 于 t = ${sim.tOff.toFixed(2)} s 从板块${edge}缘滑出，随后 A、B 均在地面摩擦下减速停止。`
@@ -1418,7 +1444,7 @@
             if (lastDraw) {
                 drawScene(simT, lastDraw.drawA, lastDraw.drawB);
             } else {
-                const bw = P.L * BLOCK_W_FRAC;
+                const bw = BLOCK_W_M;
                 const sx0 = P.v0A >= P.v0B ? 0 : P.L - bw;
                 drawScene(0, { x: sx0, v: P.v0A, onPlate: true }, { x: 0, v: P.v0B });
             }
@@ -1447,7 +1473,9 @@
             elMass.textContent = P.mA.toFixed(1) + ' + ' + P.mB.toFixed(1) + ' kg';
 
             if (state === 'idle') {
-                if (sim.willSlideOff) {
+                if (sim.tExit !== null) {
+                    elStatus.textContent = `当前参数：物体将未停止越出运动区域，演示于 t = ${sim.tExit.toFixed(1)} s 提前结束。`;
+                } else if (sim.willSlideOff) {
                     const edge = sim.offEdge === 'back' ? '后' : '前';
                     elStatus.textContent = `当前参数：相对滑移将达板长，A 会从${edge}缘滑出。`;
                 } else if (!sim.bMovedEver) {
@@ -1464,7 +1492,7 @@
 
         // ========== 预览态重绘：初始布局 + 图表（idle 参数联动共用） ==========
         function redrawPreview() {
-            const bw = P.L * BLOCK_W_FRAC;
+            const bw = BLOCK_W_M;
             const sx0 = P.v0A >= P.v0B ? 0 : P.L - bw;
             const drawA = { x: sx0, v: P.v0A, onPlate: true };
             const drawB = { x: 0, v: P.v0B };
