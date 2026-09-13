@@ -276,11 +276,11 @@
         <div class="status" id="status"></div>
         <div class="legend">
             <span>🟦 物块</span>
-            <span>🟧 板块</span>
+            <span><span style="color:#8a8f98">■</span> 板块</span>
             <span style="color:#3399ff">— v<sub>A</sub>/s<sub>A</sub> 蓝线</span>
-            <span style="color:#ff9933">— v<sub>B</sub>/s<sub>B</sub> 橙线</span>
-            <span style="color:#ff4444">→ f（物块受摩擦）</span>
-            <span style="color:#ffdd57">→ f₁′（板块受物块摩擦）</span><span style="color:#ff6644">→ f₂（地面）</span>
+            <span style="color:#8a8f98">— v<sub>B</sub>/s<sub>B</sub> 灰线</span>
+            <span style="color:#ff4444">→ f（红，物块受摩擦）</span>
+            <span style="color:#ffdd57">→ f（黄，板块受摩擦）</span>
             <span>虚线：共速/滑出时刻（v-t 与 s-t 同步）</span>
         </div>
     </main>
@@ -676,9 +676,9 @@
         let slideOffTriggered = false;
 
         // ========== 绘制：受力分析箭头 ==========
-        const ARROW_K = 2.4;
+        const ARROW_K = 5;
         const ARROW_MIN = 10;
-        const ARROW_MAX = 60;
+        const ARROW_MAX = 80;
 
         // 下落过渡进度（需求 三.4 / 18）：tCenter 后 0.15s 内 0→1（二次缓动）
         function dropFraction(t) {
@@ -747,18 +747,18 @@
                         const fDir = -sig;
                         const aMidY = groundY - PLATE_H - blockH / 2;
                         // 需求二：物块摩擦力箭头红色定长（3×物块长），只示方向
-                        drawArrow(aScreenX, aMidY, fDir, 3 * BLOCK_W_M * s, `rgba(255,68,68,${fAlpha})`, 'f', 'tail');
+                        drawArrow(aScreenX, aMidY, fDir, arrowLen(fMag), `rgba(255,68,68,${fAlpha})`, 'f', 'tail');
                         const bTopY = groundY - PLATE_H - 6;
-                        drawArrow(bScreenX, bTopY, -fDir, arrowLen(fMag), `rgba(255,221,87,${fAlpha})`, "");
+                        drawArrow(bScreenX, groundY - PLATE_H / 2, -fDir, arrowLen(fMag), `rgba(255,221,87,${fAlpha})`, 'f', 'tail');
                     }
                 } else if (mu2 > 0 && Math.abs(drawA.v) > 1e-6) {
                     const fStat = P.mA * mu2 * g;
                     if (fStat > 0.1) {
                         const fDir = Math.sign(drawA.v) > 0 ? -1 : 1;
                         const aMidY = groundY - PLATE_H - blockH / 2;
-                        drawArrow(aScreenX, aMidY, fDir, 3 * BLOCK_W_M * s, `rgba(255,68,68,${fAlpha})`, 'f', 'tail');
+                        drawArrow(aScreenX, aMidY, fDir, arrowLen(fMag), `rgba(255,68,68,${fAlpha})`, 'f', 'tail');
                         const bTopY = groundY - PLATE_H - 6;
-                        drawArrow(bScreenX, bTopY, -fDir, arrowLen(fStat), `rgba(255,221,87,${fAlpha})`, "");
+                        drawArrow(bScreenX, groundY - PLATE_H / 2, -fDir, arrowLen(fStat), `rgba(255,221,87,${fAlpha})`, 'f', 'tail');
                     }
                 }
 
@@ -767,14 +767,14 @@
                     const fDir = Math.sign(drawB.v) > 0 ? -1 : 1;
                     if (fGnd > 0.1) {
                         const fGndY = groundY + 12;
-                        drawArrow(bScreenX, fGndY, fDir, arrowLen(fGnd), '#ff6644', '');
+                        drawArrow(bScreenX, groundY - PLATE_H / 2, fDir, arrowLen(fGnd), '#ffdd57', 'f', 'tail');
                     }
                 } else if (mu2 > 0 && Math.abs(drawA.v) > 1e-6) {
                     const driveF = mu1 * P.mA * g;
                     if (driveF <= mu2 * (P.mA + P.mB) * g + 1e-9 && driveF > 0.1) {
                         const fDir = -sig;
                         const fGndY = groundY + 12;
-                        drawArrow(bScreenX, fGndY, fDir, arrowLen(driveF), '#ff6644', '');
+                        drawArrow(bScreenX, groundY - PLATE_H / 2, fDir, arrowLen(driveF), '#ffdd57', 'f', 'tail');
                     }
                 }
             } else {
@@ -787,13 +787,13 @@
                     const aBotNow = groundY - PLATE_H + PLATE_H * dropFrac;
                     const aMidY = aBotNow - blockH / 2;
                     const alpha = (0.15 + 0.85 * dropFrac).toFixed(2);
-                    drawArrow(aScreenX, aMidY, fDir, 3 * BLOCK_W_M * s, `rgba(255,68,68,${alpha})`, 'f', 'tail');
+                    drawArrow(aScreenX, aMidY, fDir, arrowLen(fA), `rgba(255,68,68,${alpha})`, 'f', 'tail');
                 }
                 if (mu2 > 0 && Math.abs(drawB.v) > 1e-6) {
                     const fB = mu2 * P.mB * g;
                     const fDir = Math.sign(drawB.v) > 0 ? -1 : 1;
                     const bMidY = groundY - PLATE_H / 2;
-                    drawArrow(bScreenX, bMidY, fDir, arrowLen(fB), '#ff6644', '');
+                    drawArrow(bScreenX, bMidY, fDir, arrowLen(fB), '#ffdd57', 'f', 'tail');
                 }
             }
         }
@@ -857,26 +857,14 @@
             ctx.fillStyle = 'rgba(0,0,0,0.35)';
             ctx.fillRect(bLeft + 4, bBot + 3, bRight - bLeft, 7);
 
-            const bg = ctx.createLinearGradient(bLeft, bTop, bLeft, bBot);
-            bg.addColorStop(0, '#dd8833');
-            bg.addColorStop(0.6, '#bb6600');
-            bg.addColorStop(1, '#7a3d00');
-            ctx.fillStyle = bg;
+            // 需求二（v8）：板块纯灰色填充，无渐变
+            ctx.fillStyle = '#8a8f98';
             ctx.fillRect(bLeft, bTop, bRight - bLeft, bBot - bTop);
 
-            ctx.strokeStyle = '#ffaa44';
+            ctx.strokeStyle = '#c0c4cc';
             ctx.lineWidth = 2;
             ctx.strokeRect(bLeft, bTop, bRight - bLeft, bBot - bTop);
 
-            ctx.strokeStyle = 'rgba(255,255,255,0.14)';
-            ctx.lineWidth = 1;
-            for (let i = 1; i <= 3; i++) {
-                const ly = bTop + (bBot - bTop) * i / 4;
-                ctx.beginPath();
-                ctx.moveTo(bLeft + 5, ly);
-                ctx.lineTo(bRight - 5, ly);
-                ctx.stroke();
-            }
 
 
             // 物块 A
@@ -1049,7 +1037,7 @@
             gctx.stroke();
 
             // 曲线 B
-            gctx.strokeStyle = '#ff9933';
+            gctx.strokeStyle = '#8a8f98';
             gctx.lineWidth = 2;
             gctx.beginPath();
             gctx.moveTo(TX(sim.T[0]), VY(sim.VB[0]));
@@ -1069,7 +1057,7 @@
             gctx.stroke();
             gctx.fillStyle = '#3399ff';
             gctx.beginPath(); gctx.arc(pxNow, VY(sim.VA[ci]), 3.5, 0, Math.PI * 2); gctx.fill();
-            gctx.fillStyle = '#ff9933';
+            gctx.fillStyle = '#8a8f98';
             gctx.beginPath(); gctx.arc(pxNow, VY(sim.VB[ci]), 3.5, 0, Math.PI * 2); gctx.fill();
 
             // 轴标签
@@ -1090,7 +1078,7 @@
             gctx.fillStyle = '#8899aa';
             gctx.font = '10px system-ui';
             gctx.fillText('vₐ', padL + 24, padT + 28);
-            gctx.fillStyle = '#ff9933';
+            gctx.fillStyle = '#8a8f98';
             gctx.fillRect(padL + 52, padT + 22, 14, 3);
             gctx.fillStyle = '#8899aa';
             gctx.fillText('vᵦ', padL + 70, padT + 28);
@@ -1214,7 +1202,7 @@
             stctx.stroke();
 
             // 曲线 B（位移 = XB - XB[0]）
-            stctx.strokeStyle = '#ff9933';
+            stctx.strokeStyle = '#8a8f98';
             stctx.lineWidth = 2;
             stctx.beginPath();
             stctx.moveTo(TX(sim.T[0]), SY(sim.XB[0] - s0B));
@@ -1235,7 +1223,7 @@
                 stctx.textAlign = 'left';
                 stctx.fillStyle = '#3399ff';
                 stctx.fillText(sAEnd.toFixed(1) + 'm', pxEndA + 5, SY(sAEnd) + 3);
-                stctx.fillStyle = '#ff9933';
+                stctx.fillStyle = '#8a8f98';
                 stctx.fillText(sBEnd.toFixed(1) + 'm', pxEndB + 5, SY(sBEnd) + 3);
             }
 
@@ -1250,7 +1238,7 @@
             stctx.stroke();
             stctx.fillStyle = '#3399ff';
             stctx.beginPath(); stctx.arc(pxNow, SY(sim.XA[ci] - s0A), 3.5, 0, Math.PI * 2); stctx.fill();
-            stctx.fillStyle = '#ff9933';
+            stctx.fillStyle = '#8a8f98';
             stctx.beginPath(); stctx.arc(pxNow, SY(sim.XB[ci] - s0B), 3.5, 0, Math.PI * 2); stctx.fill();
 
             // 轴标签
@@ -1271,7 +1259,7 @@
             stctx.fillStyle = '#8899aa';
             stctx.font = '10px system-ui';
             stctx.fillText('sₐ', padL + 24, padT + 28);
-            stctx.fillStyle = '#ff9933';
+            stctx.fillStyle = '#8a8f98';
             stctx.fillRect(padL + 52, padT + 22, 14, 3);
             stctx.fillStyle = '#8899aa';
             stctx.fillText('sᵦ', padL + 70, padT + 28);
