@@ -1,0 +1,8 @@
+--- a/block-plate.html
++++ b/block-plate.html
+@@ -48,7 +48,7 @@
+             border-radius: 10px;
+             background-color: #0b1828;
+         }
+-        canvas#scene { aspect-ratio: 880 / 520; }
++        canvas#scene { aspect-ratio: 880 / 300; }
