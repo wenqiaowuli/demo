@@ -710,9 +710,12 @@
             ctx.lineTo(tipX - dir * 8, cy + 5);
             ctx.closePath();
             ctx.fill();
-            ctx.font = 'bold 11px system-ui';
-            ctx.textAlign = 'center';
-            ctx.fillText(label, tipX - dir * 16, cy + 4);
+            if (label) {
+                // 需求一（v7）：符号与箭头同一水平线，位于尖端外侧不重合
+                ctx.font = 'bold 11px system-ui';
+                ctx.textAlign = 'center';
+                ctx.fillText(label, tipX + dir * 22, cy + 4);
+            }
         }
 
         function drawForces(t, drawA, drawB, s) {
@@ -746,7 +749,7 @@
                         // 需求二：物块摩擦力箭头红色定长（3×物块长），只示方向
                         drawArrow(aScreenX, aMidY, fDir, 3 * BLOCK_W_M * s, `rgba(255,68,68,${fAlpha})`, 'f', 'tail');
                         const bTopY = groundY - PLATE_H - 6;
-                        drawArrow(bScreenX, bTopY, -fDir, arrowLen(fMag), `rgba(255,221,87,${fAlpha})`, "f₁'");
+                        drawArrow(bScreenX, bTopY, -fDir, arrowLen(fMag), `rgba(255,221,87,${fAlpha})`, "");
                     }
                 } else if (mu2 > 0 && Math.abs(drawA.v) > 1e-6) {
                     const fStat = P.mA * mu2 * g;
@@ -755,7 +758,7 @@
                         const aMidY = groundY - PLATE_H - blockH / 2;
                         drawArrow(aScreenX, aMidY, fDir, 3 * BLOCK_W_M * s, `rgba(255,68,68,${fAlpha})`, 'f', 'tail');
                         const bTopY = groundY - PLATE_H - 6;
-                        drawArrow(bScreenX, bTopY, -fDir, arrowLen(fStat), `rgba(255,221,87,${fAlpha})`, "f₁'");
+                        drawArrow(bScreenX, bTopY, -fDir, arrowLen(fStat), `rgba(255,221,87,${fAlpha})`, "");
                     }
                 }
 
@@ -764,14 +767,14 @@
                     const fDir = Math.sign(drawB.v) > 0 ? -1 : 1;
                     if (fGnd > 0.1) {
                         const fGndY = groundY + 12;
-                        drawArrow(bScreenX, fGndY, fDir, arrowLen(fGnd), '#ff6644', 'f₂');
+                        drawArrow(bScreenX, fGndY, fDir, arrowLen(fGnd), '#ff6644', '');
                     }
                 } else if (mu2 > 0 && Math.abs(drawA.v) > 1e-6) {
                     const driveF = mu1 * P.mA * g;
                     if (driveF <= mu2 * (P.mA + P.mB) * g + 1e-9 && driveF > 0.1) {
                         const fDir = -sig;
                         const fGndY = groundY + 12;
-                        drawArrow(bScreenX, fGndY, fDir, arrowLen(driveF), '#ff6644', 'f₂');
+                        drawArrow(bScreenX, fGndY, fDir, arrowLen(driveF), '#ff6644', '');
                     }
                 }
             } else {
@@ -790,7 +793,7 @@
                     const fB = mu2 * P.mB * g;
                     const fDir = Math.sign(drawB.v) > 0 ? -1 : 1;
                     const bMidY = groundY - PLATE_H / 2;
-                    drawArrow(bScreenX, bMidY, fDir, arrowLen(fB), '#ff6644', 'f₂');
+                    drawArrow(bScreenX, bMidY, fDir, arrowLen(fB), '#ff6644', '');
                 }
             }
         }
@@ -839,6 +842,12 @@
                 ctx.fillText(m + 'm', SX(m), groundY + 24);
             }
 
+            // 需求四（v7）：活动区域裁剪——区域外的板块/物块部分不显示
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(SX(REGION_MIN), 0, SX(REGION_MAX) - SX(REGION_MIN), view.height);
+            ctx.clip();
+
             // 板块 B
             const bLeft  = SX(drawB.x);
             const bRight = SX(drawB.x + P.L);
@@ -869,13 +878,6 @@
                 ctx.stroke();
             }
 
-            // 需求二/五（v6）：板身内嵌汉字"板"，预览态不显示任何标识
-            if (state !== 'idle') {
-                ctx.fillStyle = '#fff';
-                ctx.font = 'bold 10px system-ui';
-                ctx.textAlign = 'center';
-                ctx.fillText('板', (bLeft + bRight) / 2, bTop + 9);
-            }
 
             // 物块 A
             // 物块 A：固定正方形（需求一），宽 = 高 = BLOCK_W_M × scale
@@ -887,10 +889,6 @@
             const dropFrac = dropFraction(t);
             const aBot = bTop + PLATE_H * dropFrac;
             const aTopY = aBot - blockH;
-
-            // 需求 21：块宽不足以容纳文字时（移动端窄块），名称/速度上移到块上方
-            ctx.font = 'bold 11px system-ui';
-            const nameTooWide = ctx.measureText('物块').width > blockW;
 
             if (drawA.onPlate) {
                 const aLeft = SX(drawA.x);
@@ -908,17 +906,6 @@
                 ctx.lineWidth = 2;
                 ctx.strokeRect(aLeft, aTopY, blockW, aBot - aTopY);
 
-                // 需求五（v6）：标注"物块"（去字母），预览态不显示
-                if (state !== 'idle') {
-                    ctx.fillStyle = '#fff';
-                    ctx.font = 'bold 11px system-ui';
-                    ctx.textAlign = 'center';
-                    if (nameTooWide) {
-                        ctx.fillText('物块', aLeft + blockW / 2, aTopY - 16);
-                    } else {
-                        ctx.fillText('物块', aLeft + blockW / 2, aTopY + 14);
-                    }
-                }
             } else {
                 const ax = Math.max(4, Math.min(SX(drawA.x), view.width - blockW - 4));
 
@@ -935,14 +922,10 @@
                 ctx.lineWidth = 2;
                 ctx.strokeRect(ax, aTopY, blockW, blockH);
 
-                // 需求五（v6）：滑出后标注"物块"，预览态不显示
-                if (state !== 'idle') {
-                    ctx.fillStyle = '#fff';
-                    ctx.font = 'bold 11px system-ui';
-                    ctx.textAlign = 'center';
-                    ctx.fillText('物块', ax + blockW / 2, nameTooWide ? aTopY - 16 : aTopY + 14);
-                }
             }
+
+            // 恢复裁剪（摩擦力箭头不参与裁剪）
+            ctx.restore();
 
             // 摩擦力
             drawForces(t, drawA, drawB, s);
