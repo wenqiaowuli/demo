@@ -4,16 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!--
-    文件描述：板块运动演示（通用版 v3）
+    文件描述：板块运动演示（通用版 v4）
     物理内容：展示物块 A 在板块 B 上的相对滑动、共速、滑出及摩擦生热等完整过程，
               双摩擦系数建模（μ₁ = A-B 之间，μ₂ = B-地面之间，μ₂ 默认 0）。
               共速后按 μ_s=μ₁ 判断能否锁死：需 μ₁≥μ₂ 才能一起减速，否则继续相对滑动。
               支持 A、B 双初速度（v0B 可为负值，即反向），A、B 质量可调。
               事件驱动精确积分：每步解析求解，v-t 图从预计算序列回放。
-    v3 变更：物块 A 固定 2.0 m 正方形（不随板长/运动变化）；
-              正方向向右，v₀B 默认 +2.0 m/s（A、B 默认均向右运动）；
-              固定运动区域 [-10 m, +40 m]、固定比例尺（不动态取景），
-              物体未停止而完全越出区域 -> 整个演示立即结束。
+    v4 变更：板与物块从活动区最左端（x=0）出发；板厚 24→12px（板身内嵌"B"标记）；
+              物块 A 缩小为 1.0m 正方形（体积 1/4）；板默认长 20m（=20×物块），
+              滑条 2–40m 步长 1；正方向标注移至左上角；
+              活动区域 [0, 60m] 不绘制边界线，物体未停止完全穿过即结束并提示。
     适用场景：高中物理"板块模型"教学，可调 v₀A、v₀B、m_A、m_B、双动摩擦因数与板长 L，
               实时显示 v-t 图、相对位移、摩擦生热等数据，支持物块滑出后继续运动的情景。
     风格：与斜抛运动演示网页（oblique-throw-motion.html）统一的深色系列。
@@ -234,8 +234,8 @@
                 </div>
                 <div class="param-row">
                     <label for="plateLen">板长 L</label>
-                    <input id="plateLen" type="range" min="2" max="10" value="6" step="0.5">
-                    <div class="val" id="plateLenVal">6.0 m</div>
+                    <input id="plateLen" type="range" min="2" max="40" value="20" step="1">
+                    <div class="val" id="plateLenVal">20.0 m</div>
                 </div>
                 <div class="param-row">
                     <label for="ts">动画速度</label>
@@ -328,15 +328,16 @@
         const PAD_X = 90;
         const PAD_RIGHT = 70;
         const PAD_BOTTOM = 58;
-        const PLATE_H = 24;
+        const PLATE_H = 12;
 
-        // ========== v3 需求 ==========
-        // 需求一：物块 A 世界尺寸固定 2.0 m（正方形），不随板长/运动/缩放变化
-        const BLOCK_W_M = 2.0;
-        // 需求三：固定运动区域（世界坐标），比例尺固定，不再动态取景；
-        // 任一物体未停止而完全越出区域 -> 整个演示立即结束
-        const REGION_MIN = -10;
-        const REGION_MAX = 40;
+        // ========== v4 需求 ==========
+        // 需求三：物块 A 世界尺寸固定 1.0 m（正方形，体积为 v3 的 1/4），
+        // 不随板长/运动/缩放变化
+        const BLOCK_W_M = 1.0;
+        // 需求六：活动区域 [0, 60]（内部判定，不在画面绘制边界线）；
+        // 任一物体未停止而完全穿出区域 -> 整个演示立即结束
+        const REGION_MIN = 0;
+        const REGION_MAX = 60;
 
         function viewScale() {
             return (view.width - PAD_X - PAD_RIGHT) / (REGION_MAX - REGION_MIN);
@@ -349,7 +350,7 @@
             v0B: 2,
             mu: 0.2,
             mu2: 0,
-            L: 6,
+            L: 20,
         };
 
         // ========== 事件驱动精确积分预仿真 ==========
@@ -802,22 +803,11 @@
                 ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, groundY); ctx.stroke();
             }
 
-            // 运动区域边界（需求三）：左右边界醒目虚线
-            ctx.strokeStyle = 'rgba(255,102,68,0.8)';
-            ctx.lineWidth = 2;
-            ctx.setLineDash([8, 6]);
-            for (const bx of [SX(REGION_MIN), SX(REGION_MAX)]) {
-                ctx.beginPath(); ctx.moveTo(bx, 14); ctx.lineTo(bx, groundY); ctx.stroke();
-            }
-            ctx.setLineDash([]);
-
-            // 正方向标注（需求二.1）
+            // 正方向标注（需求五）：左上角
             ctx.fillStyle = '#8899aa';
             ctx.font = '11px system-ui';
-            ctx.textAlign = 'right';
-            ctx.fillText('正方向 →', SX(REGION_MAX) - 6, 24);
             ctx.textAlign = 'left';
-            ctx.fillText('运动区域', SX(REGION_MIN) + 6, 24);
+            ctx.fillText('正方向 →', SX(REGION_MIN) + 6, 24);
 
             // 地面
             ctx.strokeStyle = '#3a4a5a';
@@ -866,15 +856,12 @@
                 ctx.stroke();
             }
 
+            // 需求二：板厚 12px 不再容纳完整标签，板身内嵌短标记 "B"
+            // （速度/板长信息由参数滑条与数据面板承载）
             ctx.fillStyle = '#fff';
-            ctx.font = 'bold 11px system-ui';
+            ctx.font = 'bold 10px system-ui';
             ctx.textAlign = 'center';
-            // 需求 21：窄画布（移动端）板标签自动精简，避免超出板宽
-            let bLabel = `板块 B · vᵦ = ${drawB.v.toFixed(1)} m/s · L = ${P.L.toFixed(1)} m`;
-            if (ctx.measureText(bLabel).width > bRight - bLeft - 6) {
-                bLabel = `B · ${drawB.v.toFixed(1)} m/s`;
-            }
-            ctx.fillText(bLabel, (bLeft + bRight) / 2, bTop + 16);
+            ctx.fillText('B', (bLeft + bRight) / 2, bTop + 9);
 
             // 物块 A
             // 物块 A：固定正方形（需求一），宽 = 高 = BLOCK_W_M × scale
@@ -1407,7 +1394,7 @@
 
             let msg;
             if (sim.tExit !== null) {
-                msg = `${sim.exitObjs.join('、')} 未停止即越出运动区域（−10 m ～ +40 m），演示结束。`;
+                msg = `${sim.exitObjs.join('、')} 未停止即穿过活动区域，演示结束。`;
             } else if (sim.willSlideOff) {
                 const edge = sim.offEdge === 'back' ? '后' : '前';
                 msg = sim.mu2 > 0
@@ -1474,7 +1461,7 @@
 
             if (state === 'idle') {
                 if (sim.tExit !== null) {
-                    elStatus.textContent = `当前参数：物体将未停止越出运动区域，演示于 t = ${sim.tExit.toFixed(1)} s 提前结束。`;
+                    elStatus.textContent = `当前参数：物体将未停止穿过活动区域，演示于 t = ${sim.tExit.toFixed(1)} s 提前结束。`;
                 } else if (sim.willSlideOff) {
                     const edge = sim.offEdge === 'back' ? '后' : '前';
                     elStatus.textContent = `当前参数：相对滑移将达板长，A 会从${edge}缘滑出。`;
@@ -1567,7 +1554,7 @@
             P.mB  = parseFloat(elMB.value) / 10;
             P.mu  = parseFloat(elMu.value) / 100;
             P.mu2 = parseFloat(elMu2.value) / 100;
-            P.L   = parseFloat(elL.value) || 6;
+            P.L   = parseFloat(elL.value) || 20;
             timeScale = parseFloat(elTs.value) / 10;
 
             elV0AVal.textContent = P.v0A.toFixed(1) + ' m/s';
