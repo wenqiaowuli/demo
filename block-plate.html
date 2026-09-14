@@ -26,6 +26,7 @@
               （废除固定 6 秒观察窗），μ₂>0 时两者停止后结束。
     v9 变更：地面线由距底部固定 58px 调整为距底部 1/3 总高（groundY = height×2/3），
             上方活动空间加大，随窗口缩放按比例保持。
+    v10 变更：物块 A 默认初速度 v₀A 由 12 m/s 调整为 10 m/s（范围 2–20 m/s 不变）。
     适用场景：高中物理"板块模型"教学，可调 v₀A、v₀B、m_A、m_B、双动摩擦因数与板长 L，
               实时显示 v-t 图、相对位移、摩擦生热等数据，支持物块滑出后继续运动的情景。
     风格：与斜抛运动演示网页（oblique-throw-motion.html）统一的深色系列。
@@ -216,8 +217,8 @@
                 <div class="group-title" id="parameterTitle">参数设定</div>
                 <div class="param-row">
                     <label for="v0A">物块初速度</label>
-                    <input id="v0A" type="range" min="2" max="20" value="12" step="0.5">
-                    <div class="val" id="v0AVal">12.0 m/s</div>
+                    <input id="v0A" type="range" min="2" max="20" value="10" step="0.5">
+                    <div class="val" id="v0AVal">10.0 m/s</div>
                 </div>
                 <div class="param-row">
                     <label for="v0B">板块初速度</label>
@@ -361,7 +362,7 @@
         // ========== 物理参数 ==========
         const P = {
             mA: 2, mB: 4,
-            v0A: 12,
+            v0A: 10,
             v0B: 0,
             mu: 0.2,
             mu2: 0,
@@ -1545,7 +1546,7 @@
             playIdx = 0;
             slideOffTriggered = false;
 
-            P.v0A = parseFloat(elV0A.value) || 12;
+            P.v0A = parseFloat(elV0A.value) || 10;
             P.v0B = parseFloat(elV0B.value) / 10;
             P.mA  = parseFloat(elMA.value) / 10;
             P.mB  = parseFloat(elMB.value) / 10;
