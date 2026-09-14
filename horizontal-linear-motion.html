@@ -344,7 +344,7 @@
 
         function sceneGeometry() {
             const plotL = 48, plotR = sceneView.width - 48;
-            const axisY = Math.round(sceneView.height / 3);
+            const axisY = Math.round(sceneView.height * 2 / 3);
             const pix = (plotR - plotL) / (2 * X_HALF);
             const xToScreen = x => (plotL + plotR) / 2 + x * pix;
             return { plotL, plotR, axisY, pix, xToScreen };
