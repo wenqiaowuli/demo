@@ -223,8 +223,7 @@
         </div>
         <div class="actions">
             <button id="btnStart" type="button">开始</button>
-            <button id="btnPause" type="button" disabled>暂停</button>
-            <button id="btnContinue" type="button" disabled>继续</button>
+            <button id="btnPauseResume" type="button" disabled>暂停</button>
             <button id="btnReset" type="button">重置</button>
         </div>
         <div class="legend">
@@ -265,8 +264,7 @@
         const elTZero = document.getElementById('tZero');
         const elTurnS = document.getElementById('turnS');
         const btnStart = document.getElementById('btnStart');
-        const btnPause = document.getElementById('btnPause');
-        const btnContinue = document.getElementById('btnContinue');
+        const btnPauseResume = document.getElementById('btnPauseResume');
         const btnReset = document.getElementById('btnReset');
 
         let state = 'idle';
@@ -668,8 +666,8 @@
             state = 'ended';
             btnStart.disabled = false;
             btnStart.textContent = '重新开始';
-            btnPause.disabled = true;
-            btnContinue.disabled = true;
+            btnPauseResume.disabled = true;
+            btnPauseResume.textContent = '暂停';
             inputV0.disabled = false;
             inputAcc.disabled = false;
         }
@@ -698,15 +696,16 @@
         }
 
         function start() {
-            if (state === 'running' || state === 'paused') return;
+            if (state === 'running') return;
+            if (raf) cancelAnimationFrame(raf);
             t = 0;
             lastTs = null;
             trail = [];
             state = 'running';
             btnStart.disabled = true;
             btnStart.textContent = '运行中…';
-            btnPause.disabled = false;
-            btnContinue.disabled = true;
+            btnPauseResume.disabled = false;
+            btnPauseResume.textContent = '暂停';
             inputV0.disabled = true;
             inputAcc.disabled = true;
             updateReadouts();
@@ -718,16 +717,18 @@
             if (state !== 'running') return;
             state = 'paused';
             if (raf) cancelAnimationFrame(raf);
-            btnPause.disabled = true;
-            btnContinue.disabled = false;
+            btnStart.disabled = false;
+            btnStart.textContent = '重新开始';
+            btnPauseResume.textContent = '继续';
         }
 
         function resume() {
             if (state !== 'paused') return;
             state = 'running';
             lastTs = null;
-            btnPause.disabled = false;
-            btnContinue.disabled = true;
+            btnStart.disabled = true;
+            btnStart.textContent = '运行中…';
+            btnPauseResume.textContent = '暂停';
             raf = requestAnimationFrame(frame);
         }
 
@@ -742,8 +743,8 @@
             inputAcc.disabled = false;
             btnStart.disabled = false;
             btnStart.textContent = '开始';
-            btnPause.disabled = true;
-            btnContinue.disabled = true;
+            btnPauseResume.disabled = true;
+            btnPauseResume.textContent = '暂停';
             updateParameterLabels();
             updateReadouts();
             renderAll();
@@ -756,8 +757,10 @@
         }
 
         btnStart.addEventListener('click', start);
-        btnPause.addEventListener('click', pause);
-        btnContinue.addEventListener('click', resume);
+        btnPauseResume.addEventListener('click', () => {
+            if (state === 'running') pause();
+            else if (state === 'paused') resume();
+        });
         btnReset.addEventListener('click', reset);
         inputV0.addEventListener('input', () => {
             updateParameterLabels();
