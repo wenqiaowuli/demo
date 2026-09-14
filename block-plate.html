@@ -24,6 +24,8 @@
               参数滑条标签与界面文案全面汉化（去 A/B 字母），形体标注"物块"/"板"；
               结束判定分情况：μ₂=0 时物块与板块都完全离开活动区域后结束
               （废除固定 6 秒观察窗），μ₂>0 时两者停止后结束。
+    v9 变更：地面线由距底部固定 58px 调整为距底部 1/3 总高（groundY = height×2/3），
+            上方活动空间加大，随窗口缩放按比例保持。
     适用场景：高中物理"板块模型"教学，可调 v₀A、v₀B、m_A、m_B、双动摩擦因数与板长 L，
               实时显示 v-t 图、相对位移、摩擦生热等数据，支持物块滑出后继续运动的情景。
     风格：与斜抛运动演示网页（oblique-throw-motion.html）统一的深色系列。
@@ -341,7 +343,6 @@
         // ========== 场景视图 ==========
         const PAD_X = 90;
         const PAD_RIGHT = 70;
-        const PAD_BOTTOM = 58;
         const PLATE_H = 12;
 
         // ========== v4 需求 ==========
@@ -725,7 +726,7 @@
             // 需求二（v6）：预览态（未开始）不绘制任何摩擦力箭头
             if (state === 'idle') return;
             const mu1 = P.mu, mu2 = P.mu2;
-            const groundY = view.height - PAD_BOTTOM;
+            const groundY = Math.round(view.height * 2 / 3);
             const blockH = BLOCK_W_M * s;
             const SX = x => PAD_X + (x - REGION_MIN) * s;
 
@@ -797,7 +798,7 @@
             ctx.clearRect(0, 0, view.width, view.height);
 
             const s = viewScale();
-            const groundY = view.height - PAD_BOTTOM;
+            const groundY = Math.round(view.height * 2 / 3);
             const SX = x => PAD_X + (x - REGION_MIN) * s;
 
             // 水平网格
