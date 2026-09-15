@@ -250,10 +250,6 @@
         </div>
         <div class="legend">
             <span>□ 电梯轿厢（内有人与体重计）</span>
-            <span style="color:#ff9933">视重读数：超重</span>
-            <span style="color:#ffffff">视重读数：正常</span>
-            <span style="color:#66aaff">视重读数：失重</span>
-            <span style="color:#33ddcc">视重读数：完全失重</span>
             <span style="color:#ff9933">→ 加速度 a</span>
             <span>楼层线（每层 3 m）与左侧高度标尺</span>
             <span style="color:#33ddcc">-- 虚线：上行高度 H / 图中实重 G</span>
@@ -594,11 +590,10 @@
         function drawBubble(geometry, cabin) {
             const ph = phaseAt(t);
             const fShow = state === 'idle' ? gForceOf() : ph.F;
-            const st = state === 'idle' ? { color: COLOR_NORMAL } : stateOf(ph);
             const textX = Math.min(geometry.cabinX + CABIN_W / 2 + 28, sceneView.width - 112);
             sctx.textAlign = 'left';
             sctx.font = 'bold 13px system-ui, sans-serif';
-            sctx.fillStyle = st.color;
+            sctx.fillStyle = COLOR_NORMAL;
             sctx.fillText('视重 = ' + fShow.toFixed(0) + ' N', textX, readingLabelY(geometry, cabin));
         }
 
