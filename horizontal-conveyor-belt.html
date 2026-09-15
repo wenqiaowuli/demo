@@ -297,11 +297,6 @@ footer {
         <span class="val" id="muv">0.30</span>
       </div>
       <div class="param-row">
-        <label>重力 g</label>
-        <input id="g" type="range" min="5" max="15" step="0.1" value="10">
-        <span class="val" id="gv">10.0 m/s²</span>
-      </div>
-      <div class="param-row">
         <label>带长 L</label>
         <input id="len" type="range" min="5" max="40" step="1" value="24">
         <span class="val" id="lenVal">24 m</span>
@@ -318,7 +313,7 @@ footer {
         摩擦生热：<em>Q = μmg · s相对</em><br>
         共速后：<em>v = v带</em>，<em>a = 0</em>，匀速 · s相对 停止增长<br>
         正方向：物块位移向右为正；传送带位移 v带 > 0 向右<br>
-        参数：μ（动摩擦因数）· m = 1 kg（物块质量）· g（重力加速度）· v₀（初速度）· v带（传送带速度）· L（带长）
+        参数：μ（动摩擦因数）· m = 1 kg（物块质量）· v₀（初速度）· v带（传送带速度）· L（带长）；g = 10 m/s²（固定值）
       </div>
     </section>
 
@@ -383,7 +378,6 @@ footer {
   const $ = id => document.getElementById(id);
   const v0El  = $('v0'),  v0v  = $('v0v');
   const muEl  = $('mu'),  muv  = $('muv');
-  const gEl   = $('g'),   gv   = $('gv');
   const startLeft = $('startLeft'), startRight = $('startRight');
   const vbSizeEl = $('vbSize'), vbSizeVal = $('vbSizeVal');
   const vbv = $('vbv');
@@ -1076,7 +1070,7 @@ footer {
 
   // ===== 控件 =====
   function setSliders(dis) {
-    [v0El, muEl, gEl, lenEl, vbSizeEl, speedEl].forEach(el => { el.disabled = dis; });
+    [v0El, muEl, lenEl, vbSizeEl, speedEl].forEach(el => { el.disabled = dis; });
     startLeft.disabled = dis || state.startSide === 'left';
     startRight.disabled = dis || state.startSide === 'right';
   }
@@ -1084,14 +1078,13 @@ footer {
   function readControls() {
     state.v0    = parseFloat(v0El.value);
     state.mu    = parseFloat(muEl.value);
-    state.g     = parseFloat(gEl.value);
+    state.g     = 10;   // 重力加速度固定值（系列惯例）
     state.L     = parseFloat(lenEl.value);
     state.speed = parseFloat(speedEl.value);
     state.vbSize = parseFloat(vbSizeEl.value);
     state.vBelt = state.vbSize;
     v0v.textContent   = (state.v0 >= 0 ? '+' : '') + state.v0.toFixed(1) + ' m/s';
     muv.textContent   = state.mu.toFixed(2);
-    gv.textContent    = state.g.toFixed(1) + ' m/s²';
     vbv.textContent   = (state.vBelt >= 0 ? '+' : '') + state.vBelt.toFixed(1) + ' m/s';
     vbSizeVal.textContent = (state.vbSize >= 0 ? '+' : '') + state.vbSize.toFixed(1) + ' m/s';
     lenVal.textContent  = state.L + ' m';
@@ -1176,7 +1169,7 @@ footer {
     if (phase === 'run') return;
     reset(); // 完整重置：idle/done 态改 L 后恢复 idle 与按钮状态（L18）
   }
-  [v0El, muEl, gEl].forEach(el => {
+  [v0El, muEl].forEach(el => {
     el.addEventListener('input', () => { if (phase === 'idle' || phase === 'done') reset(); });
   });
   lenEl.addEventListener('input', updateL);

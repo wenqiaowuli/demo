@@ -291,11 +291,6 @@ footer {
         <span class="val" id="muv">0.50</span>
       </div>
       <div class="param-row">
-        <label>重力 g</label>
-        <input id="g" type="range" min="5" max="15" step="0.1" value="10">
-        <span class="val" id="gv">10.0 m/s²</span>
-      </div>
-      <div class="param-row">
         <label>带长 L</label>
         <input id="len" type="range" min="4" max="20" step="1" value="10">
         <span class="val" id="lenVal">10 m</span>
@@ -320,7 +315,7 @@ footer {
         带向上·轻放：<em>μ&gt;tanθ 先 a=μg·cosθ−g·sinθ，共速后匀速；μ≤tanθ 无法上带</em><br>
         带向下·轻放：<em>先 a=g·sinθ+μg·cosθ；共速后 μ≥tanθ 匀速，μ&lt;tanθ 以 a=g·sinθ−μg·cosθ 继续加速</em><br>
         正方向：沿斜面向上为正；v带、v₀ 正负表示方向<br>
-        参数：μ（动摩擦因数）· m = 1 kg（物块质量）· g（重力加速度）· θ（倾角）· v带（带速）· v₀（初速度）· L（带长）
+        参数：μ（动摩擦因数）· m = 1 kg（物块质量）· θ（倾角）· v带（带速）· v₀（初速度）· L（带长）；g = 10 m/s²（固定值）
       </div>
     </section>
 
@@ -394,9 +389,9 @@ footer {
   // ===== DOM =====
   const $ = id => document.getElementById(id);
   const thEl = $('theta'), v0El = $('v0'), vbEl = $('vb'), muEl = $('mu'),
-        gEl = $('g'), lenEl = $('len'), speedEl = $('speed');
+        lenEl = $('len'), speedEl = $('speed');
   const thVal = $('thVal'), v0v = $('v0v'), vbv = $('vbv'), muv = $('muv'),
-        gv = $('gv'), lenVal = $('lenVal'), speedVal = $('speedVal');
+        lenVal = $('lenVal'), speedVal = $('speedVal');
   const posBottom = $('posBottom'), posMid = $('posMid'), posTop = $('posTop');
   const bStart = $('bStart'), bPause = $('bPause'), bContinue = $('bContinue'), bReset = $('bReset');
   const hudRow = $('hudRow');
@@ -1064,7 +1059,7 @@ footer {
   }
 
   // ===== 控件 =====
-  const sliderEls = [thEl, v0El, vbEl, muEl, gEl, lenEl];
+  const sliderEls = [thEl, v0El, vbEl, muEl, lenEl];
   const posBtns = [posBottom, posMid, posTop];
   function setSliders(dis) {
     sliderEls.forEach(el => { el.disabled = dis; });
@@ -1081,14 +1076,13 @@ footer {
     state.v0 = parseFloat(v0El.value);
     state.vBelt = parseFloat(vbEl.value);
     state.mu = parseFloat(muEl.value);
-    state.g = parseFloat(gEl.value);
+    state.g = 10;   // 重力加速度固定值（系列惯例）
     state.L = parseInt(lenEl.value, 10);
     state.speed = parseFloat(speedEl.value);
     thVal.textContent = state.theta + '°';
     v0v.textContent = (state.v0 >= 0 ? '+' : '−') + Math.abs(state.v0).toFixed(1) + ' m/s';
     vbv.textContent = (state.vBelt >= 0 ? '+' : '−') + Math.abs(state.vBelt).toFixed(1) + ' m/s';
     muv.textContent = state.mu.toFixed(2);
-    gv.textContent = state.g.toFixed(1) + ' m/s²';
     lenVal.textContent = state.L + ' m';
     speedVal.textContent = String(+state.speed.toFixed(2)) + '×';
   }
@@ -1171,7 +1165,7 @@ footer {
     reset();
   }
 
-  [thEl, v0El, vbEl, muEl, gEl, lenEl].forEach(el => {
+  [thEl, v0El, vbEl, muEl, lenEl].forEach(el => {
     el.addEventListener('input', () => { if (phase === 'idle' || phase === 'done') reset(); });
   });
   speedEl.addEventListener('input', readControls);
