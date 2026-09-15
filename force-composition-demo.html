@@ -1,0 +1,1460 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>力的合成与分解演示｜高中物理</title>
+    <meta name="description" content="力的合成与分解教学演示（人教必修第一册 3.4-3.5）：拖动两分力观察平行四边形定则、合力随夹角变化的曲线与合力范围，体验正交分解、按两已知方向分解与分解的多解性，理解合力与分力的等效替代关系。">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            font-family: system-ui, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 12px 32px;
+        }
+        main {
+            width: 100%;
+            max-width: 880px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1 {
+            font-size: 22px;
+            margin-bottom: 12px;
+            text-align: center;
+        }
+        .mode-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .mode-tabs .tab {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            color: #ccd;
+            padding: 7px 22px;
+            border-radius: 999px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+        }
+        .mode-tabs .tab:hover { background: rgba(255, 255, 255, 0.12); }
+        .mode-tabs .tab.active {
+            background: #3388dd;
+            border-color: #3388dd;
+            color: #ffffff;
+        }
+        .canvas-wrap { width: 100%; }
+        canvas#scene {
+            display: block;
+            width: 100%;
+            aspect-ratio: 880 / 520;
+            border: 2px solid #3388dd;
+            border-radius: 10px;
+            background-color: #0b1828;
+            touch-action: none;
+        }
+        .control-panel {
+            margin-top: 14px;
+            width: 100%;
+            display: grid;
+            grid-template-columns: minmax(240px, 1fr) minmax(280px, 1.25fr);
+            gap: 14px;
+        }
+        @media (max-width: 720px) {
+            .control-panel { grid-template-columns: 1fr; }
+        }
+        .param-group,
+        .data-group {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 14px 16px;
+        }
+        .chart-panel {
+            background: transparent;
+            border: none;
+            border-radius: 0;
+            padding: 0;
+        }
+        .chart-panel .group-title {
+            padding: 0 2px;
+        }
+        .group-title {
+            font-size: 12px;
+            color: #8899aa;
+            margin-bottom: 10px;
+            letter-spacing: 0.5px;
+        }
+        .param-row {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            margin-bottom: 10px;
+        }
+        .param-row label {
+            font-size: 13px;
+            color: #ccd;
+            white-space: nowrap;
+            min-width: 82px;
+        }
+        .param-row input[type=range] { flex: 1; }
+        .param-row .val {
+            min-width: 64px;
+            text-align: right;
+            font-size: 13px;
+            font-variant-numeric: tabular-nums;
+            color: #ccd;
+        }
+        .param-row input[type=range]:disabled + .val { opacity: 0.5; }
+        .seg-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        .seg-row .seg-label {
+            font-size: 13px;
+            color: #ccd;
+            min-width: 82px;
+        }
+        .seg {
+            display: flex;
+            gap: 6px;
+            flex: 1;
+        }
+        .seg button {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            color: #ccd;
+            padding: 6px 4px;
+            border-radius: 7px;
+            font-size: 12.5px;
+            white-space: nowrap;
+        }
+        .seg button:hover { background: rgba(255, 255, 255, 0.12); }
+        .seg button.active {
+            background: #3388dd;
+            border-color: #3388dd;
+            color: #ffffff;
+        }
+        .fixed-note {
+            margin-top: 4px;
+            font-size: 12px;
+            color: #8899aa;
+            line-height: 1.6;
+        }
+        .fixed-note b { color: #ff9933; font-weight: 600; }
+        .data-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 9px;
+        }
+        @media (max-width: 560px) {
+            .data-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+        .data-item {
+            background: rgba(255, 255, 255, 0.035);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            padding: 8px 10px;
+        }
+        .data-item.span-full { grid-column: 1 / -1; }
+        .data-item span {
+            display: block;
+            font-size: 11px;
+            color: #8899aa;
+            margin-bottom: 4px;
+        }
+        .data-item b {
+            display: block;
+            font-size: 14px;
+            color: #ffffff;
+            font-variant-numeric: tabular-nums;
+        }
+        .charts-row {
+            margin-top: 16px;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+        @media (max-width: 720px) {
+            .charts-row { grid-template-columns: 1fr; }
+        }
+        .chart-panel canvas {
+            display: block;
+            width: 100%;
+            aspect-ratio: 20 / 9;
+            background: #0b1828;
+            border: 2px solid #3388dd;
+            border-radius: 10px;
+        }
+        .actions {
+            margin-top: 16px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        button {
+            background: #3388dd;
+            border: none;
+            color: white;
+            padding: 9px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.15s ease, transform 0.15s ease;
+        }
+        button:hover:not(:disabled) { background: #2f7cc8; }
+        button:active:not(:disabled) { transform: translateY(1px); }
+        button:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+        .legend {
+            margin-top: 12px;
+            font-size: 12px;
+            color: #aab;
+            text-align: center;
+            line-height: 1.8;
+        }
+        .legend span { margin: 0 6px; }
+    </style>
+</head>
+<body>
+    <main>
+        <h1>力的合成与分解演示</h1>
+        <div class="mode-tabs" role="tablist" aria-label="演示模式">
+            <button id="tabCompose" class="tab active" type="button" role="tab" aria-selected="true">力的合成</button>
+            <button id="tabResolve" class="tab" type="button" role="tab" aria-selected="false">力的分解</button>
+        </div>
+        <div class="canvas-wrap">
+            <canvas id="scene" role="img" aria-label="力的合成与分解矢量实验台"></canvas>
+        </div>
+        <div class="charts-row">
+            <section class="chart-panel">
+                <div class="group-title" id="titleL">合力-夹角图 (F–θ)</div>
+                <canvas id="chartL" role="img" aria-label="合力随夹角变化的曲线，带合力范围参考线"></canvas>
+            </section>
+            <section class="chart-panel">
+                <div class="group-title" id="titleR">正交分量-夹角图 (Fx、Fy–θ)</div>
+                <canvas id="chartR" role="img" aria-label="合力正交分量随夹角变化的曲线"></canvas>
+            </section>
+        </div>
+        <div class="control-panel">
+            <section class="param-group" aria-labelledby="parameterTitle">
+                <div class="group-title" id="parameterTitle">参数设定</div>
+                <div id="composeParams">
+                    <div class="param-row">
+                        <label for="pF1">分力 F₁</label>
+                        <input id="pF1" type="range" min="1" max="10" value="4" step="0.5" aria-label="分力 F1 大小，方向固定水平向右">
+                        <div class="val" id="pF1Val">4.0 N</div>
+                    </div>
+                    <div class="param-row">
+                        <label for="pF2">分力 F₂</label>
+                        <input id="pF2" type="range" min="1" max="10" value="3" step="0.5" aria-label="分力 F2 大小">
+                        <div class="val" id="pF2Val">3.0 N</div>
+                    </div>
+                    <div class="param-row">
+                        <label for="pTheta">夹角 θ</label>
+                        <input id="pTheta" type="range" min="0" max="180" value="60" step="5" aria-label="F1 与 F2 的夹角">
+                        <div class="val" id="pThetaVal">60°</div>
+                    </div>
+                </div>
+                <div id="resolveParams" style="display:none;">
+                    <div class="param-row">
+                        <label for="pF">合力 F</label>
+                        <input id="pF" type="range" min="2" max="14" value="6" step="0.5" aria-label="合力 F 大小">
+                        <div class="val" id="pFVal">6.0 N</div>
+                    </div>
+                    <div class="param-row">
+                        <label for="pAlpha">方向角 α</label>
+                        <input id="pAlpha" type="range" min="-80" max="80" value="30" step="5" aria-label="合力 F 相对水平方向的方向角">
+                        <div class="val" id="pAlphaVal">30°</div>
+                    </div>
+                    <div class="seg-row">
+                        <div class="seg-label">分解方式</div>
+                        <div class="seg" role="group" aria-label="分解方式">
+                            <button id="segOrtho" type="button" class="active">正交分解</button>
+                            <button id="segTwo" type="button">按两已知方向</button>
+                            <button id="segMulti" type="button">多解性观察</button>
+                        </div>
+                    </div>
+                    <div class="param-row">
+                        <label for="pPhi1">方向角 φ₁</label>
+                        <input id="pPhi1" type="range" min="-80" max="80" value="0" step="5" aria-label="分力 F1撇 的方向角" disabled>
+                        <div class="val" id="pPhi1Val">0°</div>
+                    </div>
+                    <div class="param-row">
+                        <label for="pPhi2">方向角 φ₂</label>
+                        <input id="pPhi2" type="range" min="-80" max="180" value="70" step="5" aria-label="分力 F2撇 的方向角" disabled>
+                        <div class="val" id="pPhi2Val">70°</div>
+                    </div>
+                </div>
+                <div class="param-row" style="margin-top:2px;">
+                    <label for="pSpeed">播放速度</label>
+                    <input id="pSpeed" type="range" min="0.1" max="2" value="1" step="0.1" aria-label="自动演示播放速度倍率">
+                    <div class="val" id="pSpeedVal">1.0×</div>
+                </div>
+                <div class="fixed-note">
+                    合成：平行四边形定则 <b>F = √(F₁²+F₂²+2F₁F₂cosθ)</b>；两分力固定时<b>夹角越大合力越小</b>，范围 |F₁−F₂| ≤ F ≤ F₁+F₂。<br>
+                    特殊情形：同向 θ=0°→F=F₁+F₂；反向 θ=180°→F=|F₁−F₂|；垂直 θ=90°→F=√(F₁²+F₂²)；等大且 θ=120°→F=F₁=F₂。<br>
+                    分解是合成的<b>逆运算</b>：正交分解 Fx=Fcosα、Fy=Fsinα；<b>分解不唯一</b>，附加条件后唯一，分力可任意大。<br>
+                    <b>合力与分力是等效替代关系，不能同时参与受力分析</b>。
+                </div>
+            </section>
+            <section class="data-group" aria-labelledby="dataTitle" aria-live="polite">
+                <div class="group-title" id="dataTitle">实时数值</div>
+                <div class="data-grid" id="composeData">
+                    <div class="data-item"><span>分力 F₁</span><b id="dF1">4.0 N</b></div>
+                    <div class="data-item"><span>分力 F₂</span><b id="dF2">3.0 N</b></div>
+                    <div class="data-item"><span>夹角 θ</span><b id="dTheta">60°</b></div>
+                    <div class="data-item"><span>合力 F</span><b id="dF">6.08 N</b></div>
+                    <div class="data-item"><span>合力方向角 φ（对 F₁）</span><b id="dPhi">25.3°</b></div>
+                    <div class="data-item"><span>正交分量 Fy</span><b id="dFy">2.60 N</b></div>
+                    <div class="data-item"><span>正交分量 Fx</span><b id="dFx">5.50 N</b></div>
+                    <div class="data-item"><span>合力范围 [F₁−F₂, F₁+F₂]</span><b id="dRange">[1.0, 7.0] N</b></div>
+                    <div class="data-item span-full"><span>情形分类</span><b id="dClass">锐角夹角</b></div>
+                </div>
+                <div class="data-grid" id="resolveData" style="display:none;">
+                    <div class="data-item"><span>合力 F</span><b id="dRF">6.0 N</b></div>
+                    <div class="data-item"><span>方向角 α</span><b id="dRAlpha">30°</b></div>
+                    <div class="data-item"><span>分解方式</span><b id="dRMethod">正交分解</b></div>
+                    <div class="data-item"><span>分力 F₁′</span><b id="dF1p">—</b></div>
+                    <div class="data-item"><span>分力 F₂′</span><b id="dF2p">—</b></div>
+                    <div class="data-item"><span>方向角 φ₁ / φ₂</span><b id="dPhis">0° / 70°</b></div>
+                    <div class="data-item"><span>正交分量 Fx</span><b id="dRFx">5.20 N</b></div>
+                    <div class="data-item"><span>正交分量 Fy</span><b id="dRFy">3.00 N</b></div>
+                    <div class="data-item span-full"><span>解的特征</span><b id="dFeature">唯一解（正交分解）</b></div>
+                </div>
+            </section>
+        </div>
+        <div class="actions">
+            <button id="btnStart" type="button">▶ 自动演示</button>
+            <button id="btnPauseResume" type="button" disabled>暂停</button>
+            <button id="btnReset" type="button">重置</button>
+        </div>
+        <div class="legend">
+            <span style="color:#ffcc44">—— F₁ / F₁′ / Fx（黄）</span>
+            <span style="color:#33ddcc">—— F₂ / F₂′ / Fy（青）</span>
+            <span style="color:#ff5555">—— 合力 F（红）</span>
+            <span style="color:#aab">– – 平行四边形辅助线与方向线</span>
+            <span>⊙ 待机时可拖拽端点 / 方向线</span>
+            <span>空格 = 演示/暂停 · R = 重置</span>
+        </div>
+    </main>
+    <script>
+    (() => {
+        const RAD = Math.PI / 180;
+        const BASE_WIDTH = 880;
+        const BASE_HEIGHT = 520;
+        const CHART_ASPECT = 20 / 9;
+        const C_F1 = '#ffcc44', C_F2 = '#33ddcc', C_F = '#ff5555';
+        const C_FX = '#ff9933', C_FY = '#66aaff';
+        const C_DASH = 'rgba(255,255,255,0.4)';
+        const C_GRID = 'rgba(255,255,255,0.05)';
+        const C_AXIS = '#3a4a5c';
+        const SCAN_DUR_COMPOSE = 8;   // θ 0→180° 单程秒数 @1×
+        const SCAN_DUR_RESOLVE = 6;
+
+        // ---------- 参数状态（两模式各自记忆） ----------
+        const compose = { F1: 4, F2: 3, theta: 60 };
+        const resolve = { F: 6, alpha: 30, method: 'ortho', phi1: 0, phi2: 70 };
+        let mode = 'compose';          // 'compose' | 'resolve'
+        let phase = 'idle';            // idle | running | paused | ended
+        const scan = { active: false, value: 0 };   // 演示扫描中的当前角度
+        let raf = null, lastTs = null, progress = 0, scanStart = 0, scanEnd = 1, scanDur = 8;
+
+        // ---------- DOM ----------
+        const $ = (id) => document.getElementById(id);
+        const sceneCanvas = $('scene'), sctx = sceneCanvas.getContext('2d');
+        const chartL = $('chartL'), ctxL = chartL.getContext('2d');
+        const chartR = $('chartR'), ctxR = chartR.getContext('2d');
+        const views = { scene: { width: BASE_WIDTH, height: BASE_HEIGHT }, L: { width: 400, height: 180 }, R: { width: 400, height: 180 } };
+        const tabCompose = $('tabCompose'), tabResolve = $('tabResolve');
+        const titleL = $('titleL'), titleR = $('titleR');
+        const composeParams = $('composeParams'), resolveParams = $('resolveParams');
+        const composeData = $('composeData'), resolveData = $('resolveData');
+        const inF1 = $('pF1'), inF2 = $('pF2'), inTheta = $('pTheta');
+        const inF = $('pF'), inAlpha = $('pAlpha'), inPhi1 = $('pPhi1'), inPhi2 = $('pPhi2');
+        const inSpeed = $('pSpeed');
+        const segOrtho = $('segOrtho'), segTwo = $('segTwo'), segMulti = $('segMulti');
+        const btnStart = $('btnStart'), btnPauseResume = $('btnPauseResume'), btnReset = $('btnReset');
+
+        // ---------- 物理计算 ----------
+        function composeResult(F1, F2, thetaDeg) {
+            const r = thetaDeg * RAD;
+            const Fx = F1 + F2 * Math.cos(r);
+            const Fy = F2 * Math.sin(r);
+            return { F: Math.hypot(Fx, Fy), phi: Math.atan2(Fy, Fx) / RAD, Fx, Fy };
+        }
+        function orthoDecomp(F, alphaDeg) {
+            const a = alphaDeg * RAD;
+            return { Fx: F * Math.cos(a), Fy: F * Math.sin(a) };
+        }
+        function twoDirDecomp(F, alphaDeg, p1, p2) {
+            const a = alphaDeg * RAD, r1 = p1 * RAD, r2 = p2 * RAD;
+            const s = Math.sin(r2 - r1);
+            const lo = Math.min(p1, p2), hi = Math.max(p1, p2);
+            const feasible = (hi - lo) < 180 - 1e-9 && alphaDeg > lo + 1e-9 && alphaDeg < hi - 1e-9;
+            return {
+                feasible,
+                F1p: F * Math.sin(r2 - a) / s,
+                F2p: F * Math.sin(a - r1) / s,
+            };
+        }
+        // 当前显示角度（演示扫描时取扫描值，否则取参数值）
+        function dispTheta() { return scan.active ? scan.value : compose.theta; }
+        function dispAlpha() { return (scan.active && resolve.method === 'ortho') ? scan.value : resolve.alpha; }
+        function dispPhi2() { return (scan.active && resolve.method !== 'ortho') ? scan.value : resolve.phi2; }
+        function composeClass(theta) {
+            if (theta <= 0.01) return { label: '同向（合力最大）', color: '#ffffff' };
+            if (theta >= 179.99) return { label: '反向（合力最小）', color: '#66aaff' };
+            if (Math.abs(theta - 90) < 0.01) return { label: '垂直（F=√(F₁²+F₂²)）', color: '#33ddcc' };
+            if (theta < 90) return { label: '锐角夹角', color: '#ffffff' };
+            return { label: '钝角夹角', color: '#ff9933' };
+        }
+
+        // ---------- 刻度工具（与系列一致） ----------
+        function niceCeil(value) {
+            if (!isFinite(value) || value <= 0) return 1;
+            const magnitude = Math.pow(10, Math.floor(Math.log10(value)));
+            const normalized = value / magnitude;
+            const factor = normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10;
+            return factor * magnitude;
+        }
+        function niceStep(maxValue) {
+            const rawStep = maxValue / 5;
+            const magnitude = Math.pow(10, Math.floor(Math.log10(rawStep)));
+            const normalized = rawStep / magnitude;
+            const factor = normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10;
+            return factor * magnitude;
+        }
+        function tickDecimals(step) {
+            if (step >= 1) return 0;
+            return Math.min(6, Math.ceil(-Math.log10(step) + 1e-9));
+        }
+        const fmt = (v, d = 2) => v.toFixed(d);
+
+        // ---------- 主画布：自适应坐标变换 ----------
+        // pointsN: N 单位坐标点集 → 求 bbox → 缩放平移使 bbox 居中于可用区
+        function makeTransform(pointsN, opts = {}) {
+            const mTop = 46, mBottom = 66, mSide = 44;
+            const availW = BASE_WIDTH - mSide * 2;
+            const availH = BASE_HEIGHT - mTop - mBottom;
+            let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+            pointsN.forEach((p) => {
+                minX = Math.min(minX, p[0]); maxX = Math.max(maxX, p[0]);
+                minY = Math.min(minY, p[1]); maxY = Math.max(maxY, p[1]);
+            });
+            const spanX = Math.max(maxX - minX, 0.5);
+            const spanY = Math.max(maxY - minY, 0.5);
+            let scale = Math.min(availW / spanX, availH / spanY);
+            scale = Math.min(scale, 90);
+            const ox = mSide + (availW - spanX * scale) / 2 - minX * scale;
+            const oy = mTop + (availH - spanY * scale) / 2 + maxY * scale;
+            return {
+                scale, ox, oy,
+                px: (x) => ox + x * scale,
+                py: (y) => oy - y * scale,
+            };
+        }
+
+        function drawArrow(ctx, fromX, fromY, toX, toY, color, width = 3, headLen = 10) {
+            const dx = toX - fromX, dy = toY - fromY;
+            const len = Math.hypot(dx, dy);
+            if (len < 2) return;
+            const angle = Math.atan2(dy, dx);
+            ctx.strokeStyle = color;
+            ctx.fillStyle = color;
+            ctx.lineWidth = width;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(fromX, fromY);
+            ctx.lineTo(toX, toY);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(toX, toY);
+            ctx.lineTo(toX - headLen * Math.cos(angle - Math.PI / 6.5), toY - headLen * Math.sin(angle - Math.PI / 6.5));
+            ctx.lineTo(toX - headLen * Math.cos(angle + Math.PI / 6.5), toY - headLen * Math.sin(angle + Math.PI / 6.5));
+            ctx.closePath();
+            ctx.fill();
+            ctx.lineCap = 'butt';
+        }
+
+        function drawRay(tr, angDeg, color, label, lenN) {
+            const r = angDeg * RAD;
+            const x2 = tr.px(Math.cos(r) * lenN), y2 = tr.py(Math.sin(r) * lenN);
+            sctx.save();
+            sctx.strokeStyle = color;
+            sctx.lineWidth = 1.5;
+            sctx.setLineDash([7, 6]);
+            sctx.beginPath();
+            sctx.moveTo(tr.ox, tr.oy);
+            sctx.lineTo(x2, y2);
+            sctx.stroke();
+            sctx.restore();
+            const hl = 8, ang = Math.atan2(y2 - tr.oy, x2 - tr.ox);
+            sctx.fillStyle = color;
+            sctx.beginPath();
+            sctx.moveTo(x2, y2);
+            sctx.lineTo(x2 - hl * Math.cos(ang - Math.PI / 7), y2 - hl * Math.sin(ang - Math.PI / 7));
+            sctx.lineTo(x2 - hl * Math.cos(ang + Math.PI / 7), y2 - hl * Math.sin(ang + Math.PI / 7));
+            sctx.closePath();
+            sctx.fill();
+            sctx.font = '11px system-ui, sans-serif';
+            sctx.fillStyle = color;
+            sctx.textAlign = ang < 0 || ang > Math.PI ? 'right' : 'left';
+            sctx.fillText(label, x2 + (Math.cos(ang) < 0 ? -6 : 6), y2 + (Math.sin(ang) < 0 ? -6 : 12));
+        }
+
+        // 角度弧：N 空间从 ang1 到 ang2（逆时针为正）；labelAnchor 可指定标签锚点（小角度避让）
+        function drawAngleArc(tr, rPx, ang1N, ang2N, color, label, labelAnchor) {
+            const a1 = -ang1N * RAD, a2 = -ang2N * RAD;
+            const ccw = ang2N > ang1N;
+            sctx.strokeStyle = color;
+            sctx.lineWidth = 1.5;
+            sctx.beginPath();
+            sctx.arc(tr.ox, tr.oy, rPx, a1, a2, ccw);
+            sctx.stroke();
+            let lx, ly;
+            if (labelAnchor) {
+                lx = labelAnchor.x; ly = labelAnchor.y;
+            } else {
+                const mid = (ang1N + ang2N) / 2 * RAD;
+                lx = tr.ox + Math.cos(mid) * (rPx + 16);
+                ly = tr.oy + Math.sin(mid) * (rPx + 16) + 4;
+            }
+            sctx.fillStyle = color;
+            sctx.font = '11.5px system-ui, sans-serif';
+            sctx.textAlign = 'center';
+            sctx.fillText(label, lx, ly);
+        }
+
+        function drawGridAndAxes(tr) {
+            // 浅网格（N 单位，步长取比例尺合适的值）
+            const stepN = gridStepN(tr.scale);
+            sctx.lineWidth = 1;
+            sctx.strokeStyle = C_GRID;
+            const x0 = Math.ceil((-tr.ox) / tr.scale / stepN) * stepN;
+            const x1 = (BASE_WIDTH - tr.ox) / tr.scale;
+            for (let x = x0; x <= x1; x += stepN) {
+                sctx.beginPath();
+                sctx.moveTo(tr.px(x), 0);
+                sctx.lineTo(tr.px(x), BASE_HEIGHT);
+                sctx.stroke();
+            }
+            const y0 = Math.ceil((tr.oy - BASE_HEIGHT) / tr.scale / stepN) * stepN;
+            const y1 = tr.oy / tr.scale;
+            for (let y = y0; y <= y1; y += stepN) {
+                sctx.beginPath();
+                sctx.moveTo(0, tr.py(y));
+                sctx.lineTo(BASE_WIDTH, tr.py(y));
+                sctx.stroke();
+            }
+            // 坐标轴（过 O）
+            sctx.strokeStyle = C_AXIS;
+            sctx.lineWidth = 1.5;
+            sctx.beginPath();
+            sctx.moveTo(6, tr.oy); sctx.lineTo(BASE_WIDTH - 6, tr.oy);
+            sctx.moveTo(tr.ox, 6); sctx.lineTo(tr.ox, BASE_HEIGHT - 6);
+            sctx.stroke();
+            // O 点
+            sctx.fillStyle = '#ffffff';
+            sctx.beginPath();
+            sctx.arc(tr.ox, tr.oy, 4, 0, Math.PI * 2);
+            sctx.fill();
+            sctx.font = 'bold 12px system-ui, sans-serif';
+            sctx.textAlign = 'right';
+            sctx.fillText('O', tr.ox - 8, tr.oy + 14);
+        }
+        function gridStepN(scale) {
+            for (const s of [1, 2, 5, 10]) if (s * scale >= 34) return s;
+            return 10;
+        }
+
+        function drawScaleBar(tr) {
+            let unit = 10;
+            for (const s of [1, 2, 5, 10]) { unit = s; if (s * tr.scale >= 56) break; }
+            const len = unit * tr.scale;
+            const y = BASE_HEIGHT - 26, x0 = 20;
+            sctx.strokeStyle = '#8899aa';
+            sctx.lineWidth = 2;
+            sctx.beginPath();
+            sctx.moveTo(x0, y - 5); sctx.lineTo(x0, y + 5);
+            sctx.moveTo(x0, y); sctx.lineTo(x0 + len, y);
+            sctx.moveTo(x0 + len, y - 5); sctx.lineTo(x0 + len, y + 5);
+            sctx.stroke();
+            sctx.fillStyle = '#8899aa';
+            sctx.font = '11px system-ui, sans-serif';
+            sctx.textAlign = 'left';
+            sctx.fillText(unit + ' N', x0 + len + 7, y + 4);
+        }
+
+        function labelSide(midpoint, tip, base) {
+            // 取远离第三点的法向偏移
+            const dx = tip.x - base.x, dy = tip.y - base.y;
+            const len = Math.hypot(dx, dy) || 1;
+            const nx = -dy / len, ny = dx / len;
+            const cx = midpoint.x + nx * 18, cy = midpoint.y + ny * 18;
+            const far = Math.hypot(cx - base.x, cy - base.y);
+            const cx2 = midpoint.x - nx * 18, cy2 = midpoint.y - ny * 18;
+            const far2 = Math.hypot(cx2 - base.x, cy2 - base.y);
+            return far > far2 ? { x: cx, y: cy } : { x: cx2, y: cy2 };
+        }
+
+        function drawBanner(text) {
+            sctx.font = 'bold 13px system-ui, sans-serif';
+            const w = sctx.measureText(text).width + 28;
+            const x = (BASE_WIDTH - w) / 2, y = 12;
+            sctx.fillStyle = 'rgba(255,85,85,0.16)';
+            sctx.strokeStyle = 'rgba(255,85,85,0.7)';
+            sctx.lineWidth = 1;
+            roundRectPath(sctx, x, y, w, 28, 7);
+            sctx.fill(); sctx.stroke();
+            sctx.fillStyle = '#ff7777';
+            sctx.textAlign = 'center';
+            sctx.fillText(text, BASE_WIDTH / 2, y + 19);
+        }
+        function roundRectPath(ctx, x, y, w, h, r) {
+            ctx.beginPath();
+            ctx.moveTo(x + r, y);
+            ctx.arcTo(x + w, y, x + w, y + h, r);
+            ctx.arcTo(x + w, y + h, x, y + h, r);
+            ctx.arcTo(x, y + h, x, y, r);
+            ctx.arcTo(x, y, x + w, y, r);
+            ctx.closePath();
+        }
+
+        // ---------- 合成模式场景 ----------
+        function drawComposeScene() {
+            const F1 = compose.F1, F2 = compose.F2, th = dispTheta();
+            const res = composeResult(F1, F2, th);
+            const O = [0, 0], P1 = [F1, 0], P2 = [F2 * Math.cos(th * RAD), F2 * Math.sin(th * RAD)];
+            const C = [P1[0] + P2[0], P1[1] + P2[1]];
+            const tr = makeTransform([O, P1, P2, C]);
+            drawGridAndAxes(tr);
+
+            // 平行四边形辅助虚线
+            sctx.save();
+            sctx.strokeStyle = C_DASH;
+            sctx.lineWidth = 1.5;
+            sctx.setLineDash([6, 6]);
+            sctx.beginPath();
+            sctx.moveTo(tr.px(P1[0]), tr.py(P1[1])); sctx.lineTo(tr.px(C[0]), tr.py(C[1]));
+            sctx.moveTo(tr.px(P2[0]), tr.py(P2[1])); sctx.lineTo(tr.px(C[0]), tr.py(C[1]));
+            sctx.stroke();
+            sctx.restore();
+
+            // 角弧：θ（F₁→F₂）与 φ（F₁→F）；小夹角时标签上下分行避让
+            if (th < 40) {
+                drawAngleArc(tr, 34, 0, th, '#dceeff', 'θ=' + Math.round(th) + '°',
+                    { x: tr.ox + Math.cos(th / 2 * RAD) * 50, y: tr.oy - 14 });
+                if (res.F > 0.5 && th > 0.5 && th < 179.5) {
+                    drawAngleArc(tr, 54, 0, res.phi, C_F, 'φ=' + res.phi.toFixed(1) + '°',
+                        { x: tr.ox + Math.cos(res.phi / 2 * RAD) * 70, y: tr.oy + 20 });
+                }
+            } else {
+                drawAngleArc(tr, 34, 0, th, '#dceeff', 'θ=' + Math.round(th) + '°');
+                if (res.F > 0.5 && th > 0.5 && th < 179.5) {
+                    drawAngleArc(tr, 54, 0, res.phi, C_F, 'φ=' + res.phi.toFixed(1) + '°');
+                }
+            }
+
+            // 矢量
+            drawArrow(sctx, tr.ox, tr.oy, tr.px(P1[0]), tr.py(P1[1]), C_F1);
+            drawArrow(sctx, tr.ox, tr.oy, tr.px(P2[0]), tr.py(P2[1]), C_F2);
+            if (res.F > 0.05) drawArrow(sctx, tr.ox, tr.oy, tr.px(C[0]), tr.py(C[1]), C_F, 4, 12);
+
+            // 标注
+            sctx.font = 'bold 13px system-ui, sans-serif';
+            const mid1 = { x: (tr.ox + tr.px(P1[0])) / 2, y: (tr.oy + tr.py(P1[1])) / 2 + 20 };
+            sctx.fillStyle = C_F1; sctx.textAlign = 'center';
+            sctx.fillText('F₁ = ' + F1.toFixed(1) + ' N', mid1.x, mid1.y);
+            const mid2 = labelSide(
+                { x: (tr.ox + tr.px(P2[0])) / 2, y: (tr.oy + tr.py(P2[1])) / 2 },
+                { x: tr.px(P2[0]), y: tr.py(P2[1]) }, { x: tr.ox, y: tr.oy }
+            );
+            sctx.fillStyle = C_F2;
+            sctx.fillText('F₂ = ' + F2.toFixed(1) + ' N', mid2.x, mid2.y);
+            if (res.F > 0.05) {
+                const midF = labelSide(
+                    { x: (tr.ox + tr.px(C[0])) / 2, y: (tr.oy + tr.py(C[1])) / 2 },
+                    { x: tr.px(C[0]), y: tr.py(C[1]) }, { x: tr.ox, y: tr.oy }
+                );
+                sctx.fillStyle = C_F;
+                sctx.fillText('F = ' + res.F.toFixed(2) + ' N', midF.x, midF.y);
+            }
+
+            // 拖拽手柄（待机）
+            if (phase === 'idle') {
+                drawHandle(tr.px(P1[0]), tr.py(P1[1]), C_F1);
+                drawHandle(tr.px(P2[0]), tr.py(P2[1]), C_F2);
+            }
+
+            // 顶部状态与提示
+            const cls = composeClass(th);
+            sctx.font = 'bold 13px system-ui, sans-serif';
+            sctx.fillStyle = cls.color;
+            sctx.textAlign = 'left';
+            sctx.fillText('当前情形：' + cls.label, 18, 24);
+            sctx.fillStyle = '#667788';
+            sctx.font = '11.5px system-ui, sans-serif';
+            sctx.textAlign = 'right';
+            sctx.fillText('待机时可拖拽 F₁ / F₂ 箭头端点调整（吸附 0.5 N / 5°）', BASE_WIDTH - 16, 24);
+            drawScaleBar(tr);
+        }
+        function drawHandle(x, y, color) {
+            sctx.fillStyle = '#0b1828';
+            sctx.strokeStyle = color;
+            sctx.lineWidth = 2.5;
+            sctx.beginPath();
+            sctx.arc(x, y, 7, 0, Math.PI * 2);
+            sctx.fill();
+            sctx.stroke();
+        }
+
+        // ---------- 分解模式场景 ----------
+        function drawResolveScene() {
+            const r = resolve;
+            const alpha = dispAlpha();
+            const phi1 = r.phi1, phi2 = dispPhi2();
+            const F = r.F;
+            const o = orthoDecomp(F, alpha);
+            const td = twoDirDecomp(F, alpha, phi1, phi2);
+            const method = r.method;
+
+            const Ftip = [o.Fx, o.Fy];
+            let pts = [[0, 0], Ftip];
+            if (method === 'ortho') {
+                pts.push([o.Fx, 0], [0, o.Fy]);
+            } else if (td.feasible) {
+                const u1 = [Math.cos(phi1 * RAD), Math.sin(phi1 * RAD)];
+                const u2 = [Math.cos(phi2 * RAD), Math.sin(phi2 * RAD)];
+                pts.push([td.F1p * u1[0], td.F1p * u1[1]], [td.F2p * u2[0], td.F2p * u2[1]]);
+            }
+            // 方向线延伸计入 bbox
+            const rayLenN = Math.max(F * 1.6, Math.abs(o.Fx) + 2, Math.abs(o.Fy) + 2, 14);
+            if (method !== 'ortho') {
+                pts.push([Math.cos(phi1 * RAD) * rayLenN, Math.sin(phi1 * RAD) * rayLenN]);
+                pts.push([Math.cos(phi2 * RAD) * rayLenN, Math.sin(phi2 * RAD) * rayLenN]);
+            } else {
+                pts.push([rayLenN, 0], [0, Math.abs(o.Fy) > 0.1 ? o.Fy : rayLenN * 0.6]);
+            }
+            const tr = makeTransform(pts);
+            drawGridAndAxes(tr);
+
+            // 方向线
+            if (method !== 'ortho') {
+                drawRay(tr, phi1, C_F1, 'φ₁=' + Math.round(phi1) + '°', rayLenN);
+                drawRay(tr, phi2, C_F2, 'φ₂=' + Math.round(phi2) + '°', rayLenN);
+            } else {
+                drawRay(tr, 0, C_F1, 'x', rayLenN);
+                drawRay(tr, 90, C_FY, 'y', rayLenN * 0.75);
+            }
+
+            // α 角弧
+            if (Math.abs(alpha) > 0.5) {
+                drawAngleArc(tr, 30, 0, alpha, '#dceeff', 'α=' + Math.round(alpha) + '°');
+            }
+
+            // 分解分量
+            if (method === 'ortho') {
+                sctx.save();
+                sctx.strokeStyle = C_DASH;
+                sctx.lineWidth = 1.5;
+                sctx.setLineDash([6, 6]);
+                sctx.beginPath();
+                sctx.moveTo(tr.px(o.Fx), tr.py(0)); sctx.lineTo(tr.px(o.Fx), tr.py(o.Fy));
+                sctx.moveTo(tr.px(0), tr.py(o.Fy)); sctx.lineTo(tr.px(o.Fx), tr.py(o.Fy));
+                sctx.stroke();
+                sctx.restore();
+                drawArrow(sctx, tr.ox, tr.oy, tr.px(o.Fx), tr.py(0), C_F1);
+                if (Math.abs(o.Fy) > 0.05) drawArrow(sctx, tr.ox, tr.oy, tr.px(0), tr.py(o.Fy), C_F2);
+                drawArrow(sctx, tr.ox, tr.oy, tr.px(Ftip[0]), tr.py(Ftip[1]), C_F, 4, 12);
+                sctx.font = 'bold 13px system-ui, sans-serif';
+                sctx.fillStyle = C_F1; sctx.textAlign = 'center';
+                sctx.fillText('Fx = ' + o.Fx.toFixed(2) + ' N', (tr.ox + tr.px(o.Fx)) / 2, tr.oy + 22);
+                sctx.fillStyle = C_F2; sctx.textAlign = 'left';
+                sctx.fillText('Fy = ' + o.Fy.toFixed(2) + ' N', tr.ox + 10, (tr.oy + tr.py(o.Fy)) / 2);
+                const mF0 = labelSide({ x: (tr.ox + tr.px(Ftip[0])) / 2, y: (tr.oy + tr.py(Ftip[1])) / 2 },
+                    { x: tr.px(Ftip[0]), y: tr.py(Ftip[1]) }, { x: tr.ox, y: tr.oy });
+                sctx.fillStyle = C_F; sctx.textAlign = 'center';
+                sctx.fillText('F = ' + F.toFixed(2) + ' N', mF0.x, mF0.y);
+            } else if (td.feasible) {
+                const u1 = [Math.cos(phi1 * RAD), Math.sin(phi1 * RAD)];
+                const u2 = [Math.cos(phi2 * RAD), Math.sin(phi2 * RAD)];
+                const Q1 = [td.F1p * u1[0], td.F1p * u1[1]];
+                const Q2 = [td.F2p * u2[0], td.F2p * u2[1]];
+                sctx.save();
+                sctx.strokeStyle = C_DASH;
+                sctx.lineWidth = 1.5;
+                sctx.setLineDash([6, 6]);
+                sctx.beginPath();
+                sctx.moveTo(tr.px(Q1[0]), tr.py(Q1[1])); sctx.lineTo(tr.px(Ftip[0]), tr.py(Ftip[1]));
+                sctx.moveTo(tr.px(Q2[0]), tr.py(Q2[1])); sctx.lineTo(tr.px(Ftip[0]), tr.py(Ftip[1]));
+                sctx.stroke();
+                sctx.restore();
+                drawArrow(sctx, tr.ox, tr.oy, tr.px(Q1[0]), tr.py(Q1[1]), C_F1);
+                drawArrow(sctx, tr.ox, tr.oy, tr.px(Q2[0]), tr.py(Q2[1]), C_F2);
+                drawArrow(sctx, tr.ox, tr.oy, tr.px(Ftip[0]), tr.py(Ftip[1]), C_F, 4, 12);
+                sctx.font = 'bold 13px system-ui, sans-serif';
+                const m1 = labelSide({ x: (tr.ox + tr.px(Q1[0])) / 2, y: (tr.oy + tr.py(Q1[1])) / 2 },
+                    { x: tr.px(Q1[0]), y: tr.py(Q1[1]) }, { x: tr.ox, y: tr.oy });
+                sctx.fillStyle = C_F1; sctx.textAlign = 'center';
+                sctx.fillText('F₁′ = ' + td.F1p.toFixed(2) + ' N', m1.x, m1.y);
+                const m2 = labelSide({ x: (tr.ox + tr.px(Q2[0])) / 2, y: (tr.oy + tr.py(Q2[1])) / 2 },
+                    { x: tr.px(Q2[0]), y: tr.py(Q2[1]) }, { x: tr.ox, y: tr.oy });
+                sctx.fillStyle = C_F2;
+                sctx.fillText('F₂′ = ' + td.F2p.toFixed(2) + ' N', m2.x, m2.y);
+                const mF = labelSide({ x: (tr.ox + tr.px(Ftip[0])) / 2, y: (tr.oy + tr.py(Ftip[1])) / 2 },
+                    { x: tr.px(Ftip[0]), y: tr.py(Ftip[1]) }, { x: tr.ox, y: tr.oy });
+                sctx.fillStyle = C_F;
+                sctx.fillText('F = ' + F.toFixed(2) + ' N', mF.x, mF.y);
+            } else {
+                drawArrow(sctx, tr.ox, tr.oy, tr.px(Ftip[0]), tr.py(Ftip[1]), C_F, 4, 12);
+                sctx.font = 'bold 13px system-ui, sans-serif';
+                sctx.fillStyle = C_F; sctx.textAlign = 'center';
+                const mF = labelSide({ x: (tr.ox + tr.px(Ftip[0])) / 2, y: (tr.oy + tr.py(Ftip[1])) / 2 },
+                    { x: tr.px(Ftip[0]), y: tr.py(Ftip[1]) }, { x: tr.ox, y: tr.oy });
+                sctx.fillText('F = ' + F.toFixed(2) + ' N', mF.x, mF.y);
+            }
+
+            // 拖拽手柄（方向线，待机且方式②③）
+            if (phase === 'idle' && method !== 'ortho') {
+                const hN = rayLenN * 0.62;
+                drawHandle(tr.px(Math.cos(phi1 * RAD) * hN), tr.py(Math.sin(phi1 * RAD) * hN), C_F1);
+                drawHandle(tr.px(Math.cos(phi2 * RAD) * hN), tr.py(Math.sin(phi2 * RAD) * hN), C_F2);
+            }
+
+            // 顶部状态与提示
+            sctx.font = 'bold 13px system-ui, sans-serif';
+            sctx.textAlign = 'left';
+            if (method === 'multi') {
+                sctx.fillStyle = '#ff9933';
+                sctx.fillText('多解性观察：同一合力 F 有无穷多组分解（拖 φ₂ 观察右图）', 18, 24);
+            } else {
+                sctx.fillStyle = '#dceeff';
+                sctx.fillText(method === 'ortho' ? '正交分解：沿水平 / 竖直方向分解' : '按两已知方向分解：平行四边形作图求唯一解', 18, 24);
+            }
+            sctx.fillStyle = '#667788';
+            sctx.font = '11.5px system-ui, sans-serif';
+            sctx.textAlign = 'right';
+            sctx.fillText(method === 'ortho' ? '调整 F 与 α 观察分量变化' : '待机时可拖拽方向线手柄（吸附 5°）', BASE_WIDTH - 16, 24);
+            if (method !== 'ortho' && !td.feasible) {
+                drawBanner('合力不在两分力方向之间，无法按效果分解');
+            }
+            drawScaleBar(tr);
+        }
+
+        function drawScene() {
+            sctx.clearRect(0, 0, views.scene.width, views.scene.height);
+            if (mode === 'compose') drawComposeScene(); else drawResolveScene();
+        }
+
+        // ---------- 通用曲线图 ----------
+        function drawCurveChart(view, ctx, cfg) {
+            const padL = 50, padR = 14, padT = 18, padB = 32;
+            const plotW = view.width - padL - padR;
+            const plotH = view.height - padT - padB;
+            const xOf = (x) => padL + (x - cfg.xMin) / (cfg.xMax - cfg.xMin) * plotW;
+            const yOf = (v) => padT + plotH - (v - cfg.yMin) / (cfg.yMax - cfg.yMin) * plotH;
+            ctx.clearRect(0, 0, view.width, view.height);
+
+            // 水平网格
+            const yStep = niceStep(cfg.yMax - cfg.yMin);
+            const yDec = tickDecimals(yStep);
+            ctx.font = '10px system-ui, sans-serif';
+            for (let i = Math.ceil(cfg.yMin / yStep - 1e-9); i <= Math.floor(cfg.yMax / yStep + 1e-9); i++) {
+                const val = i * yStep;
+                const py = yOf(val);
+                ctx.strokeStyle = '#1f2d3d'; ctx.lineWidth = 1;
+                ctx.beginPath(); ctx.moveTo(padL, py); ctx.lineTo(padL + plotW, py); ctx.stroke();
+                ctx.fillStyle = '#8899aa'; ctx.textAlign = 'right';
+                ctx.fillText(val.toFixed(yDec), padL - 6, py + 3);
+            }
+            if (cfg.yMin < 0 && cfg.yMax > 0) {
+                const py0 = yOf(0);
+                ctx.strokeStyle = '#7b8ea3'; ctx.lineWidth = 1.5;
+                ctx.beginPath(); ctx.moveTo(padL, py0); ctx.lineTo(padL + plotW, py0); ctx.stroke();
+            }
+            // 竖直网格
+            const xStep = cfg.xStep || niceStep(cfg.xMax - cfg.xMin);
+            const xDec = tickDecimals(xStep);
+            ctx.textAlign = 'center';
+            for (let x = Math.ceil(cfg.xMin / xStep - 1e-9); x <= Math.floor(cfg.xMax / xStep + 1e-9); x++) {
+                const val = x * xStep;
+                const px = xOf(val);
+                ctx.strokeStyle = '#1f2d3d'; ctx.lineWidth = 1;
+                ctx.beginPath(); ctx.moveTo(px, padT); ctx.lineTo(px, padT + plotH); ctx.stroke();
+                ctx.fillStyle = '#8899aa';
+                ctx.fillText(val.toFixed(xDec) + (cfg.xUnit || ''), px, padT + plotH + 16);
+            }
+            // 特殊点标注
+            (cfg.specialX || []).forEach((s) => {
+                const px = xOf(s.x);
+                ctx.strokeStyle = 'rgba(255,153,51,0.4)';
+                ctx.lineWidth = 1;
+                ctx.setLineDash && ctx.setLineDash([3, 4]);
+                ctx.beginPath(); ctx.moveTo(px, padT); ctx.lineTo(px, padT + plotH); ctx.stroke();
+                ctx.setLineDash && ctx.setLineDash([]);
+                ctx.fillStyle = '#ff9933';
+                ctx.fillText(s.label, px, padT - 4);
+            });
+            // 参考虚线
+            (cfg.refs || []).forEach((rf) => {
+                const py = yOf(rf.v);
+                if (py < padT - 1 || py > padT + plotH + 1) return;
+                ctx.save();
+                ctx.strokeStyle = rf.color; ctx.lineWidth = 1.5;
+                ctx.setLineDash([6, 5]);
+                ctx.beginPath(); ctx.moveTo(padL, py); ctx.lineTo(padL + plotW, py); ctx.stroke();
+                ctx.restore();
+                ctx.fillStyle = rf.color; ctx.textAlign = 'right';
+                ctx.fillText(rf.label, padL + plotW - 4, py - 5);
+            });
+            // 外框
+            ctx.strokeStyle = '#7b8ea3'; ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(padL, padT); ctx.lineTo(padL, padT + plotH); ctx.lineTo(padL + plotW, padT + plotH);
+            ctx.stroke();
+            ctx.fillStyle = '#8899aa';
+            ctx.textAlign = 'left';
+            ctx.fillText(cfg.yLabel, padL + 6, padT + 12);
+            ctx.textAlign = 'right';
+            ctx.fillText(cfg.xLabel, padL + plotW, view.height - 6);
+            // 曲线
+            const samples = 300;
+            cfg.series.forEach((s) => {
+                ctx.strokeStyle = s.color; ctx.lineWidth = 2.5; ctx.lineJoin = 'round';
+                ctx.beginPath();
+                let pen = false;
+                for (let i = 0; i <= samples; i++) {
+                    const x = cfg.xMin + (i / samples) * (cfg.xMax - cfg.xMin);
+                    const v = s.f(x);
+                    const inRange = v >= cfg.yMin - (cfg.yMax - cfg.yMin) * 0.02 && v <= cfg.yMax + (cfg.yMax - cfg.yMin) * 0.02;
+                    if (!inRange) { pen = false; continue; }
+                    const px = xOf(x), py = yOf(v);
+                    if (!pen) { ctx.moveTo(px, py); pen = true; } else ctx.lineTo(px, py);
+                }
+                ctx.stroke();
+            });
+            // 游标与当前点
+            if (cfg.cursorX != null) {
+                const pxNow = xOf(cfg.cursorX);
+                ctx.strokeStyle = 'rgba(51,136,221,0.4)'; ctx.lineWidth = 1;
+                ctx.beginPath(); ctx.moveTo(pxNow, padT); ctx.lineTo(pxNow, padT + plotH); ctx.stroke();
+                const vals = [];
+                cfg.series.forEach((s) => {
+                    const v = s.f(cfg.cursorX);
+                    const inRange = v >= cfg.yMin && v <= cfg.yMax;
+                    if (!inRange) return;
+                    const py = yOf(v);
+                    ctx.fillStyle = s.color;
+                    ctx.beginPath(); ctx.arc(pxNow, py, 4.5, 0, Math.PI * 2); ctx.fill();
+                    vals.push(s.cursorFmt ? s.cursorFmt(v) : v.toFixed(1));
+                });
+                if (vals.length) {
+                    ctx.font = '10px system-ui, sans-serif';
+                    const text = vals.join('  ');
+                    const tw = ctx.measureText(text).width;
+                    let lx = pxNow + 7;
+                    if (lx + tw > padL + plotW) lx = pxNow - tw - 14;
+                    ctx.fillStyle = '#dde6f0'; ctx.textAlign = 'left';
+                    ctx.fillText(text, lx, padT + 12);
+                }
+            }
+        }
+
+        // ---------- 分量条形图（分解 · 正交 / 两方向） ----------
+        function drawBarChart(view, ctx, bars) {
+            ctx.clearRect(0, 0, view.width, view.height);
+            const padL = 74, padR = 20, padT = 24, padB = 20;
+            const plotW = view.width - padL - padR;
+            const maxV = Math.max(...bars.map((b) => b.value), 0.001);
+            const rowH = (view.height - padT - padB) / bars.length;
+            bars.forEach((b, i) => {
+                const y = padT + rowH * i + rowH / 2;
+                const w = Math.max(2, b.value / maxV * (plotW - 66));
+                ctx.fillStyle = b.color;
+                roundRectPath(ctx, padL, y - 8, w, 16, 4);
+                ctx.fill();
+                ctx.font = '11px system-ui, sans-serif';
+                ctx.fillStyle = '#8899aa';
+                ctx.textAlign = 'right';
+                ctx.fillText(b.label, padL - 8, y + 4);
+                ctx.fillStyle = b.color;
+                ctx.textAlign = 'left';
+                ctx.fillText(b.value.toFixed(2) + ' N', padL + w + 7, y + 4);
+            });
+            ctx.fillStyle = '#667788';
+            ctx.font = '11px system-ui, sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText('同一合力 F 与其分力大小对比（按效果分解，分力可大于合力）', padL, view.height - 6);
+        }
+
+        function drawCharts() {
+            if (mode === 'compose') {
+                const { F1, F2 } = compose;
+                const th = dispTheta();
+                const res = composeResult(F1, F2, th);
+                const special = [];
+                if (Math.abs(F1 - F2) < 1e-9) special.push({ x: 120, label: '等大120°' });
+                special.push({ x: 90, label: '垂直' });
+                drawCurveChart(views.L, ctxL, {
+                    xMin: 0, xMax: 180, xStep: 30, xUnit: '°', xLabel: 'θ',
+                    yMin: 0, yMax: niceCeil((F1 + F2) * 1.08), yLabel: 'F (N)',
+                    series: [{ f: (x) => composeResult(F1, F2, x).F, color: C_F }],
+                    refs: [
+                        { v: F1 + F2, color: 'rgba(255,255,255,0.45)', label: 'F₁+F₂=' + (F1 + F2).toFixed(1) },
+                        { v: Math.abs(F1 - F2), color: 'rgba(255,255,255,0.45)', label: '|F₁−F₂|=' + Math.abs(F1 - F2).toFixed(1) },
+                    ],
+                    specialX: special,
+                    cursorX: th,
+                });
+                const neg = Math.max(0, F2 - F1);
+                drawCurveChart(views.R, ctxR, {
+                    xMin: 0, xMax: 180, xStep: 30, xUnit: '°', xLabel: 'θ',
+                    yMin: neg > 0 ? -niceCeil(neg * 1.15) : 0,
+                    yMax: niceCeil((F1 + F2) * 1.05),
+                    yLabel: 'N',
+                    series: [
+                        { f: (x) => composeResult(F1, F2, x).Fx, color: C_FX, cursorFmt: (v) => 'Fx=' + v.toFixed(2) },
+                        { f: (x) => composeResult(F1, F2, x).Fy, color: C_FY, cursorFmt: (v) => 'Fy=' + v.toFixed(2) },
+                    ],
+                    cursorX: th,
+                });
+            } else {
+                const r = resolve;
+                const alpha = dispAlpha();
+                const o = orthoDecomp(r.F, alpha);
+                drawCurveChart(views.L, ctxL, {
+                    xMin: -80, xMax: 80, xStep: 40, xUnit: '°', xLabel: 'α',
+                    yMin: -niceCeil(r.F * 1.05), yMax: niceCeil(r.F * 1.05), yLabel: 'N',
+                    series: [
+                        { f: (x) => orthoDecomp(r.F, x).Fx, color: C_FX, cursorFmt: (v) => 'Fx=' + v.toFixed(2) },
+                        { f: (x) => orthoDecomp(r.F, x).Fy, color: C_FY, cursorFmt: (v) => 'Fy=' + v.toFixed(2) },
+                    ],
+                    cursorX: alpha,
+                });
+                if (r.method === 'multi') {
+                    const lo = Math.max(r.alpha, r.phi1) + 2;
+                    const hi = Math.min(178, r.phi1 + 178);
+                    if (lo < hi - 2) {
+                        drawCurveChart(views.R, ctxR, {
+                            xMin: lo, xMax: hi, xUnit: '°', xLabel: 'φ₂',
+                            yMin: 0, yMax: niceCeil(r.F * 2.2), yLabel: 'N',
+                            series: [
+                                { f: (x) => twoDirDecomp(r.F, r.alpha, r.phi1, x).F1p, color: C_F1, cursorFmt: (v) => 'F₁′=' + v.toFixed(2) },
+                                { f: (x) => twoDirDecomp(r.F, r.alpha, r.phi1, x).F2p, color: C_F2, cursorFmt: (v) => 'F₂′=' + v.toFixed(2) },
+                            ],
+                            cursorX: dispPhi2(),
+                        });
+                        ctxR.fillStyle = '#8899aa';
+                        ctxR.font = '10px system-ui, sans-serif';
+                        ctxR.textAlign = 'right';
+                        ctxR.fillText('分解有无穷多组解：分力可任意大', views.R.width - 10, views.R.height - 8);
+                    } else {
+                        drawNoSolution(ctxR, views.R);
+                    }
+                } else if (r.method === 'twoDir') {
+                    const td = twoDirDecomp(r.F, r.alpha, r.phi1, r.phi2);
+                    if (td.feasible) {
+                        drawBarChart(views.R, ctxR, [
+                            { label: '合力 F', value: r.F, color: C_F },
+                            { label: 'F₁′(φ₁)', value: td.F1p, color: C_F1 },
+                            { label: 'F₂′(φ₂)', value: td.F2p, color: C_F2 },
+                        ]);
+                    } else {
+                        drawNoSolution(ctxR, views.R);
+                    }
+                } else {
+                    drawBarChart(views.R, ctxR, [
+                        { label: '合力 F', value: r.F, color: C_F },
+                        { label: '分量 Fx', value: o.Fx, color: C_FX },
+                        { label: '分量 Fy', value: Math.abs(o.Fy), color: C_FY },
+                    ]);
+                }
+            }
+        }
+        function drawNoSolution(ctx, view) {
+            ctx.clearRect(0, 0, view.width, view.height);
+            ctx.fillStyle = '#667788';
+            ctx.font = '13px system-ui, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('当前 φ₁ 与 α 组合下无可行分解', view.width / 2, view.height / 2 - 6);
+            ctx.fillText('（需合力位于两分力方向之间）', view.width / 2, view.height / 2 + 14);
+        }
+
+        function renderAll() {
+            drawScene();
+            drawCharts();
+        }
+
+        // ---------- 数值面板 ----------
+        function updateReadouts() {
+            if (mode === 'compose') {
+                const { F1, F2 } = compose;
+                const th = dispTheta();
+                const res = composeResult(F1, F2, th);
+                const cls = composeClass(th);
+                $('dF1').textContent = F1.toFixed(1) + ' N';
+                $('dF2').textContent = F2.toFixed(1) + ' N';
+                $('dTheta').textContent = Math.round(th) + '°';
+                $('dF').textContent = res.F.toFixed(2) + ' N';
+                $('dPhi').textContent = res.phi.toFixed(1) + '°';
+                $('dFx').textContent = res.Fx.toFixed(2) + ' N';
+                $('dFy').textContent = res.Fy.toFixed(2) + ' N';
+                $('dRange').textContent = '[' + Math.abs(F1 - F2).toFixed(1) + ', ' + (F1 + F2).toFixed(1) + '] N';
+                const elCls = $('dClass');
+                elCls.textContent = cls.label;
+                elCls.style.color = cls.color;
+                sceneCanvas.setAttribute('aria-label',
+                    `力的合成演示：F1为${F1.toFixed(1)}牛，F2为${F2.toFixed(1)}牛，夹角${Math.round(th)}度，合力${res.F.toFixed(2)}牛，方向角${res.phi.toFixed(1)}度，${cls.label}`);
+            } else {
+                const r = resolve;
+                const alpha = dispAlpha();
+                const o = orthoDecomp(r.F, alpha);
+                const td = twoDirDecomp(r.F, r.alpha, r.phi1, dispPhi2());
+                const methodNames = { ortho: '正交分解', twoDir: '按两已知方向', multi: '多解性观察' };
+                $('dRF').textContent = r.F.toFixed(1) + ' N';
+                $('dRAlpha').textContent = Math.round(alpha) + '°';
+                $('dRMethod').textContent = methodNames[r.method];
+                const feasible = r.method === 'ortho' ? true : td.feasible;
+                $('dF1p').textContent = r.method === 'ortho' ? o.Fx.toFixed(2) + ' N（=Fx）'
+                    : (td.feasible ? td.F1p.toFixed(2) + ' N' : '—');
+                $('dF2p').textContent = r.method === 'ortho' ? o.Fy.toFixed(2) + ' N（=Fy）'
+                    : (td.feasible ? td.F2p.toFixed(2) + ' N' : '—');
+                $('dPhis').textContent = r.method === 'ortho' ? '沿 x / y 轴'
+                    : Math.round(r.phi1) + '° / ' + Math.round(dispPhi2()) + '°';
+                $('dRFx').textContent = o.Fx.toFixed(2) + ' N';
+                $('dRFy').textContent = o.Fy.toFixed(2) + ' N';
+                const elFea = $('dFeature');
+                if (r.method === 'ortho') { elFea.textContent = '唯一解（正交分解）'; elFea.style.color = '#ffffff'; }
+                else if (r.method === 'twoDir') {
+                    elFea.textContent = td.feasible ? '唯一解（两方向确定）' : '不可分解（α 不在两方向之间）';
+                    elFea.style.color = td.feasible ? '#33ddcc' : '#ff5555';
+                } else {
+                    elFea.textContent = td.feasible ? '无穷多组解（分力可任意大）' : '无可行分解（调整 φ₁ 或 α）';
+                    elFea.style.color = td.feasible ? '#ff9933' : '#ff5555';
+                }
+                sceneCanvas.setAttribute('aria-label',
+                    `力的分解演示：合力${r.F.toFixed(1)}牛，方向角${Math.round(alpha)}度，${methodNames[r.method]}，Fx=${o.Fx.toFixed(2)}牛，Fy=${o.Fy.toFixed(2)}牛`);
+            }
+        }
+
+        // ---------- 画布尺寸（DPR + ResizeObserver，系列约定） ----------
+        function setupCanvas(canvas, view, aspect) {
+            const cssWidth = canvas.clientWidth || 400;
+            const cssHeight = cssWidth / aspect;
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = Math.round(cssWidth * dpr);
+            canvas.height = Math.round(cssHeight * dpr);
+            canvas.getContext('2d').setTransform(dpr, 0, 0, dpr, 0, 0);
+            view.width = cssWidth;
+            view.height = cssHeight;
+        }
+        function resizeAll() {
+            setupCanvas(sceneCanvas, views.scene, BASE_WIDTH / BASE_HEIGHT);
+            setupCanvas(chartL, views.L, CHART_ASPECT);
+            setupCanvas(chartR, views.R, CHART_ASPECT);
+            renderAll();
+        }
+
+        // ---------- 按钮与锁定 ----------
+        function setButtons() {
+            if (phase === 'running') {
+                btnStart.disabled = true; btnStart.textContent = '演示中…';
+                btnPauseResume.disabled = false; btnPauseResume.textContent = '暂停';
+                btnReset.disabled = true;
+            } else if (phase === 'paused') {
+                btnStart.disabled = false; btnStart.textContent = '▶ 重新演示';
+                btnPauseResume.disabled = false; btnPauseResume.textContent = '继续';
+                btnReset.disabled = false;
+            } else if (phase === 'ended') {
+                btnStart.disabled = false; btnStart.textContent = '▶ 再来一次';
+                btnPauseResume.disabled = true; btnPauseResume.textContent = '暂停';
+                btnReset.disabled = false;
+            } else {
+                btnStart.disabled = false; btnStart.textContent = '▶ 自动演示';
+                btnPauseResume.disabled = true; btnPauseResume.textContent = '暂停';
+                btnReset.disabled = false;
+            }
+        }
+        function setParamLocks() {
+            const lock = phase === 'running' || phase === 'paused';
+            [inF1, inF2, inTheta, inF, inAlpha].forEach((el) => { el.disabled = lock; });
+            const phiLock = lock || resolve.method === 'ortho';
+            inPhi1.disabled = phiLock;
+            inPhi2.disabled = phiLock;
+        }
+
+        // ---------- 演示扫描动画 ----------
+        function scanRange() {
+            if (mode === 'compose') return { start: 0, end: 180, dur: SCAN_DUR_COMPOSE };
+            const r = resolve;
+            if (r.method === 'ortho') return { start: -80, end: 80, dur: SCAN_DUR_RESOLVE };
+            const start = Math.max(r.alpha, r.phi1) + 3;
+            const end = Math.min(172, r.phi1 + 172);
+            return { start: Math.min(start, end - 8), end, dur: SCAN_DUR_RESOLVE };
+        }
+        function frame(ts) {
+            if (phase !== 'running') return;
+            if (lastTs === null) lastTs = ts;
+            const dt = Math.min((ts - lastTs) / 1000, 0.05) * Number(inSpeed.value);
+            lastTs = ts;
+            progress = Math.min(progress + dt / scanDur, 1);
+            scan.value = scanStart + (scanEnd - scanStart) * progress;
+            if (progress >= 1) {
+                phase = 'ended';
+                scan.active = false;   // 游标回到参数值，曲线定格完整
+                setButtons(); setParamLocks();
+                renderAll(); updateReadouts();
+                return;
+            }
+            renderAll(); updateReadouts();
+            raf = requestAnimationFrame(frame);
+        }
+        function start() {
+            if (phase === 'running' || phase === 'paused') return;
+            const r = scanRange();
+            scanStart = r.start; scanEnd = r.end; scanDur = r.dur;
+            progress = 0; scan.active = true; scan.value = r.start;
+            lastTs = null; phase = 'running';
+            setButtons(); setParamLocks(); updateReadouts(); renderAll();
+            raf = requestAnimationFrame(frame);
+        }
+        function pause() {
+            if (phase !== 'running') return;
+            phase = 'paused';
+            if (raf) cancelAnimationFrame(raf);
+            setButtons(); updateReadouts();
+        }
+        function resume() {
+            if (phase !== 'paused') return;
+            phase = 'running'; lastTs = null;
+            setButtons();
+            raf = requestAnimationFrame(frame);
+        }
+        function reset() {
+            if (raf) cancelAnimationFrame(raf);
+            phase = 'idle'; progress = 0; scan.active = false; lastTs = null;
+            setButtons(); setParamLocks(); updateReadouts(); renderAll();
+        }
+
+        // ---------- 参数标签 / 联动 ----------
+        function updateParamLabels() {
+            $('pF1Val').textContent = Number(inF1.value).toFixed(1) + ' N';
+            $('pF2Val').textContent = Number(inF2.value).toFixed(1) + ' N';
+            $('pThetaVal').textContent = inTheta.value + '°';
+            $('pFVal').textContent = Number(inF.value).toFixed(1) + ' N';
+            $('pAlphaVal').textContent = inAlpha.value + '°';
+            $('pPhi1Val').textContent = inPhi1.value + '°';
+            $('pPhi2Val').textContent = inPhi2.value + '°';
+            $('pSpeedVal').textContent = Number(inSpeed.value).toFixed(1) + '×';
+        }
+        function syncSliders() {
+            inF1.value = compose.F1; inF2.value = compose.F2; inTheta.value = compose.theta;
+            inF.value = resolve.F; inAlpha.value = resolve.alpha;
+            inPhi1.value = resolve.phi1; inPhi2.value = resolve.phi2;
+        }
+        function applyParamsFromSliders() {
+            compose.F1 = Number(inF1.value);
+            compose.F2 = Number(inF2.value);
+            compose.theta = Number(inTheta.value);
+            resolve.F = Number(inF.value);
+            resolve.alpha = Number(inAlpha.value);
+            resolve.phi1 = Number(inPhi1.value);
+            resolve.phi2 = Number(inPhi2.value);
+        }
+        function onParamsChanged() {
+            updateParamLabels();
+            if (phase === 'idle' || phase === 'ended') reset();
+            else { renderAll(); updateReadouts(); }
+        }
+
+        [inF1, inF2, inTheta, inF, inAlpha, inPhi1, inPhi2].forEach((el) => {
+            el.addEventListener('input', () => { applyParamsFromSliders(); onParamsChanged(); });
+        });
+        inSpeed.addEventListener('input', updateParamLabels);
+
+        // ---------- 分解方式切换 ----------
+        function setMethod(m) {
+            resolve.method = m;
+            [segOrtho, segTwo, segMulti].forEach((b) => b.classList.remove('active'));
+            ({ ortho: segOrtho, twoDir: segTwo, multi: segMulti })[m].classList.add('active');
+            titleR.textContent = m === 'multi' ? '多解性：分力大小随 φ₂ 变化'
+                : m === 'twoDir' ? '当前分解分量对比（F 与 F₁′、F₂′）'
+                : '当前分解分量对比（F 与 Fx、Fy）';
+            chartR.setAttribute('aria-label', titleR.textContent);
+            setParamLocks();
+            reset();
+        }
+        [segOrtho, segTwo, segMulti].forEach((btn) => {
+            btn.addEventListener('click', () => setMethod(btn === segOrtho ? 'ortho' : btn === segTwo ? 'twoDir' : 'multi'));
+        });
+
+        // ---------- 模式切换 ----------
+        function setMode(m) {
+            if (mode === m) return;
+            mode = m;
+            if (raf) cancelAnimationFrame(raf);
+            phase = 'idle'; progress = 0; scan.active = false; lastTs = null;
+            tabCompose.classList.toggle('active', m === 'compose');
+            tabResolve.classList.toggle('active', m === 'resolve');
+            tabCompose.setAttribute('aria-selected', m === 'compose');
+            tabResolve.setAttribute('aria-selected', m === 'resolve');
+            composeParams.style.display = m === 'compose' ? '' : 'none';
+            resolveParams.style.display = m === 'resolve' ? '' : 'none';
+            composeData.style.display = m === 'compose' ? '' : 'none';
+            resolveData.style.display = m === 'resolve' ? '' : 'none';
+            titleL.textContent = m === 'compose' ? '合力-夹角图 (F–θ)' : '正交分量-方向角图 (Fx、Fy–α)';
+            chartL.setAttribute('aria-label', titleL.textContent);
+            if (m === 'compose') {
+                titleR.textContent = '正交分量-夹角图 (Fx、Fy–θ)';
+                chartR.setAttribute('aria-label', titleR.textContent);
+            } else {
+                setMethod(resolve.method);
+            }
+            setButtons(); setParamLocks(); updateReadouts(); renderAll();
+        }
+        tabCompose.addEventListener('click', () => setMode('compose'));
+        tabResolve.addEventListener('click', () => setMode('resolve'));
+
+        // ---------- 画布拖拽 ----------
+        const drag = { target: null };
+        function scenePos(ev) {
+            const rect = sceneCanvas.getBoundingClientRect();
+            return {
+                x: (ev.clientX - rect.left) / rect.width * BASE_WIDTH,
+                y: (ev.clientY - rect.top) / rect.height * BASE_HEIGHT,
+            };
+        }
+        function hitTargets(px, py) {
+            const hits = [];
+            if (mode === 'compose') {
+                const F1 = compose.F1, F2 = compose.F2, th = dispTheta();
+                const res = composeResult(F1, F2, th);
+                const pts = [[0, 0], [F1, 0], [F2 * Math.cos(th * RAD), F2 * Math.sin(th * RAD)],
+                    [F1 + F2 * Math.cos(th * RAD), F2 * Math.sin(th * RAD)]];
+                const tr = makeTransform(pts);
+                hits.push({ target: 'F1', x: tr.px(F1), y: tr.py(0) });
+                hits.push({ target: 'F2', x: tr.px(F2 * Math.cos(th * RAD)), y: tr.py(F2 * Math.sin(th * RAD)) });
+            } else if (resolve.method !== 'ortho') {
+                const r = resolve;
+                const o = orthoDecomp(r.F, dispAlpha());
+                const td = twoDirDecomp(r.F, r.alpha, r.phi1, dispPhi2());
+                const rayLenN = Math.max(r.F * 1.6, 14);
+                const pts = [[0, 0], [o.Fx, o.Fy]];
+                if (td.feasible) pts.push([td.F1p * Math.cos(r.phi1 * RAD), td.F1p * Math.sin(r.phi1 * RAD)],
+                    [td.F2p * Math.cos(dispPhi2() * RAD), td.F2p * Math.sin(dispPhi2() * RAD)]);
+                pts.push([Math.cos(r.phi1 * RAD) * rayLenN, Math.sin(r.phi1 * RAD) * rayLenN],
+                    [Math.cos(dispPhi2() * RAD) * rayLenN, Math.sin(dispPhi2() * RAD) * rayLenN]);
+                const tr = makeTransform(pts);
+                const hN = rayLenN * 0.62;
+                hits.push({ target: 'phi1', x: tr.px(Math.cos(r.phi1 * RAD) * hN), y: tr.py(Math.sin(r.phi1 * RAD) * hN) });
+                hits.push({ target: 'phi2', x: tr.px(Math.cos(dispPhi2() * RAD) * hN), y: tr.py(Math.sin(dispPhi2() * RAD) * hN) });
+            }
+            return hits.filter((h) => Math.hypot(h.x - px, h.y - py) < 16);
+        }
+        function snap(v, step, min, max) {
+            return Math.min(max, Math.max(min, Math.round(v / step) * step));
+        }
+        sceneCanvas.addEventListener('pointerdown', (ev) => {
+            if (phase !== 'idle') return;
+            const p = scenePos(ev);
+            const hits = hitTargets(p.x, p.y);
+            if (!hits.length) return;
+            drag.target = hits[0].target;
+            sceneCanvas.setPointerCapture(ev.pointerId);
+            sceneCanvas.style.cursor = 'grabbing';
+            ev.preventDefault();
+        });
+        sceneCanvas.addEventListener('pointermove', (ev) => {
+            const p = scenePos(ev);
+            if (!drag.target) {
+                if (phase === 'idle') {
+                    const hit = hitTargets(p.x, p.y).length > 0;
+                    sceneCanvas.style.cursor = hit ? 'grab' : 'default';
+                } else sceneCanvas.style.cursor = 'default';
+                return;
+            }
+            if (mode === 'compose') {
+                const th = dispTheta() * RAD;
+                const pts = [[0, 0], [compose.F1, 0],
+                    [compose.F2 * Math.cos(th), compose.F2 * Math.sin(th)],
+                    [compose.F1 + compose.F2 * Math.cos(th), compose.F2 * Math.sin(th)]];
+                const tr = makeTransform(pts);
+                if (drag.target === 'F1') {
+                    compose.F1 = snap((p.x - tr.ox) / tr.scale, 0.5, 1, 10);
+                } else {
+                    const dx = (p.x - tr.ox) / tr.scale, dy = (tr.oy - p.y) / tr.scale;
+                    compose.theta = snap(Math.atan2(dy, dx) / RAD, 5, 0, 180);
+                    compose.F2 = snap(Math.hypot(dx, dy), 0.5, 1, 10);
+                }
+                syncSliders();
+            } else if (drag.target === 'phi1' || drag.target === 'phi2') {
+                const r = resolve;
+                const o = orthoDecomp(r.F, dispAlpha());
+                const td = twoDirDecomp(r.F, r.alpha, r.phi1, dispPhi2());
+                const rayLenN = Math.max(r.F * 1.6, 14);
+                const pts = [[0, 0], [o.Fx, o.Fy]];
+                if (td.feasible) pts.push([td.F1p * Math.cos(r.phi1 * RAD), td.F1p * Math.sin(r.phi1 * RAD)],
+                    [td.F2p * Math.cos(dispPhi2() * RAD), td.F2p * Math.sin(dispPhi2() * RAD)]);
+                pts.push([Math.cos(r.phi1 * RAD) * rayLenN, Math.sin(r.phi1 * RAD) * rayLenN],
+                    [Math.cos(dispPhi2() * RAD) * rayLenN, Math.sin(dispPhi2() * RAD) * rayLenN]);
+                const tr = makeTransform(pts);
+                const ang = snap(Math.atan2(tr.oy - p.y, p.x - tr.ox) / RAD, 5,
+                    drag.target === 'phi1' ? -80 : -80, drag.target === 'phi1' ? 80 : 180);
+                if (drag.target === 'phi1') resolve.phi1 = ang; else resolve.phi2 = ang;
+                syncSliders();
+            }
+            updateParamLabels();
+            reset();
+        });
+        const endDrag = () => { drag.target = null; sceneCanvas.style.cursor = 'default'; };
+        sceneCanvas.addEventListener('pointerup', endDrag);
+        sceneCanvas.addEventListener('pointercancel', endDrag);
+
+        // ---------- 按钮与快捷键 ----------
+        btnStart.addEventListener('click', start);
+        btnPauseResume.addEventListener('click', () => {
+            if (phase === 'running') pause(); else if (phase === 'paused') resume();
+        });
+        btnReset.addEventListener('click', reset);
+        window.addEventListener('keydown', (e) => {
+            const ae = document.activeElement;
+            if (ae && (ae.tagName === 'INPUT' || ae.tagName === 'BUTTON' || ae.tagName === 'SELECT' || ae.tagName === 'TEXTAREA' || ae.isContentEditable)) return;
+            if (e.code === 'Space') {
+                e.preventDefault();
+                if (phase === 'running') pause();
+                else if (phase === 'paused') resume();
+                else start();
+            } else if (e.key === 'r' || e.key === 'R') {
+                reset();
+            }
+        });
+        window.addEventListener('resize', resizeAll);
+        if (typeof ResizeObserver !== 'undefined') {
+            const observer = new ResizeObserver(resizeAll);
+            observer.observe(sceneCanvas);
+            observer.observe(chartL);
+            observer.observe(chartR);
+        }
+
+        updateParamLabels();
+        resizeAll();
+        reset();
+    })();
+    </script>
+</body>
+</html>
