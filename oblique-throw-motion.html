@@ -49,12 +49,20 @@
             .charts-row { grid-template-columns: 1fr; }
         }
         .param-group,
-        .data-group,
-        .chart-panel {
+        .data-group {
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 10px;
             padding: 14px 16px;
+        }
+        .chart-panel {
+            background: transparent;
+            border: none;
+            border-radius: 0;
+            padding: 0;
+        }
+        .chart-panel .group-title {
+            padding: 0 2px;
         }
         .chart-panel canvas {
             display: block;
