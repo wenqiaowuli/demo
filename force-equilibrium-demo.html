@@ -198,7 +198,7 @@
                 <div class="group-title" id="parameterTitle">参数设定</div>
                 <div class="param-row">
                     <label for="pTheta">目标夹角 θ</label>
-                    <input id="pTheta" type="range" min="0" max="60" value="45" step="1" aria-label="绳与竖直方向的目标夹角，可用拖拽小球联动">
+                    <input id="pTheta" type="range" min="0" max="60" value="45" step="1" aria-label="目标夹角：自动演示结束时小球停下处绳与竖直方向的夹角">
                     <div class="val" id="pThetaVal">45°</div>
                 </div>
                 <div class="param-row">
@@ -243,8 +243,7 @@
             <span style="color:#ff9933">—— F 水平拉力（橙）</span>
             <span style="color:#66aaff">—— G 重力（蓝）</span>
             <span style="color:#aab">– – 辅助线（G+F = −T / 初始竖直位置）</span>
-            <span>◌ 幽灵球 = 初始位置</span>
-            <span>⊙ 待机时可拖拽小球</span>
+            <span>◌ 幽灵球 = 初始竖直位置</span>
             <span>空格 = 演示/暂停 · R = 重置</span>
         </div>
     </main>
@@ -266,10 +265,10 @@
         const C_REF = 'rgba(255,255,255,0.25)';
 
         // ---------- 参数状态 ----------
-        const eq = { theta: 45, mass: 1 };
+        const eq = { target: 45, mass: 1 };   // target = 拉动结束时小球停下的目标夹角
         let phase = 'idle';             // idle | running | paused | ended
         const scan = { active: false, value: 0 };
-        let raf = null, lastTs = null, progress = 0;
+        let raf = null, lastTs = null, progress = 0, scanEnd = 0;
 
         // ---------- DOM ----------
         const $ = (id) => document.getElementById(id);
@@ -283,7 +282,11 @@
         // ---------- 物理计算 ----------
         const calcF = (m, th) => m * g * Math.tan(th * RAD);
         const calcT = (m, th) => m * g / Math.cos(th * RAD);
-        function dispTheta() { return scan.active ? scan.value : eq.theta; }
+        // 当前角度：待机 = 竖直静止悬挂 0°；拉动中 = 扫描值；结束后 = 停在目标角
+        function dispTheta() {
+            if (scan.active) return scan.value;
+            return phase === 'ended' ? eq.target : 0;
+        }
         function ballPos(th) {
             return { x: O.x + STR * Math.sin(th * RAD), y: O.y + STR * Math.cos(th * RAD) };
         }
@@ -485,7 +488,12 @@
             sctx.fillStyle = '#667788';
             sctx.font = '11.5px system-ui, sans-serif';
             sctx.textAlign = 'right';
-            sctx.fillText(phase === 'running' || phase === 'paused' ? '自动演示中：θ 缓慢增大，F 与 T 连续增长' : '待机时可拖拽小球沿弧移动（吸附 1°）', BASE_WIDTH - 16, 24);
+            const hint = (phase === 'running' || phase === 'paused')
+                ? '缓慢拉动中：θ 连续增大，F 与 T 连续增长'
+                : phase === 'ended'
+                    ? '已停在目标夹角 θ=' + Math.round(eq.target) + '°'
+                    : '设定目标夹角后点击自动演示，小球将被缓慢拉起';
+            sctx.fillText(hint, BASE_WIDTH - 16, 24);
 
             // 比例尺
             let unit = 50;
@@ -698,17 +706,17 @@
             inMass.disabled = lock;
         }
 
-        // ---------- 演示扫描动画 ----------
+        // ---------- 演示扫描动画（缓慢拉动：0° → 目标夹角） ----------
         function frame(ts) {
             if (phase !== 'running') return;
             if (lastTs === null) lastTs = ts;
             const dt = Math.min((ts - lastTs) / 1000, 0.05) * Number(inSpeed.value);
             lastTs = ts;
             progress = Math.min(progress + dt / SCAN_DUR, 1);
-            scan.value = TH_MAX * progress;
+            scan.value = scanEnd * progress;
             if (progress >= 1) {
                 phase = 'ended';
-                scan.active = false;   // 球与游标回到参数值，曲线定格完整
+                scan.active = false;   // 小球停在目标夹角（dispTheta 回落至 eq.target）
                 setButtons(); setParamLocks();
                 renderAll(); updateReadouts();
                 return;
@@ -718,6 +726,7 @@
         }
         function start() {
             if (phase === 'running' || phase === 'paused') return;
+            scanEnd = eq.target;
             progress = 0; scan.active = true; scan.value = 0;
             lastTs = null; phase = 'running';
             setButtons(); setParamLocks(); updateReadouts(); renderAll();
@@ -748,11 +757,11 @@
             $('pSpeedVal').textContent = Number(inSpeed.value).toFixed(1) + '×';
         }
         function syncSliders() {
-            inTheta.value = eq.theta;
+            inTheta.value = eq.target;
             inMass.value = eq.mass;
         }
         function applyParamsFromSliders() {
-            eq.theta = Number(inTheta.value);
+            eq.target = Number(inTheta.value);
             eq.mass = Number(inMass.value);
         }
         function onParamsChanged() {
@@ -764,45 +773,6 @@
             el.addEventListener('input', () => { applyParamsFromSliders(); onParamsChanged(); });
         });
         inSpeed.addEventListener('input', updateParamLabels);
-
-        // ---------- 拖拽小球（沿弧，仅待机） ----------
-        let dragging = false;
-        function scenePos(ev) {
-            const rect = sceneCanvas.getBoundingClientRect();
-            return {
-                x: (ev.clientX - rect.left) / rect.width * BASE_WIDTH,
-                y: (ev.clientY - rect.top) / rect.height * BASE_HEIGHT,
-            };
-        }
-        function nearBall(p) {
-            const th = dispTheta();
-            const b = ballPos(th);
-            return Math.hypot(p.x - b.x, p.y - b.y) < BALL_R + 8;
-        }
-        sceneCanvas.addEventListener('pointerdown', (ev) => {
-            if (phase !== 'idle') return;
-            const p = scenePos(ev);
-            if (!nearBall(p)) return;
-            dragging = true;
-            sceneCanvas.setPointerCapture(ev.pointerId);
-            sceneCanvas.style.cursor = 'grabbing';
-            ev.preventDefault();
-        });
-        sceneCanvas.addEventListener('pointermove', (ev) => {
-            const p = scenePos(ev);
-            if (!dragging) {
-                sceneCanvas.style.cursor = (phase === 'idle' && nearBall(p)) ? 'grab' : 'default';
-                return;
-            }
-            const dx = p.x - O.x, dy = Math.max(p.y - O.y, 1e-6);
-            eq.theta = Math.min(TH_MAX, Math.max(0, Math.round(Math.atan2(dx, dy) / RAD)));
-            syncSliders();
-            updateParamLabels();
-            reset();
-        });
-        const endDrag = () => { dragging = false; sceneCanvas.style.cursor = 'default'; };
-        sceneCanvas.addEventListener('pointerup', endDrag);
-        sceneCanvas.addEventListener('pointercancel', endDrag);
 
         // ---------- 按钮与快捷键 ----------
         btnStart.addEventListener('click', start);
