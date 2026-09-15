@@ -49,12 +49,20 @@
             .control-panel { grid-template-columns: 1fr; }
         }
         .param-group,
-        .data-group,
-        .chart-panel {
+        .data-group {
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 10px;
             padding: 14px 16px;
+        }
+        .chart-panel {
+            background: transparent;
+            border: none;
+            border-radius: 0;
+            padding: 0;
+        }
+        .chart-panel .group-title {
+            padding: 0 2px;
         }
         .group-title {
             font-size: 12px;
@@ -242,10 +250,10 @@
         </div>
         <div class="legend">
             <span>□ 电梯轿厢（内有人与体重计）</span>
-            <span style="color:#ff9933">视重气泡：超重</span>
-            <span style="color:#ffffff">视重气泡：正常</span>
-            <span style="color:#66aaff">视重气泡：失重</span>
-            <span style="color:#33ddcc">视重气泡：完全失重</span>
+            <span style="color:#ff9933">视重读数：超重</span>
+            <span style="color:#ffffff">视重读数：正常</span>
+            <span style="color:#66aaff">视重读数：失重</span>
+            <span style="color:#33ddcc">视重读数：完全失重</span>
             <span style="color:#ff9933">→ 加速度 a</span>
             <span>楼层线（每层 3 m）与左侧高度标尺</span>
             <span style="color:#33ddcc">-- 虚线：上行高度 H / 图中实重 G</span>
@@ -558,11 +566,17 @@
             return { x: ex, y: ey };
         }
 
+        function readingLabelY(geometry, cabin) {
+            const centerY = cabin.y + CABIN_H / 2;
+            const y0 = Math.max(geometry.plotTop + 4, Math.min(geometry.originY - 36, centerY - 15));
+            return y0 + 20;
+        }
+
         function drawVectors(geometry, cabin) {
             const ph = phaseAt(t);
             const aShow = state === 'idle' ? 0 : ph.a;
             const centerY = cabin.y + CABIN_H / 2;
-            sctx.font = '12px system-ui, sans-serif';
+            sctx.font = 'bold 13px system-ui, sans-serif';
             sctx.textAlign = 'right';
             sctx.fillStyle = '#ff9933';
             const aX = geometry.cabinX - CABIN_W / 2 - 18;
@@ -574,28 +588,18 @@
                 const dir = aShow >= 0 ? -1 : 1;
                 drawArrow(aX, centerY, aX, centerY + dir * aLen, '#ff9933');
             }
-            sctx.fillText(aText, aX - 10, centerY + 4);
+            sctx.fillText(aText, aX - 10, readingLabelY(geometry, cabin));
         }
 
         function drawBubble(geometry, cabin) {
             const ph = phaseAt(t);
             const fShow = state === 'idle' ? gForceOf() : ph.F;
             const st = state === 'idle' ? { color: COLOR_NORMAL } : stateOf(ph);
-            const w = 150, h = 30;
-            let x0 = geometry.cabinX + CABIN_W / 2 + 40;
-            if (x0 + w > sceneView.width - 10) x0 = geometry.cabinX - CABIN_W / 2 - 40 - w;
-            const centerY = cabin.y + CABIN_H / 2;
-            let y0 = Math.max(geometry.plotTop + 4, Math.min(geometry.originY - h - 6, centerY - h / 2));
-            sctx.fillStyle = 'rgba(10, 25, 40, 0.92)';
-            sctx.strokeStyle = st.color;
-            sctx.lineWidth = 2;
-            roundRect(sctx, x0, y0, w, h, 8);
-            sctx.fill();
-            sctx.stroke();
+            const textX = Math.min(geometry.cabinX + CABIN_W / 2 + 28, sceneView.width - 112);
             sctx.textAlign = 'left';
             sctx.font = 'bold 13px system-ui, sans-serif';
             sctx.fillStyle = st.color;
-            sctx.fillText('视重 = ' + fShow.toFixed(0) + ' N', x0 + 12, y0 + 20);
+            sctx.fillText('视重 = ' + fShow.toFixed(0) + ' N', textX, readingLabelY(geometry, cabin));
         }
 
         function drawEndMark(geometry) {
