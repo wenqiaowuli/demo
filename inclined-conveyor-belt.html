@@ -56,26 +56,31 @@ h1 {
 .canvas-wrap {
   position: relative;
   width: 100%;
-  background: #0d141b;
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 10px;
-  overflow: hidden;
 }
 canvas { display: block; width: 100%; }
+canvas#cv {
+  aspect-ratio: 880 / 520;
+  border: 2px solid #3388dd;
+  border-radius: 10px;
+  background: #0b1828;
+}
 .charts-row {
   width: 100%;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  gap: 14px;
 }
 @media (max-width: 720px) {
   .charts-row { grid-template-columns: 1fr; }
 }
 .chart-panel {
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 10px;
-  padding: 10px 14px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+}
+.chart-panel .group-title {
+  padding: 0 2px;
 }
 .chart-title {
   font-size: 11px;
@@ -84,9 +89,19 @@ canvas { display: block; width: 100%; }
   letter-spacing: 0.4px;
 }
 .chart-panel canvas {
+  display: block;
+  width: 100%;
+  aspect-ratio: 20 / 9;
+  background: #0b1828;
   border: 2px solid #3388dd;
   border-radius: 10px;
-  background: #0b1828;
+}
+.actions {
+  margin-top: 16px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 .control-panel {
   width: 100%;
@@ -163,7 +178,7 @@ canvas { display: block; width: 100%; }
   flex: 1;
   min-width: 200px;
 }
-.card-title {
+.group-title {
   font-size: 11px;
   color: #8899aa;
   margin-bottom: 8px;
@@ -187,14 +202,15 @@ button {
   background: #3388dd;
   border: none;
   color: #fff;
-  padding: 7px 13px;
-  border-radius: 7px;
+  padding: 9px 16px;
+  border-radius: 8px;
   cursor: pointer;
-  font-size: 12px;
+  font-size: 14px;
   font-family: inherit;
-  transition: background 0.15s;
+  transition: background-color 0.15s ease, transform 0.15s ease;
 }
-button:hover { background: #4499ee; }
+button:hover:not(:disabled) { background: #2f7cc8; }
+button:active:not(:disabled) { transform: translateY(1px); }
 button.alt { background: #445566; }
 button.alt:hover { background: #556677; }
 button:disabled { opacity: 0.45; cursor: not-allowed; }
@@ -236,24 +252,24 @@ footer {
 
 <div class="main">
   <div class="canvas-wrap">
-    <canvas id="cv" width="880" height="370" role="img"
+    <canvas id="cv" width="880" height="520" role="img"
       aria-label="倾斜传送带上物块运动演示：倾角可调，传送带沿斜面向上或向下运行，物块受重力、支持力与摩擦力作用，先相对滑动后可能共速"></canvas>
   </div>
 
   <div class="charts-row">
     <section class="chart-panel">
       <div class="chart-title">速度-时间图 (v-t) · 橙:物块 v / 青实线:带速 v带 / 阴影:相对位移 / 竖线:共速 · 正方向:沿斜面向上</div>
-      <canvas id="vtCv" width="430" height="200" role="img" aria-label="物块速度与传送带速度随时间变化图像：两线间阴影为相对位移，竖线标注共速时刻"></canvas>
+      <canvas id="vtCv" width="440" height="198" role="img" aria-label="物块速度与传送带速度随时间变化图像：两线间阴影为相对位移，竖线标注共速时刻"></canvas>
     </section>
     <section class="chart-panel">
       <div class="chart-title">位移-时间图 (s-t) · 橙:物块位移 s−s₀ / 青实线:带位移 v带·t / 两线间距 = 相对位移</div>
-      <canvas id="stCv" width="430" height="200" role="img" aria-label="物块位移与传送带位移随时间变化图像：两线间距等于相对滑动距离，竖线标注共速时刻"></canvas>
+      <canvas id="stCv" width="440" height="198" role="img" aria-label="物块位移与传送带位移随时间变化图像：两线间距等于相对滑动距离，竖线标注共速时刻"></canvas>
     </section>
   </div>
 
   <div class="control-panel">
     <section class="card param-group">
-      <div class="card-title">参数设定</div>
+      <div class="group-title">参数设定</div>
       <div class="param-row">
         <label>倾角 θ</label>
         <input id="theta" type="range" min="5" max="60" step="1" value="30">
@@ -297,13 +313,6 @@ footer {
           <button id="posTop" class="alt" title="物块从顶端出发（距顶端 1 m）">⬒ 顶端</button>
         </span>
       </div>
-      <div class="btn-group">
-        <button id="bStart" class="alt">▶ 开始</button>
-        <button id="bPause" disabled>⏸ 暂停</button>
-        <button id="bContinue" disabled>▶ 继续</button>
-        <button id="bReset">⟲ 重置</button>
-      </div>
-      <div class="note">空格：开始 / 暂停 / 继续 · R：重置 · m = 1 kg</div>
       <div class="fixed-note">
         <b>公式</b>（地面参考系，沿斜面向上为正）<br>
         滑动：<em>f = μmg·cosθ</em> · <em>a = −g·sinθ ∓ μg·cosθ</em>（与相对滑动方向相反）<br>
@@ -316,7 +325,7 @@ footer {
     </section>
 
     <section class="card data-group" id="hudRow" aria-live="polite">
-      <div class="card-title">实时数值</div>
+      <div class="group-title">实时数值</div>
       <div class="data-grid">
         <div class="data-item"><span>物块速度 v</span><b class="accent" id="vNum">+0.00 m/s</b></div>
         <div class="data-item"><span>传送带速度 v带</span><b class="cyan" id="vbNum">−2.00 m/s</b></div>
@@ -332,6 +341,13 @@ footer {
     </section>
   </div>
 
+  <div class="actions">
+    <button id="bStart">▶ 开始</button>
+    <button id="bPause" disabled>⏸ 暂停</button>
+    <button id="bContinue" disabled>▶ 继续</button>
+    <button id="bReset">⟲ 重置</button>
+  </div>
+
   <div class="legend">
     <span class="lg-v">物块速度 v / 位移</span>
     <span class="lg-vbelt">传送带速度 v带</span>
@@ -339,6 +355,7 @@ footer {
     <span class="lg-static">静摩擦 f（共速）/ 相对运动</span>
     <span class="lg-g">重力 G</span>
     <span class="lg-n">支持力 N</span>
+    <span>⌨ 空格 = 播放/暂停　R = 重置　m = 1 kg</span>
   </div>
 </div>
 
@@ -436,7 +453,7 @@ footer {
   // ===== 场景几何（宽度与高度双重约束，杜绝裁切） =====
   function geom() {
     const w = cv.clientWidth || 880;
-    const h = cv.clientHeight || 370;
+    const h = cv.clientHeight || 520;
     const groundY = h - 34;
     const R = 16, band = R + 4;
     const mL = 84, mR = 84, mT = 64;
@@ -529,8 +546,8 @@ footer {
   // ===== 主画布绘制 =====
   function clear() {
     const w = cv.clientWidth || 880;
-    const h = cv.clientHeight || 370;
-    ctx.fillStyle = '#0d141b';
+    const h = cv.clientHeight || 520;
+    ctx.fillStyle = '#0b1828';
     ctx.fillRect(0, 0, w, h);
     ctx.strokeStyle = 'rgba(255,255,255,0.04)';
     ctx.lineWidth = 1;
