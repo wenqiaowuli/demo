@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>共点力平衡演示｜高中物理</title>
+    <meta name="description" content="共点力平衡教学演示（人教必修第一册 3.5）：轻绳悬球在水平拉力作用下缓慢向右上方移动的准静态平衡过程，呈现 ΣFx=0、ΣFy=0 的平衡条件，F=mg·tanθ 与 T=mg/cosθ 的变化规律，三力封闭三角形与正交分解平衡。">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            font-family: system-ui, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 12px 32px;
+        }
+        main {
+            width: 100%;
+            max-width: 880px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1 {
+            font-size: 22px;
+            margin-bottom: 12px;
+            text-align: center;
+        }
+        .canvas-wrap { width: 100%; }
+        canvas#scene {
+            display: block;
+            width: 100%;
+            aspect-ratio: 880 / 520;
+            border: 2px solid #3388dd;
+            border-radius: 10px;
+            background-color: #0b1828;
+            touch-action: none;
+        }
+        .control-panel {
+            margin-top: 14px;
+            width: 100%;
+            display: grid;
+            grid-template-columns: minmax(240px, 1fr) minmax(280px, 1.25fr);
+            gap: 14px;
+        }
+        @media (max-width: 720px) {
+            .control-panel { grid-template-columns: 1fr; }
+        }
+        .param-group,
+        .data-group {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 14px 16px;
+        }
+        .chart-panel {
+            background: transparent;
+            border: none;
+            border-radius: 0;
+            padding: 0;
+        }
+        .chart-panel .group-title {
+            padding: 0 2px;
+        }
+        .group-title {
+            font-size: 12px;
+            color: #8899aa;
+            margin-bottom: 10px;
+            letter-spacing: 0.5px;
+        }
+        .param-row {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            margin-bottom: 10px;
+        }
+        .param-row label {
+            font-size: 13px;
+            color: #ccd;
+            white-space: nowrap;
+            min-width: 82px;
+        }
+        .param-row input[type=range] { flex: 1; }
+        .param-row .val {
+            min-width: 64px;
+            text-align: right;
+            font-size: 13px;
+            font-variant-numeric: tabular-nums;
+            color: #ccd;
+        }
+        .param-row input[type=range]:disabled + .val { opacity: 0.5; }
+        .fixed-note {
+            margin-top: 4px;
+            font-size: 12px;
+            color: #8899aa;
+            line-height: 1.6;
+        }
+        .fixed-note b { color: #ff9933; font-weight: 600; }
+        .data-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 9px;
+        }
+        @media (max-width: 560px) {
+            .data-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+        .data-item {
+            background: rgba(255, 255, 255, 0.035);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 8px;
+            padding: 8px 10px;
+        }
+        .data-item.span-full { grid-column: 1 / -1; }
+        .data-item span {
+            display: block;
+            font-size: 11px;
+            color: #8899aa;
+            margin-bottom: 4px;
+        }
+        .data-item b {
+            display: block;
+            font-size: 14px;
+            color: #ffffff;
+            font-variant-numeric: tabular-nums;
+        }
+        .charts-row {
+            margin-top: 16px;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+        @media (max-width: 720px) {
+            .charts-row { grid-template-columns: 1fr; }
+        }
+        .chart-panel canvas {
+            display: block;
+            width: 100%;
+            aspect-ratio: 20 / 9;
+            background: #0b1828;
+            border: 2px solid #3388dd;
+            border-radius: 10px;
+        }
+        .actions {
+            margin-top: 16px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        button {
+            background: #3388dd;
+            border: none;
+            color: white;
+            padding: 9px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.15s ease, transform 0.15s ease;
+        }
+        button:hover:not(:disabled) { background: #2f7cc8; }
+        button:active:not(:disabled) { transform: translateY(1px); }
+        button:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+        .legend {
+            margin-top: 12px;
+            font-size: 12px;
+            color: #aab;
+            text-align: center;
+            line-height: 1.8;
+        }
+        .legend span { margin: 0 6px; }
+    </style>
+</head>
+<body>
+    <main>
+        <h1>共点力平衡演示</h1>
+        <div class="canvas-wrap">
+            <canvas id="scene" role="img" aria-label="共点力平衡演示：轻绳悬球在水平拉力作用下缓慢移动"></canvas>
+        </div>
+        <div class="charts-row">
+            <section class="chart-panel">
+                <div class="group-title" id="titleL">拉力与张力-夹角图 (F、T–θ)</div>
+                <canvas id="chartL" role="img" aria-label="水平拉力与绳张力随夹角变化的曲线，带重力参考线"></canvas>
+            </section>
+            <section class="chart-panel">
+                <div class="group-title" id="titleR">张力正交分量图 (Tx、Ty–θ)</div>
+                <canvas id="chartR" role="img" aria-label="绳张力正交分量随夹角变化的曲线，Ty 恒等于重力"></canvas>
+            </section>
+        </div>
+        <div class="control-panel">
+            <section class="param-group" aria-labelledby="parameterTitle">
+                <div class="group-title" id="parameterTitle">参数设定</div>
+                <div class="param-row">
+                    <label for="pTheta">目标夹角 θ</label>
+                    <input id="pTheta" type="range" min="0" max="85" value="60" step="1" aria-label="绳与竖直方向的目标夹角，可用拖拽小球联动">
+                    <div class="val" id="pThetaVal">60°</div>
+                </div>
+                <div class="param-row">
+                    <label for="pMass">质量 m</label>
+                    <input id="pMass" type="range" min="0.5" max="5" value="1" step="0.5" aria-label="小球质量，影响重力、拉力与张力的数值">
+                    <div class="val" id="pMassVal">1.0 kg</div>
+                </div>
+                <div class="param-row">
+                    <label for="pSpeed">播放速度</label>
+                    <input id="pSpeed" type="range" min="0.1" max="2" value="1" step="0.1" aria-label="自动演示播放速度倍率">
+                    <div class="val" id="pSpeedVal">1.0×</div>
+                </div>
+                <div class="fixed-note">
+                    平衡条件：<b>ΣFx = 0，ΣFy = 0</b>（共点力合力为零）；"缓慢移动" = 准静态过程，每一时刻均为平衡态。<br>
+                    平衡方程：<b>F = mg·tanθ，T = mg/cosθ</b>（g = 10 m/s² 固定）；θ 增大 → F、T 都增大，<b>T = mg/cosθ ≥ mg 恒成立</b>；θ→90° 时 F、T → ∞（绳越接近水平越难拉）。<br>
+                    三力平衡 ⇒ <b>任意两力的合力与第三力等大反向</b>：G 与 F 的合力 = −T（沿绳延长线）；三力首尾相接构成封闭三角形。<br>
+                    正交分解：竖直分量 <b>Ty = T·cosθ = mg</b>（恒"托住"重力），水平分量 <b>Tx = T·sinθ = F</b>。（拓展：相似三角形法 T/L = mg/(L·cosθ)）
+                </div>
+            </section>
+            <section class="data-group" aria-labelledby="dataTitle" aria-live="polite">
+                <div class="group-title" id="dataTitle">实时数值</div>
+                <div class="data-grid">
+                    <div class="data-item"><span>夹角 θ（对竖直）</span><b id="dTheta">60°</b></div>
+                    <div class="data-item"><span>质量 m</span><b id="dMass">1.0 kg</b></div>
+                    <div class="data-item"><span>重力 G = mg</span><b id="dG">10.0 N</b></div>
+                    <div class="data-item"><span>水平拉力 F</span><b id="dF">17.32 N</b></div>
+                    <div class="data-item"><span>绳张力 T</span><b id="dT">20.00 N</b></div>
+                    <div class="data-item"><span>T 水平分量 Tx</span><b id="dTx">17.32 N</b></div>
+                    <div class="data-item"><span>T 竖直分量 Ty</span><b id="dTy">10.00 N</b></div>
+                    <div class="data-item"><span>T / G</span><b id="dRatio">2.00 × G</b></div>
+                    <div class="data-item span-full"><span>平衡状态</span><b id="dState">准静态平衡：ΣFx=0，ΣFy=0</b></div>
+                </div>
+            </section>
+        </div>
+        <div class="actions">
+            <button id="btnStart" type="button">▶ 自动演示</button>
+            <button id="btnPauseResume" type="button" disabled>暂停</button>
+            <button id="btnReset" type="button">重置</button>
+        </div>
+        <div class="legend">
+            <span style="color:#ffcc44">—— T 绳张力（黄）</span>
+            <span style="color:#ff9933">—— F 水平拉力（橙）</span>
+            <span style="color:#66aaff">—— G 重力（蓝）</span>
+            <span style="color:#aab">– – 辅助线（G+F = −T / 初始竖直位置）</span>
+            <span>◌ 幽灵球 = 初始位置</span>
+            <span>⊙ 待机时可拖拽小球</span>
+            <span>空格 = 演示/暂停 · R = 重置</span>
+        </div>
+    </main>
+    <script>
+    (() => {
+        const RAD = Math.PI / 180;
+        const BASE_WIDTH = 880;
+        const BASE_HEIGHT = 520;
+        const CHART_ASPECT = 20 / 9;
+        const g = 10;                       // 系列惯例：固定值
+        const TH_MAX = 85;                  // 避开 θ→90° 发散
+        const O = { x: 330, y: 70 };        // 悬点（画布逻辑坐标）
+        const STR = 260;                    // 绳长（px）
+        const BALL_R = 13;
+        const SCAN_DUR = 8;                 // θ 0→85° 单程秒数 @1×
+        const C_T = '#ffcc44', C_F = '#ff9933', C_G = '#66aaff';
+        const C_DASH = 'rgba(255,255,255,0.4)';
+        const C_REF = 'rgba(255,255,255,0.25)';
+
+        // ---------- 参数状态 ----------
+        const eq = { theta: 60, mass: 1 };
+        let phase = 'idle';             // idle | running | paused | ended
+        const scan = { active: false, value: 0 };
+        let raf = null, lastTs = null, progress = 0;
+
+        // ---------- DOM ----------
+        const $ = (id) => document.getElementById(id);
+        const sceneCanvas = $('scene'), sctx = sceneCanvas.getContext('2d');
+        const chartL = $('chartL'), ctxL = chartL.getContext('2d');
+        const chartR = $('chartR'), ctxR = chartR.getContext('2d');
+        const views = { scene: { width: BASE_WIDTH, height: BASE_HEIGHT }, L: { width: 400, height: 180 }, R: { width: 400, height: 180 } };
+        const inTheta = $('pTheta'), inMass = $('pMass'), inSpeed = $('pSpeed');
+        const btnStart = $('btnStart'), btnPauseResume = $('btnPauseResume'), btnReset = $('btnReset');
+
+        // ---------- 物理计算 ----------
+        const calcF = (m, th) => m * g * Math.tan(th * RAD);
+        const calcT = (m, th) => m * g / Math.cos(th * RAD);
+        function dispTheta() { return scan.active ? scan.value : eq.theta; }
+        function ballPos(th) {
+            return { x: O.x + STR * Math.sin(th * RAD), y: O.y + STR * Math.cos(th * RAD) };
+        }
+
+        // ---------- 刻度工具（与系列一致） ----------
+        function niceStep(maxValue) {
+            const rawStep = maxValue / 5;
+            const magnitude = Math.pow(10, Math.floor(Math.log10(rawStep)));
+            const normalized = rawStep / magnitude;
+            const factor = normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10;
+            return factor * magnitude;
+        }
+        function tickDecimals(step) {
+            if (step >= 1) return 0;
+            return Math.min(6, Math.ceil(-Math.log10(step) + 1e-9));
+        }
+
+        function drawArrow(ctx, fromX, fromY, toX, toY, color, width = 3, headLen = 10) {
+            const dx = toX - fromX, dy = toY - fromY;
+            const len = Math.hypot(dx, dy);
+            if (len < 2) return;
+            const angle = Math.atan2(dy, dx);
+            ctx.strokeStyle = color;
+            ctx.fillStyle = color;
+            ctx.lineWidth = width;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(fromX, fromY);
+            ctx.lineTo(toX, toY);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(toX, toY);
+            ctx.lineTo(toX - headLen * Math.cos(angle - Math.PI / 6.5), toY - headLen * Math.sin(angle - Math.PI / 6.5));
+            ctx.lineTo(toX - headLen * Math.cos(angle + Math.PI / 6.5), toY - headLen * Math.sin(angle + Math.PI / 6.5));
+            ctx.closePath();
+            ctx.fill();
+            ctx.lineCap = 'butt';
+        }
+        function roundRectPath(ctx, x, y, w, h, r) {
+            ctx.beginPath();
+            ctx.moveTo(x + r, y);
+            ctx.arcTo(x + w, y, x + w, y + h, r);
+            ctx.arcTo(x + w, y + h, x, y + h, r);
+            ctx.arcTo(x, y + h, x, y, r);
+            ctx.arcTo(x, y, x + w, y, r);
+            ctx.closePath();
+        }
+
+        // ---------- 主场景 ----------
+        function drawScene() {
+            sctx.clearRect(0, 0, views.scene.width, views.scene.height);
+            const th = dispTheta();
+            const m = eq.mass;
+            const F = calcF(m, th), T = calcT(m, th), G = m * g;
+            const ball = ballPos(th);
+
+            // 自适应比例系数：F/G/T 矢量与摆几何全部入画，T 箭头不越过 O
+            const k = Math.min(
+                (BASE_WIDTH - 30 - ball.x - 60) / F,
+                (BASE_HEIGHT - 44 - ball.y) / G,
+                0.9 * STR / T,
+            );
+            const Fk = F * k, Gk = G * k, Tk = T * k;
+            const s = Math.sin(th * RAD), c = Math.cos(th * RAD);
+
+            // 天花板支架
+            sctx.strokeStyle = '#7b8ea3';
+            sctx.lineWidth = 2;
+            sctx.beginPath();
+            sctx.moveTo(O.x - 45, O.y);
+            sctx.lineTo(O.x + 45, O.y);
+            sctx.stroke();
+            sctx.lineWidth = 1;
+            sctx.beginPath();
+            for (let x = O.x - 40; x <= O.x + 40; x += 10) {
+                sctx.moveTo(x, O.y);
+                sctx.lineTo(x - 8, O.y - 10);
+            }
+            sctx.stroke();
+
+            // 初始竖直参考线 + 幽灵球
+            sctx.save();
+            sctx.strokeStyle = C_REF;
+            sctx.lineWidth = 1.5;
+            sctx.setLineDash([5, 6]);
+            sctx.beginPath();
+            sctx.moveTo(O.x, O.y + 4);
+            sctx.lineTo(O.x, O.y + STR + 22);
+            sctx.stroke();
+            sctx.restore();
+            sctx.strokeStyle = C_REF;
+            sctx.fillStyle = 'rgba(255,255,255,0.05)';
+            sctx.lineWidth = 1.5;
+            sctx.beginPath();
+            sctx.arc(O.x, O.y + STR, BALL_R, 0, Math.PI * 2);
+            sctx.fill();
+            sctx.stroke();
+            sctx.fillStyle = '#667788';
+            sctx.font = '10.5px system-ui, sans-serif';
+            sctx.textAlign = 'left';
+            sctx.fillText('初始位置', O.x + 18, O.y + STR + 4);
+
+            // θ 角弧（竖直虚线与绳之间，屏幕角度 90°−θ → 90°）
+            if (th > 0.5) {
+                sctx.strokeStyle = '#dceeff';
+                sctx.lineWidth = 1.5;
+                sctx.beginPath();
+                sctx.arc(O.x, O.y, 40, (90 - th) * RAD, 90 * RAD);
+                sctx.stroke();
+                const mid = (90 - th / 2) * RAD;
+                sctx.fillStyle = '#dceeff';
+                sctx.font = '11.5px system-ui, sans-serif';
+                sctx.textAlign = 'center';
+                sctx.fillText('θ=' + Math.round(th) + '°', O.x + Math.cos(mid) * 58, O.y + Math.sin(mid) * 58 + 4);
+            }
+
+            // 绳
+            sctx.strokeStyle = '#8a9bb0';
+            sctx.lineWidth = 2;
+            sctx.beginPath();
+            sctx.moveTo(O.x, O.y);
+            sctx.lineTo(ball.x, ball.y);
+            sctx.stroke();
+
+            // 平行四边形辅助（F、G 的合力 = −T，沿绳延长线）
+            if (F >= 0.1) {
+                const corner = { x: ball.x + Fk, y: ball.y + Gk };
+                sctx.save();
+                sctx.lineWidth = 1.5;
+                sctx.setLineDash([6, 6]);
+                sctx.strokeStyle = 'rgba(255,153,51,0.55)';   // F 的平移（水平段）
+                sctx.beginPath();
+                sctx.moveTo(ball.x, ball.y + Gk);
+                sctx.lineTo(corner.x, corner.y);
+                sctx.stroke();
+                sctx.strokeStyle = 'rgba(102,170,255,0.55)';  // G 的平移（竖直段）
+                sctx.beginPath();
+                sctx.moveTo(ball.x + Fk, ball.y);
+                sctx.lineTo(corner.x, corner.y);
+                sctx.stroke();
+                // 绳延长线 + 合力对角线（G+F）
+                sctx.strokeStyle = C_DASH;
+                sctx.beginPath();
+                sctx.moveTo(ball.x + s * 4, ball.y + c * 4);
+                sctx.lineTo(ball.x + s * (Tk + 14), ball.y + c * (Tk + 14));
+                sctx.stroke();
+                sctx.restore();
+                // 对角箭头：球心 → 角点（G 与 F 的合力，与 T 等大反向）
+                drawArrow(sctx, ball.x, ball.y, corner.x, corner.y, 'rgba(255,255,255,0.55)', 2, 9);
+                sctx.fillStyle = '#dceeff';
+                sctx.font = '11.5px system-ui, sans-serif';
+                // 小夹角时角点贴近 G 矢量端点，标注移至角点右侧避让 G 标注
+                if (th < 25) {
+                    sctx.textAlign = 'left';
+                    sctx.fillText('G+F = −T', corner.x + 14, corner.y + 4);
+                } else {
+                    sctx.textAlign = 'center';
+                    sctx.fillText('G+F = −T', corner.x + s * 20 + 6, corner.y + c * 20 + 4);
+                }
+            }
+
+            // 三力矢量（自球心）
+            if (Tk >= 2) drawArrow(sctx, ball.x, ball.y, ball.x - Tk * s, ball.y - Tk * c, C_T, 3.5);
+            if (Fk >= 2) drawArrow(sctx, ball.x, ball.y, ball.x + Fk, ball.y, C_F, 3.5);
+            drawArrow(sctx, ball.x, ball.y, ball.x, ball.y + Gk, C_G, 3.5);
+
+            // 矢量标注
+            sctx.font = 'bold 13px system-ui, sans-serif';
+            if (Tk >= 2) {
+                const mx = ball.x - Tk * s * 0.5, my = ball.y - Tk * c * 0.5;
+                sctx.fillStyle = C_T;
+                sctx.textAlign = 'center';
+                sctx.fillText('T = ' + T.toFixed(2) + ' N', mx + c * 18, my - s * 18 + 4);
+            }
+            if (Fk >= 2) {
+                sctx.fillStyle = C_F;
+                if (Fk >= 60) {
+                    sctx.textAlign = 'center';
+                    sctx.fillText('F = ' + F.toFixed(2) + ' N', ball.x + Fk / 2, ball.y - 10);
+                } else {
+                    sctx.textAlign = 'left';
+                    sctx.fillText('F = ' + F.toFixed(2) + ' N', ball.x + Fk + 8, ball.y + 4);
+                }
+            }
+            sctx.fillStyle = C_G;
+            sctx.textAlign = 'center';
+            sctx.fillText('G = ' + G.toFixed(1) + ' N', ball.x, ball.y + Gk + 18);
+
+            // 小球
+            sctx.fillStyle = '#dceeff';
+            sctx.strokeStyle = '#3388dd';
+            sctx.lineWidth = 2;
+            sctx.beginPath();
+            sctx.arc(ball.x, ball.y, BALL_R, 0, Math.PI * 2);
+            sctx.fill();
+            sctx.stroke();
+
+            // 顶部状态与提示
+            sctx.font = 'bold 13px system-ui, sans-serif';
+            sctx.fillStyle = '#33ddcc';
+            sctx.textAlign = 'left';
+            sctx.fillText(th < 0.5 ? '准静态平衡：ΣFx=0，ΣFy=0（竖直悬挂：T = G）' : '准静态平衡：ΣFx=0，ΣFy=0', 18, 24);
+            sctx.fillStyle = '#667788';
+            sctx.font = '11.5px system-ui, sans-serif';
+            sctx.textAlign = 'right';
+            sctx.fillText(phase === 'running' || phase === 'paused' ? '自动演示中：θ 缓慢增大，F 与 T 连续增长' : '待机时可拖拽小球沿弧移动（吸附 1°）', BASE_WIDTH - 16, 24);
+
+            // 比例尺
+            let unit = 50;
+            for (const u of [0.5, 1, 2, 5, 10, 20, 50]) { unit = u; if (u * k >= 50) break; }
+            const len = unit * k;
+            const y = BASE_HEIGHT - 26, x0 = 20;
+            sctx.strokeStyle = '#8899aa';
+            sctx.lineWidth = 2;
+            sctx.beginPath();
+            sctx.moveTo(x0, y - 5); sctx.lineTo(x0, y + 5);
+            sctx.moveTo(x0, y); sctx.lineTo(x0 + len, y);
+            sctx.moveTo(x0 + len, y - 5); sctx.lineTo(x0 + len, y + 5);
+            sctx.stroke();
+            sctx.fillStyle = '#8899aa';
+            sctx.font = '11px system-ui, sans-serif';
+            sctx.textAlign = 'left';
+            sctx.fillText(unit + ' N', x0 + len + 7, y + 4);
+        }
+
+        // ---------- 通用曲线图（与系列一致） ----------
+        function drawCurveChart(view, ctx, cfg) {
+            const padL = 50, padR = 14, padT = 18, padB = 32;
+            const plotW = view.width - padL - padR;
+            const plotH = view.height - padT - padB;
+            const xOf = (x) => padL + (x - cfg.xMin) / (cfg.xMax - cfg.xMin) * plotW;
+            const yOf = (v) => padT + plotH - (v - cfg.yMin) / (cfg.yMax - cfg.yMin) * plotH;
+            ctx.clearRect(0, 0, view.width, view.height);
+
+            const yStep = niceStep(cfg.yMax - cfg.yMin);
+            const yDec = tickDecimals(yStep);
+            ctx.font = '10px system-ui, sans-serif';
+            for (let i = Math.ceil(cfg.yMin / yStep - 1e-9); i <= Math.floor(cfg.yMax / yStep + 1e-9); i++) {
+                const val = i * yStep;
+                const py = yOf(val);
+                ctx.strokeStyle = '#1f2d3d'; ctx.lineWidth = 1;
+                ctx.beginPath(); ctx.moveTo(padL, py); ctx.lineTo(padL + plotW, py); ctx.stroke();
+                ctx.fillStyle = '#8899aa'; ctx.textAlign = 'right';
+                ctx.fillText(val.toFixed(yDec), padL - 6, py + 3);
+            }
+            if (cfg.yMin < 0 && cfg.yMax > 0) {
+                const py0 = yOf(0);
+                ctx.strokeStyle = '#7b8ea3'; ctx.lineWidth = 1.5;
+                ctx.beginPath(); ctx.moveTo(padL, py0); ctx.lineTo(padL + plotW, py0); ctx.stroke();
+            }
+            const xStep = cfg.xStep || niceStep(cfg.xMax - cfg.xMin);
+            const xDec = tickDecimals(xStep);
+            ctx.textAlign = 'center';
+            for (let x = Math.ceil(cfg.xMin / xStep - 1e-9); x <= Math.floor(cfg.xMax / xStep + 1e-9); x++) {
+                const val = x * xStep;
+                const px = xOf(val);
+                ctx.strokeStyle = '#1f2d3d'; ctx.lineWidth = 1;
+                ctx.beginPath(); ctx.moveTo(px, padT); ctx.lineTo(px, padT + plotH); ctx.stroke();
+                ctx.fillStyle = '#8899aa';
+                ctx.fillText(val.toFixed(xDec) + (cfg.xUnit || ''), px, padT + plotH + 16);
+            }
+            (cfg.refs || []).forEach((rf) => {
+                const py = yOf(rf.v);
+                if (py < padT - 1 || py > padT + plotH + 1) return;
+                ctx.save();
+                ctx.strokeStyle = rf.color; ctx.lineWidth = 1.5;
+                ctx.setLineDash([6, 5]);
+                ctx.beginPath(); ctx.moveTo(padL, py); ctx.lineTo(padL + plotW, py); ctx.stroke();
+                ctx.restore();
+                ctx.fillStyle = rf.color; ctx.textAlign = 'right';
+                ctx.fillText(rf.label, padL + plotW - 4, py - 5);
+            });
+            ctx.strokeStyle = '#7b8ea3'; ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(padL, padT); ctx.lineTo(padL, padT + plotH); ctx.lineTo(padL + plotW, padT + plotH);
+            ctx.stroke();
+            ctx.fillStyle = '#8899aa';
+            ctx.textAlign = 'left';
+            ctx.fillText(cfg.yLabel, padL + 6, padT + 12);
+            ctx.textAlign = 'right';
+            ctx.fillText(cfg.xLabel, padL + plotW, view.height - 6);
+            const samples = 300;
+            cfg.series.forEach((s) => {
+                ctx.strokeStyle = s.color; ctx.lineWidth = 2.5; ctx.lineJoin = 'round';
+                ctx.beginPath();
+                for (let i = 0; i <= samples; i++) {
+                    const x = cfg.xMin + (i / samples) * (cfg.xMax - cfg.xMin);
+                    const v = s.f(x);
+                    const py = Math.max(padT, Math.min(padT + plotH, yOf(v)));
+                    if (i === 0) ctx.moveTo(xOf(x), py); else ctx.lineTo(xOf(x), py);
+                }
+                ctx.stroke();
+            });
+            if (cfg.cursorX != null) {
+                const pxNow = xOf(cfg.cursorX);
+                ctx.strokeStyle = 'rgba(51,136,221,0.4)'; ctx.lineWidth = 1;
+                ctx.beginPath(); ctx.moveTo(pxNow, padT); ctx.lineTo(pxNow, padT + plotH); ctx.stroke();
+                const vals = [];
+                cfg.series.forEach((s) => {
+                    const v = s.f(cfg.cursorX);
+                    const py = Math.max(padT, Math.min(padT + plotH, yOf(v)));
+                    ctx.fillStyle = s.color;
+                    ctx.beginPath(); ctx.arc(pxNow, py, 4.5, 0, Math.PI * 2); ctx.fill();
+                    vals.push(s.cursorFmt ? s.cursorFmt(v) : v.toFixed(1));
+                });
+                if (vals.length) {
+                    ctx.font = '10px system-ui, sans-serif';
+                    const text = vals.join('  ');
+                    const tw = ctx.measureText(text).width;
+                    let lx = pxNow + 7;
+                    if (lx + tw > padL + plotW) lx = pxNow - tw - 14;
+                    ctx.fillStyle = '#dde6f0'; ctx.textAlign = 'left';
+                    ctx.fillText(text, lx, padT + 12);
+                }
+            }
+        }
+
+        function drawCharts() {
+            const m = eq.mass;
+            const th = dispTheta();
+            const yMax = Math.ceil(1.05 * m * g / Math.cos(TH_MAX * RAD) / 10) * 10;
+            const gRef = { v: m * g, color: C_G, label: 'G = mg = ' + (m * g).toFixed(1) + ' N' };
+            drawCurveChart(views.L, ctxL, {
+                xMin: 0, xMax: TH_MAX, xStep: 15, xUnit: '°', xLabel: 'θ',
+                yMin: 0, yMax, yLabel: 'N',
+                series: [
+                    { f: (x) => calcF(m, x), color: C_F, cursorFmt: (v) => 'F=' + v.toFixed(2) },
+                    { f: (x) => calcT(m, x), color: C_T, cursorFmt: (v) => 'T=' + v.toFixed(2) },
+                ],
+                refs: [gRef],
+                cursorX: th,
+            });
+            drawCurveChart(views.R, ctxR, {
+                xMin: 0, xMax: TH_MAX, xStep: 15, xUnit: '°', xLabel: 'θ',
+                yMin: 0, yMax, yLabel: 'N',
+                series: [
+                    { f: (x) => calcT(m, x) * Math.sin(x * RAD), color: C_F, cursorFmt: (v) => 'Tx=' + v.toFixed(2) },
+                    { f: (x) => calcT(m, x) * Math.cos(x * RAD), color: C_G, cursorFmt: (v) => 'Ty=' + v.toFixed(2) },
+                ],
+                refs: [gRef],
+                cursorX: th,
+            });
+            ctxR.fillStyle = '#8899aa';
+            ctxR.font = '10px system-ui, sans-serif';
+            ctxR.textAlign = 'center';
+            ctxR.fillText('Ty 恒等于 mg（托住重力），Tx 恒等于 F（平衡拉力）', views.R.width / 2, views.R.height - 8);
+        }
+
+        function renderAll() {
+            drawScene();
+            drawCharts();
+        }
+
+        // ---------- 数值面板 ----------
+        function updateReadouts() {
+            const m = eq.mass;
+            const th = dispTheta();
+            const F = calcF(m, th), T = calcT(m, th), G = m * g;
+            $('dTheta').textContent = Math.round(th) + '°';
+            $('dMass').textContent = m.toFixed(1) + ' kg';
+            $('dG').textContent = G.toFixed(1) + ' N';
+            $('dF').textContent = F.toFixed(2) + ' N';
+            $('dT').textContent = T.toFixed(2) + ' N';
+            $('dTx').textContent = (T * Math.sin(th * RAD)).toFixed(2) + ' N';
+            $('dTy').textContent = (T * Math.cos(th * RAD)).toFixed(2) + ' N';
+            $('dRatio').textContent = (T / G).toFixed(2) + ' × G';
+            $('dState').textContent = th < 0.5
+                ? '准静态平衡：ΣFx=0，ΣFy=0（竖直悬挂：T = G）'
+                : '准静态平衡：ΣFx=0，ΣFy=0';
+            $('dState').style.color = '#33ddcc';
+            sceneCanvas.setAttribute('aria-label',
+                `共点力平衡演示：质量${m.toFixed(1)}千克，夹角${Math.round(th)}度，重力${G.toFixed(1)}牛，水平拉力${F.toFixed(2)}牛，绳张力${T.toFixed(2)}牛，准静态平衡`);
+        }
+
+        // ---------- 画布尺寸（DPR + ResizeObserver，系列约定） ----------
+        function setupCanvas(canvas, view, aspect) {
+            const cssWidth = canvas.clientWidth || 400;
+            const cssHeight = cssWidth / aspect;
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = Math.round(cssWidth * dpr);
+            canvas.height = Math.round(cssHeight * dpr);
+            canvas.getContext('2d').setTransform(dpr, 0, 0, dpr, 0, 0);
+            view.width = cssWidth;
+            view.height = cssHeight;
+        }
+        function resizeAll() {
+            setupCanvas(sceneCanvas, views.scene, BASE_WIDTH / BASE_HEIGHT);
+            setupCanvas(chartL, views.L, CHART_ASPECT);
+            setupCanvas(chartR, views.R, CHART_ASPECT);
+            renderAll();
+        }
+
+        // ---------- 按钮与锁定 ----------
+        function setButtons() {
+            if (phase === 'running') {
+                btnStart.disabled = true; btnStart.textContent = '演示中…';
+                btnPauseResume.disabled = false; btnPauseResume.textContent = '暂停';
+                btnReset.disabled = true;
+            } else if (phase === 'paused') {
+                btnStart.disabled = false; btnStart.textContent = '▶ 重新演示';
+                btnPauseResume.disabled = false; btnPauseResume.textContent = '继续';
+                btnReset.disabled = false;
+            } else if (phase === 'ended') {
+                btnStart.disabled = false; btnStart.textContent = '▶ 再来一次';
+                btnPauseResume.disabled = true; btnPauseResume.textContent = '暂停';
+                btnReset.disabled = false;
+            } else {
+                btnStart.disabled = false; btnStart.textContent = '▶ 自动演示';
+                btnPauseResume.disabled = true; btnPauseResume.textContent = '暂停';
+                btnReset.disabled = false;
+            }
+        }
+        function setParamLocks() {
+            const lock = phase === 'running' || phase === 'paused';
+            inTheta.disabled = lock;
+            inMass.disabled = lock;
+        }
+
+        // ---------- 演示扫描动画 ----------
+        function frame(ts) {
+            if (phase !== 'running') return;
+            if (lastTs === null) lastTs = ts;
+            const dt = Math.min((ts - lastTs) / 1000, 0.05) * Number(inSpeed.value);
+            lastTs = ts;
+            progress = Math.min(progress + dt / SCAN_DUR, 1);
+            scan.value = TH_MAX * progress;
+            if (progress >= 1) {
+                phase = 'ended';
+                scan.active = false;   // 球与游标回到参数值，曲线定格完整
+                setButtons(); setParamLocks();
+                renderAll(); updateReadouts();
+                return;
+            }
+            renderAll(); updateReadouts();
+            raf = requestAnimationFrame(frame);
+        }
+        function start() {
+            if (phase === 'running' || phase === 'paused') return;
+            progress = 0; scan.active = true; scan.value = 0;
+            lastTs = null; phase = 'running';
+            setButtons(); setParamLocks(); updateReadouts(); renderAll();
+            raf = requestAnimationFrame(frame);
+        }
+        function pause() {
+            if (phase !== 'running') return;
+            phase = 'paused';
+            if (raf) cancelAnimationFrame(raf);
+            setButtons(); updateReadouts();
+        }
+        function resume() {
+            if (phase !== 'paused') return;
+            phase = 'running'; lastTs = null;
+            setButtons();
+            raf = requestAnimationFrame(frame);
+        }
+        function reset() {
+            if (raf) cancelAnimationFrame(raf);
+            phase = 'idle'; progress = 0; scan.active = false; lastTs = null;
+            setButtons(); setParamLocks(); updateReadouts(); renderAll();
+        }
+
+        // ---------- 参数标签 / 联动 ----------
+        function updateParamLabels() {
+            $('pThetaVal').textContent = inTheta.value + '°';
+            $('pMassVal').textContent = Number(inMass.value).toFixed(1) + ' kg';
+            $('pSpeedVal').textContent = Number(inSpeed.value).toFixed(1) + '×';
+        }
+        function syncSliders() {
+            inTheta.value = eq.theta;
+            inMass.value = eq.mass;
+        }
+        function applyParamsFromSliders() {
+            eq.theta = Number(inTheta.value);
+            eq.mass = Number(inMass.value);
+        }
+        function onParamsChanged() {
+            updateParamLabels();
+            if (phase === 'idle' || phase === 'ended') reset();
+            else { renderAll(); updateReadouts(); }
+        }
+        [inTheta, inMass].forEach((el) => {
+            el.addEventListener('input', () => { applyParamsFromSliders(); onParamsChanged(); });
+        });
+        inSpeed.addEventListener('input', updateParamLabels);
+
+        // ---------- 拖拽小球（沿弧，仅待机） ----------
+        let dragging = false;
+        function scenePos(ev) {
+            const rect = sceneCanvas.getBoundingClientRect();
+            return {
+                x: (ev.clientX - rect.left) / rect.width * BASE_WIDTH,
+                y: (ev.clientY - rect.top) / rect.height * BASE_HEIGHT,
+            };
+        }
+        function nearBall(p) {
+            const th = dispTheta();
+            const b = ballPos(th);
+            return Math.hypot(p.x - b.x, p.y - b.y) < BALL_R + 8;
+        }
+        sceneCanvas.addEventListener('pointerdown', (ev) => {
+            if (phase !== 'idle') return;
+            const p = scenePos(ev);
+            if (!nearBall(p)) return;
+            dragging = true;
+            sceneCanvas.setPointerCapture(ev.pointerId);
+            sceneCanvas.style.cursor = 'grabbing';
+            ev.preventDefault();
+        });
+        sceneCanvas.addEventListener('pointermove', (ev) => {
+            const p = scenePos(ev);
+            if (!dragging) {
+                sceneCanvas.style.cursor = (phase === 'idle' && nearBall(p)) ? 'grab' : 'default';
+                return;
+            }
+            const dx = p.x - O.x, dy = Math.max(p.y - O.y, 1e-6);
+            eq.theta = Math.min(TH_MAX, Math.max(0, Math.round(Math.atan2(dx, dy) / RAD)));
+            syncSliders();
+            updateParamLabels();
+            reset();
+        });
+        const endDrag = () => { dragging = false; sceneCanvas.style.cursor = 'default'; };
+        sceneCanvas.addEventListener('pointerup', endDrag);
+        sceneCanvas.addEventListener('pointercancel', endDrag);
+
+        // ---------- 按钮与快捷键 ----------
+        btnStart.addEventListener('click', start);
+        btnPauseResume.addEventListener('click', () => {
+            if (phase === 'running') pause(); else if (phase === 'paused') resume();
+        });
+        btnReset.addEventListener('click', reset);
+        window.addEventListener('keydown', (e) => {
+            const ae = document.activeElement;
+            if (ae && (ae.tagName === 'INPUT' || ae.tagName === 'BUTTON' || ae.tagName === 'SELECT' || ae.tagName === 'TEXTAREA' || ae.isContentEditable)) return;
+            if (e.code === 'Space') {
+                e.preventDefault();
+                if (phase === 'running') pause();
+                else if (phase === 'paused') resume();
+                else start();
+            } else if (e.key === 'r' || e.key === 'R') {
+                reset();
+            }
+        });
+        window.addEventListener('resize', resizeAll);
+        if (typeof ResizeObserver !== 'undefined') {
+            const observer = new ResizeObserver(resizeAll);
+            observer.observe(sceneCanvas);
+            observer.observe(chartL);
+            observer.observe(chartR);
+        }
+
+        updateParamLabels();
+        resizeAll();
+        reset();
+    })();
+    </script>
+</body>
+</html>
