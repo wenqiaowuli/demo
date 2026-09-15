@@ -196,7 +196,12 @@
 - v-t/s-t 双面板、两线阴影=相对位移、共速竖线
 
 ## 4. 验收标准
-- [ ] 整体布局：`主画布 → 图表行 → control-panel(左参数卡 | 右数据卡) → 操作按钮 → 图例`，移动端单列。
+- [ ] 整体布局：`h1 → canvas-wrap → charts-row → control-panel(左参数卡 | 右数据卡) → actions → legend`，移动端单列。
+- [ ] 主画布：880×520，2px `#3388dd` 蓝色边框，`border-radius: 10px`，`#0b1828` 深蓝背景，CSS `aspect-ratio: 880/520`，`canvas-wrap` 无背景/无边框。
+- [ ] 场景比例重排：`yC = h × 0.675`，`ground = h × 0.94`，传送带居中偏下，上方留空用于箭头/标注。
+- [ ] 图表对齐：`.chart-panel` 透明/无边框/无内距，图表画布 `aspect-ratio: 20/9`，蓝色边框，`charts-row gap: 14px`。
+- [ ] 操作按钮独立区：`.actions` div 位于 `control-panel` 与 `legend` 之间，按钮 14px 字号、9px/16px 内距、hover/active 过渡。
+- [ ] 背景色统一：`clear()` 填充 `#0b1828`（与画布背景一致）。
 - [ ] 参数卡（左）：v₀ 滑条（±6）、起点位置按钮（左端/右端）、**带速只读显示 `vbv`**、**带速大小滑条 `vbSize`**（−6–+6 m/s，±表示方向）、μ 滑条、g 滑条、L 滑条、倍速滑条 + fixed-note 公式框。
 - [ ] 数据卡（右）：9 项实时数据（3 列 grid），含带速 `vbv2` 与方向 `dirText`。
 - [ ] 无中间结论部分（phase 区已删除）。
