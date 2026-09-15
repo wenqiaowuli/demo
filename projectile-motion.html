@@ -246,7 +246,6 @@
         <div class="actions">
             <button id="btnStart" type="button">开始</button>
             <button id="btnPause" type="button" disabled>暂停</button>
-            <button id="btnContinue" type="button" disabled>继续</button>
             <button id="btnReset" type="button">重置</button>
         </div>
         <div class="legend">
@@ -279,7 +278,6 @@
         const elRange = document.getElementById('range');
         const btnStart = document.getElementById('btnStart');
         const btnPause = document.getElementById('btnPause');
-        const btnContinue = document.getElementById('btnContinue');
         const btnReset = document.getElementById('btnReset');
         const vtCanvas = document.getElementById('vtChart');
         const vtCtx = vtCanvas.getContext('2d');
@@ -756,7 +754,8 @@
                 btnStart.disabled = false;
                 btnStart.textContent = '重新开始';
                 btnPause.disabled = true;
-                btnContinue.disabled = true;
+                btnPause.textContent = '暂停';
+                btnReset.disabled = false;
                 inputH.disabled = false;
                 inputV0.disabled = false;
                 return;
@@ -766,16 +765,16 @@
 
         function start() {
             if (state === STATE.RUNNING || state === STATE.PAUSED) return;
-            const restart = state === STATE.ENDED;
             path = [{ x: 0, y: hMeters() }];
             t = 0;
             lastTs = null;
             state = STATE.RUNNING;
             dataGroup.setAttribute('aria-live', 'off');
             btnStart.disabled = true;
-            btnStart.textContent = restart ? '重新开始' : '开始';
+            btnStart.textContent = '运行中…';
             btnPause.disabled = false;
-            btnContinue.disabled = true;
+            btnPause.textContent = '暂停';
+            btnReset.disabled = true;
             inputH.disabled = true;
             inputV0.disabled = true;
             updateReadouts();
@@ -787,8 +786,11 @@
             if (state !== STATE.RUNNING) return;
             state = STATE.PAUSED;
             if (raf) cancelAnimationFrame(raf);
-            btnPause.disabled = true;
-            btnContinue.disabled = false;
+            btnStart.disabled = false;
+            btnStart.textContent = '重新开始';
+            btnPause.disabled = false;
+            btnPause.textContent = '继续';
+            btnReset.disabled = false;
             render();
         }
 
@@ -796,8 +798,11 @@
             if (state !== STATE.PAUSED) return;
             state = STATE.RUNNING;
             lastTs = null;
+            btnStart.disabled = true;
+            btnStart.textContent = '运行中…';
             btnPause.disabled = false;
-            btnContinue.disabled = true;
+            btnPause.textContent = '暂停';
+            btnReset.disabled = true;
             raf = requestAnimationFrame(frame);
         }
 
@@ -813,7 +818,8 @@
             btnStart.disabled = false;
             btnStart.textContent = '开始';
             btnPause.disabled = true;
-            btnContinue.disabled = true;
+            btnPause.textContent = '暂停';
+            btnReset.disabled = false;
             updateReadouts();
             render();
         }
@@ -824,8 +830,10 @@
         }
 
         btnStart.addEventListener('click', start);
-        btnPause.addEventListener('click', pause);
-        btnContinue.addEventListener('click', resume);
+        btnPause.addEventListener('click', () => {
+            if (state === STATE.RUNNING) pause();
+            else if (state === STATE.PAUSED) resume();
+        });
         btnReset.addEventListener('click', reset);
         inputH.addEventListener('input', () => {
             updateParameterLabels();

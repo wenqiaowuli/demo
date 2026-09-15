@@ -1100,7 +1100,8 @@
             drawCharts();
             updateLive(sim.VA[lastI], sim.VB[lastI]);
 
-            btnStart.disabled = true;
+            btnStart.disabled = false;
+            btnStart.textContent = '重新开始';
             btnPause.disabled = true;
             btnPause.textContent = '暂停';
             btnReset.disabled = false;
@@ -1132,9 +1133,10 @@
             elStatus.textContent = '';
             elStatus.style.color = '';
             btnStart.disabled = true;
+            btnStart.textContent = '运行中…';
             btnPause.disabled = false;
             btnPause.textContent = '暂停';
-            btnReset.disabled = false;
+            btnReset.disabled = true;
             setParamsDisabled(true);
             elDataPanel.setAttribute('aria-live', 'off');
             redrawPreview();
@@ -1148,7 +1150,10 @@
             state = 'paused';
             if (animId) { cancelAnimationFrame(animId); animId = null; }
             lastTs = null;
+            btnStart.disabled = false;
+            btnStart.textContent = '重新开始';
             btnPause.textContent = '继续';
+            btnReset.disabled = false;
             elDataPanel.setAttribute('aria-live', 'polite');
         }
 
@@ -1156,7 +1161,10 @@
             if (state !== 'paused') return;
             state = 'running';
             lastTs = null;
+            btnStart.disabled = true;
+            btnStart.textContent = '运行中…';
             btnPause.textContent = '暂停';
+            btnReset.disabled = true;
             elDataPanel.setAttribute('aria-live', 'off');
             animId = requestAnimationFrame(frame);
         }
@@ -1173,9 +1181,10 @@
             readParams();
             sim = simulate();
             btnStart.disabled = false;
+            btnStart.textContent = '开始';
             btnPause.disabled = true;
             btnPause.textContent = '暂停';
-            btnReset.disabled = true;
+            btnReset.disabled = false;
             setParamsDisabled(false);
             elDataPanel.setAttribute('aria-live', 'polite');
             elStatus.style.color = '';
@@ -1295,9 +1304,9 @@
             if (tag === 'INPUT' || tag === 'BUTTON' || tag === 'SELECT' || tag === 'TEXTAREA') return;
             if (e.code === 'Space') {
                 e.preventDefault();
-                if (state === 'idle') start();
-                else if (state === 'running') pauseSim();
+                if (state === 'running') pauseSim();
                 else if (state === 'paused') resumeSim();
+                else start();
             } else if (e.key === 'r' || e.key === 'R') {
                 reset();
             }
