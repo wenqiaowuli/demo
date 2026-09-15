@@ -260,7 +260,7 @@
         const BASE_HEIGHT = 520;
         const CHART_ASPECT = 20 / 9;
         const PAD = { left: 64, right: 30, top: 44, bottom: 58 };
-        const CABIN_W = 124, CABIN_H = 62;
+        const CABIN_W = 96, CABIN_H = 84;
         const V_ARROW_SCALE = 3, V_ARROW_MAX = 90;
         const A_ARROW_SCALE = 4, A_ARROW_MAX = 40;
         const COLOR_OVER = '#ff9933', COLOR_NORMAL = '#ffffff', COLOR_UNDER = '#66aaff', COLOR_FREE = '#33ddcc';
@@ -513,23 +513,23 @@
             roundRect(sctx, geometry.cabinX - 24, floorY - 9, 48, 9, 2);
             sctx.fill();
             sctx.stroke();
-            // 简化人形
+            // 简化人形（在加高后的轿厢内垂直居中）
             sctx.strokeStyle = '#dceeff';
             sctx.fillStyle = '#dceeff';
             sctx.lineWidth = 3;
             sctx.lineCap = 'round';
             sctx.beginPath(); // 头
-            sctx.arc(geometry.cabinX, y + 16, 6, 0, Math.PI * 2);
+            sctx.arc(geometry.cabinX, y + 22, 6.5, 0, Math.PI * 2);
             sctx.fill();
             sctx.beginPath(); // 躯干
-            sctx.moveTo(geometry.cabinX, y + 24);
-            sctx.lineTo(geometry.cabinX, y + 42);
+            sctx.moveTo(geometry.cabinX, y + 31);
+            sctx.lineTo(geometry.cabinX, y + 56);
             sctx.stroke();
             sctx.beginPath(); // 腿
-            sctx.moveTo(geometry.cabinX, y + 42);
-            sctx.lineTo(geometry.cabinX - 7, floorY - 9);
-            sctx.moveTo(geometry.cabinX, y + 42);
-            sctx.lineTo(geometry.cabinX + 7, floorY - 9);
+            sctx.moveTo(geometry.cabinX, y + 56);
+            sctx.lineTo(geometry.cabinX - 8, floorY - 9);
+            sctx.moveTo(geometry.cabinX, y + 56);
+            sctx.lineTo(geometry.cabinX + 8, floorY - 9);
             sctx.stroke();
             sctx.lineCap = 'butt';
             return { x, y };
