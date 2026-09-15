@@ -259,11 +259,6 @@ footer {
         <span class="val" id="cVal">0.12</span>
       </div>
       <div class="param-row">
-        <label>重力 g</label>
-        <input id="grav" type="range" min="1.6" max="25" value="9.8" step="0.1">
-        <span class="val" id="gVal">9.8 m/s²</span>
-      </div>
-      <div class="param-row">
         <label>播放速度</label>
         <input id="speed" type="range" min="0.25" max="2" value="0.6" step="0.05">
         <span class="val" id="spVal">0.60×</span>
@@ -271,7 +266,8 @@ footer {
       <div class="fixed-note">
         <b>物理要点</b>：左侧 A 球由<b>细绳 + 弹簧</b>串联悬挂，剪断的是<b>弹簧上方的细绳</b>。剪断瞬间弹簧<b>形变不能突变</b>，弹力仍 = kx₀ = mg，A 球此刻加速度为 0；<br>
         随后弹簧随球整体下落，在共落参考系中做<b>阻尼简谐振荡</b>，使球下坠延迟。<br>
-        右侧 B 球由不可伸长绳悬挂，剪断瞬间<b>张力立即消失</b>，B 球立即自由落体。因此 <b>B 球先落地</b>。
+        右侧 B 球由不可伸长绳悬挂，剪断瞬间<b>张力立即消失</b>，B 球立即自由落体。因此 <b>B 球先落地</b>。<br>
+        重力加速度 <b>g = 10 m/s²</b>（固定值）。
       </div>
     </section>
 
@@ -331,9 +327,9 @@ footer {
 
   const $ = id => document.getElementById(id);
   const elH = $('height'), elK = $('stiff'), elM = $('mass'),
-        elC = $('damp'), elG = $('grav'), elSp = $('speed');
+        elC = $('damp'), elSp = $('speed');
   const hVal = $('hVal'), kVal = $('kVal'), mVal = $('mVal'),
-        cVal = $('cVal'), gVal = $('gVal'), spVal = $('spVal');
+        cVal = $('cVal'), spVal = $('spVal');
   const startBtn = $('startBtn'), pauseBtn = $('pauseBtn'), resetBtn = $('resetBtn');
   const hudRow = $('hudRow');
   const tNum = $('tNum'), aV = $('aV'), bV = $('bV'),
@@ -346,7 +342,7 @@ footer {
   const GROUND_Y = 486;
   const BALL_R = 16;
 
-  let params = { h: 7, k: 25, m: 1, zeta: 0.12, g: 9.8, speed: 0.6 };
+  let params = { h: 7, k: 25, m: 1, zeta: 0.12, g: 10, speed: 0.6 };
   let sysA = { y: 0, vy: 0, ay: 0, stretch: 0, stretchV: 0, landTime: null, landed: false };
   let sysB = { y: 0, vy: 0, ay: 0, landTime: null, landed: false };
   let time = 0, running = false, paused = false;
@@ -716,17 +712,16 @@ footer {
   }
 
   function setSliders(dis) {
-    [elH, elK, elM, elC, elG, elSp].forEach(el => { el.disabled = dis; });
+    [elH, elK, elM, elC, elSp].forEach(el => { el.disabled = dis; });
   }
 
   function refreshParams() {
     params.h = +elH.value; params.k = +elK.value; params.m = +elM.value;
-    params.zeta = +elC.value; params.g = +elG.value; params.speed = +elSp.value;
+    params.zeta = +elC.value; params.speed = +elSp.value;
     hVal.textContent = params.h.toFixed(1) + ' m';
     kVal.textContent = params.k + ' N/m';
     mVal.textContent = params.m.toFixed(1) + ' kg';
     cVal.textContent = params.zeta.toFixed(2);
-    gVal.textContent = params.g.toFixed(1) + ' m/s²';
     spVal.textContent = params.speed.toFixed(2) + '×';
   }
 
@@ -735,7 +730,7 @@ footer {
     if (phase === 'idle' || phase === 'done') reset();
   }
 
-  [elH, elK, elM, elC, elG].forEach(el => el.addEventListener('input', onParamChange));
+  [elH, elK, elM, elC].forEach(el => el.addEventListener('input', onParamChange));
   elSp.addEventListener('input', refreshParams);
 
   startBtn.addEventListener('click', () => {
