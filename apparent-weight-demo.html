@@ -228,7 +228,7 @@
                     <div class="data-item"><span>运动阶段</span><b id="phase">静止（待机）</b></div>
                     <div class="data-item"><span>高度 y</span><b id="height">0.00 m</b></div>
                     <div class="data-item"><span>实重 G = mg</span><b id="grav">600 N</b></div>
-                    <div class="data-item"><span>视重 F（体重计）</span><b id="fApp">600 N</b></div>
+                    <div class="data-item"><span>示重（体重计）</span><b id="fApp">600 N</b></div>
                     <div class="data-item"><span>F / G</span><b id="fRatio">1.00 × G</b></div>
                     <div class="data-item"><span>行程时间 T</span><b id="tTotal">16.80 s</b></div>
                     <div class="data-item span-full"><span>超失重状态</span><b id="stateText">正常</b></div>
@@ -242,12 +242,11 @@
         </div>
         <div class="legend">
             <span>□ 电梯轿厢（内有人与体重计）</span>
-            <span style="color:#ff9933">F 气泡：超重</span>
-            <span style="color:#ffffff">F 气泡：正常</span>
-            <span style="color:#66aaff">F 气泡：失重</span>
-            <span style="color:#33ddcc">F 气泡：完全失重</span>
-            <span style="color:#ff5555">→ 速度 v</span>
-            <span style="color:#ff9933">→ 加速度 a</span>
+            <span style="color:#ff9933">示重气泡：超重</span>
+            <span style="color:#ffffff">示重气泡：正常</span>
+            <span style="color:#66aaff">示重气泡：失重</span>
+            <span style="color:#33ddcc">示重气泡：完全失重</span>
+            <span style="color:#ff9933">→ 加速度 a（含大小）</span>
             <span>楼层线（每层 3 m）与左侧高度标尺</span>
             <span style="color:#33ddcc">-- 虚线：上行高度 H / 图中实重 G</span>
             <span style="color:#ff5555">● 图中当前点</span>
@@ -565,19 +564,7 @@
             const centerY = cabin.y + CABIN_H / 2;
             sctx.font = '12px system-ui, sans-serif';
             sctx.textAlign = 'left';
-            const vX = geometry.cabinX - CABIN_W / 2 - 18;
-            const vLen = Math.min(Math.abs(ph.v) * V_ARROW_SCALE, V_ARROW_MAX);
-            if (vLen >= 2) {
-                const dir = ph.v >= 0 ? -1 : 1; // 屏幕坐标：向上为负
-                const tip = drawArrow(vX, centerY, vX, centerY + dir * vLen, '#ff5555');
-                if (tip) {
-                    sctx.fillStyle = '#ff5555';
-                    sctx.fillText('v', tip.x + 8, tip.y + (ph.v >= 0 ? -4 : 12));
-                }
-            } else {
-                sctx.fillStyle = '#ff5555';
-                sctx.fillText('v = 0', vX - 12, centerY - 8);
-            }
+            // 速度图示已移除：速度大小与方向见 v-t 图与实时数值面板
             const aX = geometry.cabinX + CABIN_W / 2 + 18;
             const aLen = Math.min(Math.abs(ph.a) * A_ARROW_SCALE, A_ARROW_MAX);
             if (aLen >= 2) {
@@ -585,7 +572,8 @@
                 const tip = drawArrow(aX, centerY, aX, centerY + dir * aLen, '#ff9933');
                 if (tip) {
                     sctx.fillStyle = '#ff9933';
-                    sctx.fillText('a', tip.x + 8, tip.y + (ph.a >= 0 ? -4 : 12));
+                    const aText = 'a = ' + (ph.a > 0 ? '+' : '-') + Math.abs(ph.a).toFixed(1) + ' m/s²';
+                    sctx.fillText(aText, tip.x + 10, tip.y + (ph.a >= 0 ? -6 : 18));
                 }
             } else {
                 sctx.fillStyle = '#ff9933';
@@ -596,7 +584,7 @@
         function drawBubble(geometry, cabin) {
             const ph = phaseAt(t);
             const st = stateOf(ph);
-            const w = 128, h = 46;
+            const w = 150, h = 30;
             let x0 = geometry.cabinX + CABIN_W / 2 + 40;
             if (x0 + w > sceneView.width - 10) x0 = geometry.cabinX - CABIN_W / 2 - 40 - w;
             const centerY = cabin.y + CABIN_H / 2;
@@ -608,12 +596,9 @@
             sctx.fill();
             sctx.stroke();
             sctx.textAlign = 'left';
-            sctx.font = 'bold 14px system-ui, sans-serif';
+            sctx.font = 'bold 13px system-ui, sans-serif';
             sctx.fillStyle = st.color;
-            sctx.fillText('F = ' + ph.F.toFixed(0) + ' N', x0 + 12, y0 + 19);
-            sctx.font = '10px system-ui, sans-serif';
-            sctx.fillStyle = '#8899aa';
-            sctx.fillText('实重 G = ' + gForceOf().toFixed(0) + ' N', x0 + 12, y0 + 37);
+            sctx.fillText('视重（体重计）= ' + ph.F.toFixed(0) + ' N', x0 + 12, y0 + 20);
         }
 
         function drawEndMark(geometry) {
