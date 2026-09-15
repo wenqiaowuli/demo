@@ -339,7 +339,6 @@ footer {
   <div class="actions">
     <button id="bStart">▶ 开始</button>
     <button id="bPause" disabled>⏸ 暂停</button>
-    <button id="bContinue" disabled>▶ 继续</button>
     <button id="bReset">⟲ 重置</button>
   </div>
 
@@ -393,7 +392,7 @@ footer {
   const thVal = $('thVal'), v0v = $('v0v'), vbv = $('vbv'), muv = $('muv'),
         lenVal = $('lenVal'), speedVal = $('speedVal');
   const posBottom = $('posBottom'), posMid = $('posMid'), posTop = $('posTop');
-  const bStart = $('bStart'), bPause = $('bPause'), bContinue = $('bContinue'), bReset = $('bReset');
+  const bStart = $('bStart'), bPause = $('bPause'), bReset = $('bReset');
   const hudRow = $('hudRow');
   const vNum = $('vNum'), vbNum = $('vbNum'), vrelNum = $('vrelNum'), aNum = $('aNum'),
         fNum = $('fNum'), fTypeNum = $('fTypeNum'), nNum = $('nNum'), sNum = $('sNum'),
@@ -1111,7 +1110,8 @@ footer {
     bStart.disabled = false;
     bStart.textContent = '▶ 开始';
     bPause.disabled = true;
-    bContinue.disabled = true;
+    bPause.textContent = '⏸ 暂停';
+    bReset.disabled = false;
     setSliders(false);
     refreshPosBtns();
     hudRow.setAttribute('aria-live', 'polite');
@@ -1119,13 +1119,15 @@ footer {
     updateHud();
   }
   function start() {
-    if (phase !== 'idle') return;
+    if (phase === 'run' || phase === 'pause') return;
+    if (phase === 'done') reset();
     phase = 'run';
     lastTs = 0;
     bStart.disabled = true;
     bStart.textContent = '运行中…';
     bPause.disabled = false;
-    bContinue.disabled = true;
+    bPause.textContent = '⏸ 暂停';
+    bReset.disabled = true;
     setSliders(true);
     hudRow.setAttribute('aria-live', 'off');
     requestAnimationFrame(loop);
@@ -1133,29 +1135,36 @@ footer {
   function pause() {
     if (phase !== 'run') return;
     phase = 'pause';
-    bPause.disabled = true;
-    bContinue.disabled = false;
+    bStart.disabled = false;
+    bStart.textContent = '⟲ 重新开始';
+    bPause.disabled = false;
+    bPause.textContent = '▶ 继续';
+    bReset.disabled = false;
     hudRow.setAttribute('aria-live', 'polite');
   }
   function resume() {
     if (phase !== 'pause') return;
     phase = 'run';
     lastTs = 0;
+    bStart.disabled = true;
+    bStart.textContent = '运行中…';
     bPause.disabled = false;
-    bContinue.disabled = true;
+    bPause.textContent = '⏸ 暂停';
+    bReset.disabled = true;
     hudRow.setAttribute('aria-live', 'off');
     requestAnimationFrame(loop);
   }
   function togglePlay() {
     if (phase === 'run') pause();
     else if (phase === 'pause') resume();
-    else if (phase === 'idle') start();
+    else start();
   }
   function finalizeDone() {
-    bStart.disabled = true;
-    bStart.textContent = '已离开';
+    bStart.disabled = false;
+    bStart.textContent = '⟲ 重新开始';
     bPause.disabled = true;
-    bContinue.disabled = true;
+    bPause.textContent = '⏸ 暂停';
+    bReset.disabled = false;
     setSliders(false);
     refreshPosBtns();
     hudRow.setAttribute('aria-live', 'polite');
@@ -1170,8 +1179,10 @@ footer {
   });
   speedEl.addEventListener('input', readControls);
   bStart.addEventListener('click', start);
-  bPause.addEventListener('click', pause);
-  bContinue.addEventListener('click', resume);
+  bPause.addEventListener('click', () => {
+    if (phase === 'run') pause();
+    else if (phase === 'pause') resume();
+  });
   bReset.addEventListener('click', reset);
   posBottom.addEventListener('click', () => setStartPos('bottom'));
   posMid.addEventListener('click', () => setStartPos('mid'));

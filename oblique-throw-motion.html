@@ -261,7 +261,6 @@
         <div class="actions">
             <button id="btnStart" type="button">开始</button>
             <button id="btnPause" type="button" disabled>暂停</button>
-            <button id="btnContinue" type="button" disabled>继续</button>
             <button id="btnReset" type="button">重置</button>
         </div>
         <div class="legend">
@@ -301,7 +300,6 @@
         const speedVal = document.getElementById('speedVal');
         const btnStart = document.getElementById('btnStart');
         const btnPause = document.getElementById('btnPause');
-        const btnContinue = document.getElementById('btnContinue');
         const btnReset = document.getElementById('btnReset');
         const vtCanvas = document.getElementById('vtChart');
         const vtCtx = vtCanvas.getContext('2d');
@@ -652,6 +650,7 @@
 
             const currentIndex = Math.min(samples, Math.floor(samples * (tMax > 0 ? t / tMax : 0)));
             const pxNow = xOfTime(t);
+            const labels = [];
 
             seriesList.forEach((series, seriesIndex) => {
                 const { fn, color, dashColor, label, unit } = series;
@@ -694,13 +693,22 @@
                 chartCtx.fill();
                 const valText = label + ' ' + fn(t).toFixed(1) + unit;
                 let lx = pxNow + 8;
-                let ly = pyNow - 10 + seriesIndex * 16;
                 if (lx > padL + plotW - 50) lx = pxNow - 54;
-                if (ly < padT + 8) ly = pyNow + 12 + seriesIndex * 16;
-                if (ly > padT + plotH - 4) ly = pyNow - 12 - seriesIndex * 8;
+                labels.push({ text: valText, lx, pyNow });
+            });
+
+            // 当前值标签：按纵坐标排序并保证最小间距，避免叠印
+            labels.sort((a, b) => a.pyNow - b.pyNow);
+            let lastLy = -Infinity;
+            labels.forEach((L) => {
+                let ly = Math.max(padT + 8, L.pyNow - 10);
+                if (ly - lastLy < 14) ly = lastLy + 14;
+                ly = Math.min(ly, padT + plotH - 4);
+                lastLy = ly;
+                chartCtx.font = '10px system-ui, sans-serif';
                 chartCtx.textAlign = 'left';
                 chartCtx.fillStyle = '#dde6f0';
-                chartCtx.fillText(valText, lx, ly);
+                chartCtx.fillText(L.text, L.lx, ly);
             });
 
             // 播放头竖线（统一）
@@ -805,7 +813,8 @@
                 btnStart.disabled = false;
                 btnStart.textContent = '重新开始';
                 btnPause.disabled = true;
-                btnContinue.disabled = true;
+                btnPause.textContent = '暂停';
+                btnReset.disabled = false;
                 inputV0.disabled = false;
                 inputAngle.disabled = false;
                 dataGroup.setAttribute('aria-live', 'polite');
@@ -821,9 +830,10 @@
             lastTs = null;
             state = 'running';
             btnStart.disabled = true;
-            btnStart.textContent = '开始';
+            btnStart.textContent = '运行中…';
             btnPause.disabled = false;
-            btnContinue.disabled = true;
+            btnPause.textContent = '暂停';
+            btnReset.disabled = true;
             inputV0.disabled = true;
             inputAngle.disabled = true;
             dataGroup.setAttribute('aria-live', 'off');
@@ -836,8 +846,11 @@
             if (state !== 'running') return;
             state = 'paused';
             if (raf) cancelAnimationFrame(raf);
-            btnPause.disabled = true;
-            btnContinue.disabled = false;
+            btnStart.disabled = false;
+            btnStart.textContent = '重新开始';
+            btnPause.disabled = false;
+            btnPause.textContent = '继续';
+            btnReset.disabled = false;
             dataGroup.setAttribute('aria-live', 'polite');
             render();
         }
@@ -846,8 +859,11 @@
             if (state !== 'paused') return;
             state = 'running';
             lastTs = null;
+            btnStart.disabled = true;
+            btnStart.textContent = '运行中…';
             btnPause.disabled = false;
-            btnContinue.disabled = true;
+            btnPause.textContent = '暂停';
+            btnReset.disabled = true;
             dataGroup.setAttribute('aria-live', 'off');
             raf = requestAnimationFrame(frame);
         }
@@ -863,7 +879,8 @@
             btnStart.disabled = false;
             btnStart.textContent = '开始';
             btnPause.disabled = true;
-            btnContinue.disabled = true;
+            btnPause.textContent = '暂停';
+            btnReset.disabled = false;
             dataGroup.setAttribute('aria-live', 'polite');
             updateReadouts();
             render();
@@ -882,8 +899,10 @@
         }
 
         btnStart.addEventListener('click', start);
-        btnPause.addEventListener('click', pause);
-        btnContinue.addEventListener('click', resume);
+        btnPause.addEventListener('click', () => {
+            if (state === 'running') pause();
+            else if (state === 'paused') resume();
+        });
         btnReset.addEventListener('click', reset);
         document.addEventListener('keydown', (e) => {
             const tag = e.target && e.target.tagName;

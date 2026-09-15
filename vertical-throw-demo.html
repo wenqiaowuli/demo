@@ -225,7 +225,6 @@
         <div class="actions">
             <button id="btnStart" type="button">开始</button>
             <button id="btnPause" type="button" disabled>暂停</button>
-            <button id="btnContinue" type="button" disabled>继续</button>
             <button id="btnReset" type="button">重置</button>
         </div>
         <div class="legend">
@@ -267,7 +266,6 @@
         const elMaxHeight = document.getElementById('maxHeight');
         const btnStart = document.getElementById('btnStart');
         const btnPause = document.getElementById('btnPause');
-        const btnContinue = document.getElementById('btnContinue');
         const btnReset = document.getElementById('btnReset');
 
         let state = 'idle';
@@ -645,7 +643,8 @@
                 btnStart.disabled = false;
                 btnStart.textContent = '重新开始';
                 btnPause.disabled = true;
-                btnContinue.disabled = true;
+                btnPause.textContent = '暂停';
+                btnReset.disabled = false;
                 inputV0.disabled = false;
                 return;
             }
@@ -658,9 +657,10 @@
             lastTs = null;
             state = 'running';
             btnStart.disabled = true;
-            btnStart.textContent = '开始';
+            btnStart.textContent = '运行中…';
             btnPause.disabled = false;
-            btnContinue.disabled = true;
+            btnPause.textContent = '暂停';
+            btnReset.disabled = true;
             inputV0.disabled = true;
             updateReadouts();
             renderAll();
@@ -671,16 +671,22 @@
             if (state !== 'running') return;
             state = 'paused';
             if (raf) cancelAnimationFrame(raf);
-            btnPause.disabled = true;
-            btnContinue.disabled = false;
+            btnStart.disabled = false;
+            btnStart.textContent = '重新开始';
+            btnPause.disabled = false;
+            btnPause.textContent = '继续';
+            btnReset.disabled = false;
         }
 
         function resume() {
             if (state !== 'paused') return;
             state = 'running';
             lastTs = null;
+            btnStart.disabled = true;
+            btnStart.textContent = '运行中…';
             btnPause.disabled = false;
-            btnContinue.disabled = true;
+            btnPause.textContent = '暂停';
+            btnReset.disabled = true;
             raf = requestAnimationFrame(frame);
         }
 
@@ -693,7 +699,8 @@
             btnStart.disabled = false;
             btnStart.textContent = '开始';
             btnPause.disabled = true;
-            btnContinue.disabled = true;
+            btnPause.textContent = '暂停';
+            btnReset.disabled = false;
             updateReadouts();
             renderAll();
         }
@@ -704,14 +711,28 @@
         }
 
         btnStart.addEventListener('click', start);
-        btnPause.addEventListener('click', pause);
-        btnContinue.addEventListener('click', resume);
+        btnPause.addEventListener('click', () => {
+            if (state === 'running') pause();
+            else if (state === 'paused') resume();
+        });
         btnReset.addEventListener('click', reset);
         inputV0.addEventListener('input', () => {
             updateParameterLabels();
             if (state === 'idle' || state === 'ended') reset();
         });
         inputSpeed.addEventListener('input', updateParameterLabels);
+        window.addEventListener('keydown', (e) => {
+            const ae = document.activeElement;
+            if (ae && (ae.tagName === 'INPUT' || ae.tagName === 'BUTTON' || ae.tagName === 'SELECT' || ae.tagName === 'TEXTAREA' || ae.isContentEditable)) return;
+            if (e.code === 'Space') {
+                e.preventDefault();
+                if (state === 'running') pause();
+                else if (state === 'paused') resume();
+                else start();
+            } else if (e.key === 'r' || e.key === 'R') {
+                reset();
+            }
+        });
         window.addEventListener('resize', resizeAll);
         if (typeof ResizeObserver !== 'undefined') {
             const observer = new ResizeObserver(resizeAll);

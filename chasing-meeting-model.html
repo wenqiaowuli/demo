@@ -23,8 +23,11 @@ canvas{width:100%;display:block}
 .bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:10px}
 button{border:1px solid var(--line);background:#f8fafc;border-radius:8px;padding:6px 12px;font-size:13px;cursor:pointer;color:var(--ink)}
 button:hover{background:#eef2f7}
+button:disabled{opacity:.45;cursor:not-allowed}
 #btnPlay{background:var(--cA);border-color:var(--cA);color:#fff;min-width:78px}
 #btnPlay:hover{background:#1d4ed8}
+#btnPauseResume{background:var(--cA);border-color:var(--cA);color:#fff;min-width:78px}
+#btnPauseResume:hover{background:#1d4ed8}
 select,input[type=number]{border:1px solid var(--line);border-radius:8px;padding:5px 8px;font-size:13px;background:#fff;color:var(--ink)}
 input[type=number]{width:74px;padding:4px 6px}
 input[type=range]{flex:1;min-width:140px;accent-color:var(--cA)}
@@ -73,9 +76,7 @@ sup{font-size:10px}
     <canvas id="animCanvas"></canvas>
     <div class="bar">
       <button id="btnPlay">▶ 开始</button>
-      <button id="btnStepB">单步 −0.1s</button>
-      <button id="btnStep">单步 +0.1s</button>
-      <button id="btnReplay">重播</button>
+      <button id="btnPauseResume" disabled>暂停</button>
       <button id="btnReset">重置</button>
       <select id="speedSel" title="播放速度">
         <option value="0.5">0.5×</option>
@@ -317,7 +318,7 @@ function niceStep(range, n){
 
 function boot(){
   const el = id => document.getElementById(id);
-  const btnPlay = el('btnPlay'), timeSlider = el('timeSlider'), timeLabel = el('timeLabel');
+  const btnPlay = el('btnPlay'), btnPauseResume = el('btnPauseResume'), timeSlider = el('timeSlider'), timeLabel = el('timeLabel');
   const ckKey = el('ckKey'), ckDist = el('ckDist'), ckArea = el('ckArea'), ckBrake = el('ckBrake');
   const cA = getComputedStyle(document.documentElement).getPropertyValue('--cA').trim();
   const cB = getComputedStyle(document.documentElement).getPropertyValue('--cB').trim();
@@ -326,8 +327,29 @@ function boot(){
 
   function setPlaying(p){
     playing = p;
-    btnPlay.textContent = p ? '⏸ 暂停' : '▶ 开始';
     if (p){ lastTs = null; requestAnimationFrame(loop); }
+    setButtons();
+  }
+  // 标准三按钮状态矩阵（开始 | 暂停/继续 | 重置）
+  function setButtons(){
+    const ended = t >= T - EPS;
+    if (playing){
+      btnPlay.disabled = true; btnPlay.textContent = '运行中…';
+      btnPauseResume.disabled = false; btnPauseResume.textContent = '暂停';
+      btnReset.disabled = true;
+    } else if (ended){
+      btnPlay.disabled = false; btnPlay.textContent = '⟲ 重新开始';
+      btnPauseResume.disabled = true; btnPauseResume.textContent = '暂停';
+      btnReset.disabled = false;
+    } else if (t > EPS){
+      btnPlay.disabled = false; btnPlay.textContent = '⟲ 重新开始';
+      btnPauseResume.disabled = false; btnPauseResume.textContent = '▶ 继续';
+      btnReset.disabled = false;
+    } else {
+      btnPlay.disabled = false; btnPlay.textContent = '▶ 开始';
+      btnPauseResume.disabled = true; btnPauseResume.textContent = '暂停';
+      btnReset.disabled = false;
+    }
   }
   function loop(ts){
     if (!playing){ lastTs = null; return; }
@@ -665,7 +687,7 @@ function boot(){
     el('dT').textContent = `${f2(t)} s`;
     el('dXA').textContent = `${f2(xA(t))} m`;
     el('dXB').textContent = `${f2(xB(t))} m`;
-    const va = vAo(t), vb = vBo();
+    const va = vAo(t), vb = vBo(t);
     el('dVA').textContent = sgn(va) + ' m/s';
     el('dVB').textContent = sgn(vb) + ' m/s';
     el('dGap').textContent = `${f2(Math.abs(xB(t) - xA(t)))} m`;
@@ -699,7 +721,7 @@ function boot(){
   function exprTerm(o){
     const tau = o.dt > 0 ? `(t − ${f2(o.dt)})` : 't';
     let parts = [];
-    if (Math.abs(o.v0) > EPS) parts.push(`${o.v0 > 0 ? '' : '− '}${f2(Math.abs(o.v0))}${tau}`);
+    if (Math.abs(o.v0) > EPS) parts.push(`${o.v0 > 0 ? '+ ' : '− '}${f2(Math.abs(o.v0))}${tau}`);
     if (Math.abs(o.a) > EPS) parts.push(`${o.a > 0 ? '+' : '−'} ${f2(Math.abs(o.a) / 2)}${tau}²`);
     let s = o.x0 !== 0 ? f2(o.x0) : '0';
     if (parts.length) s += ' ' + parts.join(' ');
@@ -794,7 +816,7 @@ function boot(){
     sol = solve(); T = sol.T;
     if (t > T) t = T;
     timeSlider.max = T;
-    buildFormula(); updateResult(); syncTime(); render();
+    buildFormula(); updateResult(); syncTime(); render(); setButtons();
   }
 
   function markCustom(){ el('presetSel').value = 'custom'; }
@@ -838,36 +860,36 @@ function boot(){
   }
 
   btnPlay.addEventListener('click', () => {
-    if (!playing && t >= T - EPS) t = 0;
-    setPlaying(!playing);
+    if (playing) return;
+    t = 0;
+    setPlaying(true);
   });
-  el('btnStep').addEventListener('click', () => {
-    setPlaying(false);
-    t = Math.min(T, t + 0.1);
-    syncTime(); render();
+  btnPauseResume.addEventListener('click', () => {
+    if (playing){ setPlaying(false); }
+    else if (t > EPS && t < T - EPS){ setPlaying(true); }
   });
-  el('btnStepB').addEventListener('click', () => {
-    setPlaying(false);
-    t = Math.max(0, t - 0.1);
-    syncTime(); render();
-  });
-  el('btnReplay').addEventListener('click', () => { t = 0; setPlaying(true); });
-  el('btnReset').addEventListener('click', () => {
+  function doReset(){
     setPlaying(false);
     if (PRESETS[el('presetSel').value]) loadPreset(el('presetSel').value);
     else { t = 0; syncTime(); render(); }
-  });
+  }
+  el('btnReset').addEventListener('click', doReset);
   timeSlider.addEventListener('input', () => {
     setPlaying(false);
     t = Math.min(T, Math.max(0, parseFloat(timeSlider.value) || 0));
-    syncTime(); render();
+    syncTime(); render(); setButtons();
   });
   el('speedSel').addEventListener('change', e => { speed = parseFloat(e.target.value); });
   document.addEventListener('keydown', e => {
-    if (e.code === 'Space' && !/INPUT|SELECT|TEXTAREA|BUTTON/.test(e.target.tagName)){
+    if (/INPUT|SELECT|TEXTAREA|BUTTON/.test(e.target.tagName)) return;
+    if (e.code === 'Space'){
       e.preventDefault();
-      if (!playing && t >= T - EPS) t = 0;
-      setPlaying(!playing);
+      if (playing){ setPlaying(false); }
+      else if (t > EPS && t < T - EPS){ setPlaying(true); }
+      else { t = 0; setPlaying(true); }
+    } else if (e.code === 'KeyR'){
+      e.preventDefault();
+      doReset();
     }
   });
 
