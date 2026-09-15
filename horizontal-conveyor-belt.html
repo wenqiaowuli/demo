@@ -52,26 +52,31 @@ h1 {
 .canvas-wrap {
   position: relative;
   width: 100%;
-  background: #0d141b;
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 10px;
-  overflow: hidden;
 }
 canvas { display: block; width: 100%; }
+canvas#cv {
+  aspect-ratio: 880 / 520;
+  border: 2px solid #3388dd;
+  border-radius: 10px;
+  background: #0b1828;
+}
 .charts-row {
   width: 100%;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  gap: 14px;
 }
 @media (max-width: 720px) {
   .charts-row { grid-template-columns: 1fr; }
 }
 .chart-panel {
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 10px;
-  padding: 10px 14px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+}
+.chart-panel .group-title {
+  padding: 0 2px;
 }
 .chart-title {
   font-size: 11px;
@@ -80,9 +85,19 @@ canvas { display: block; width: 100%; }
   letter-spacing: 0.4px;
 }
 .chart-panel canvas {
+  display: block;
+  width: 100%;
+  aspect-ratio: 20 / 9;
+  background: #0b1828;
   border: 2px solid #3388dd;
   border-radius: 10px;
-  background: #0b1828;
+}
+.actions {
+  margin-top: 16px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 .control-panel {
   width: 100%;
@@ -165,7 +180,7 @@ canvas { display: block; width: 100%; }
   flex: 1;
   min-width: 200px;
 }
-.card-title {
+.group-title {
   font-size: 11px;
   color: #8899aa;
   margin-bottom: 8px;
@@ -189,14 +204,15 @@ button {
   background: #3388dd;
   border: none;
   color: #fff;
-  padding: 7px 13px;
-  border-radius: 7px;
+  padding: 9px 16px;
+  border-radius: 8px;
   cursor: pointer;
-  font-size: 12px;
+  font-size: 14px;
   font-family: inherit;
-  transition: background 0.15s;
+  transition: background-color 0.15s ease, transform 0.15s ease;
 }
-button:hover { background: #4499ee; }
+button:hover:not(:disabled) { background: #2f7cc8; }
+button:active:not(:disabled) { transform: translateY(1px); }
 button.alt { background: #445566; }
 button.alt:hover { background: #556677; }
 button:disabled { opacity: 0.45; cursor: not-allowed; }
@@ -237,23 +253,23 @@ footer {
 
 <div class="main">
   <div class="canvas-wrap">
-    <canvas id="cv" width="880" height="240" role="img" aria-label="水平传送带上物块运动演示：物块默认放在带左端，两端滚筒随带速旋转，物块受摩擦力加速或减速直至与带共速"></canvas>
+    <canvas id="cv" width="880" height="520" role="img" aria-label="水平传送带上物块运动演示：物块默认放在带左端，两端滚筒随带速旋转，物块受摩擦力加速或减速直至与带共速"></canvas>
   </div>
 
   <div class="charts-row">
     <section class="chart-panel">
       <div class="chart-title">速度-时间图 (v-t) · 橙:物块 v / 青实线:带速 v带 / 阴影:相对位移 / 竖线:共速</div>
-      <canvas id="vtCv" width="430" height="200" role="img" aria-label="物块速度与传送带速度随时间变化图像：两线间阴影为相对位移，竖线标注共速时刻"></canvas>
+      <canvas id="vtCv" width="440" height="198" role="img" aria-label="物块速度与传送带速度随时间变化图像：两线间阴影为相对位移，竖线标注共速时刻"></canvas>
     </section>
     <section class="chart-panel">
       <div class="chart-title">位移-时间图 (s-t) · 橙:物块位移 / 青实线:带位移 v带·t / 两线间距 = 相对位移</div>
-      <canvas id="stCv" width="430" height="200" role="img" aria-label="物块位移与传送带位移随时间变化图像：两线间距等于相对滑动距离，竖线标注共速时刻"></canvas>
+      <canvas id="stCv" width="440" height="198" role="img" aria-label="物块位移与传送带位移随时间变化图像：两线间距等于相对滑动距离，竖线标注共速时刻"></canvas>
     </section>
   </div>
 
   <div class="control-panel">
     <section class="card param-group">
-      <div class="card-title">参数设定</div>
+      <div class="group-title">参数设定</div>
       <div class="param-row">
         <label>小方块初速度 v₀</label>
         <input id="v0" type="range" min="-6" max="6" step="0.1" value="0">
@@ -295,13 +311,6 @@ footer {
         <input id="speed" type="range" min="0.25" max="4" step="0.25" value="1">
         <span class="val" id="speedVal">1×</span>
       </div>
-      <div class="btn-group">
-        <button id="bStart" class="alt">▶ 开始</button>
-        <button id="bPause" disabled>⏸ 暂停</button>
-        <button id="bContinue" disabled>▶ 继续</button>
-        <button id="bReset">⟲ 重置</button>
-      </div>
-      <div class="note">空格：开始 / 暂停 / 继续 · R：重置 · g = 10 m/s²</div>
       <div class="fixed-note">
         <b>公式</b>（地面参考系，向右为正）<br>
         滑动：<em>f = μmg</em> · <em>a = μg</em>（方向与相对速度相反）<br>
@@ -314,7 +323,7 @@ footer {
     </section>
 
     <section class="card data-group" id="hudRow" aria-live="polite">
-      <div class="card-title">实时数值</div>
+      <div class="group-title">实时数值</div>
       <div class="data-grid">
         <div class="data-item"><span>物块速度 v</span><b class="accent" id="vNum">0.00 m/s</b></div>
         <div class="data-item"><span>相对带速 v−v带</span><b class="accent" id="vrel">0.00 m/s</b></div>
@@ -329,12 +338,20 @@ footer {
     </section>
   </div>
 
+  <div class="actions">
+    <button id="bStart">▶ 开始</button>
+    <button id="bPause" disabled>⏸ 暂停</button>
+    <button id="bContinue" disabled>▶ 继续</button>
+    <button id="bReset">⟲ 重置</button>
+  </div>
+
   <div class="legend">
     <span class="lg-v">物块速度 v / 位移</span>
     <span class="lg-vbelt">传送带速度 v带 / 位移</span>
     <span class="lg-f">摩擦力 f（动摩擦）</span>
     <span class="lg-rel">相对运动方向</span>
     <span class="lg-shade">阴影/间距 = 相对位移</span>
+    <span>⌨ 空格 = 播放/暂停　R = 重置　g = 10 m/s²</span>
   </div>
 </div>
 
@@ -423,12 +440,12 @@ footer {
   // 场景几何（主画布）
   function geom() {
     const w = cv.clientWidth || cv.width || 880;
-    const h = cv.clientHeight || cv.height || 240;
+    const h = cv.clientHeight || cv.height || 520;
     const xL = 44, xR = w - 44;
     const R = 18;                 // 滚筒半径
-    const yC = h - 78;            // 滚筒中心线
+    const yC = Math.round(h * 0.675);  // 滚筒中心线（居中偏下）
     const band = R + 4;           // 带环路径半径（带包在滚筒外侧）
-    const ground = h - 14;        // 地面线
+    const ground = Math.round(h * 0.94);  // 地面线
     return {
       w, h, xL, xR, yC, R, band, ground,
       pix: (xR - xL) / state.L,
@@ -494,8 +511,8 @@ footer {
   // ===== 绘制：主画布 =====
   function clear() {
     const w = cv.clientWidth || cv.width || 880;
-    const h = cv.clientHeight || cv.height || 240;
-    ctx.fillStyle = '#0d141b';
+    const h = cv.clientHeight || cv.height || 520;
+    ctx.fillStyle = '#0b1828';
     ctx.fillRect(0, 0, w, h);
     ctx.strokeStyle = 'rgba(255,255,255,0.04)';
     ctx.lineWidth = 1;
