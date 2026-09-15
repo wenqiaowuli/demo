@@ -5,820 +5,784 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>弹簧 vs 绳子 · 哪个球先落地？</title>
 <style>
-  :root{
-    --bg:#0f172a; --panel:#1e293b; --line:#334155;
-    --text:#e2e8f0; --dim:#94a3b8;
-    --a:#38bdf8;        /* A 球 蓝色 */
-    --b:#f87171;        /* B 球 红色 */
-    --good:#4ade80; --warn:#fbbf24;
-  }
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{
-    font-family:"PingFang SC","Microsoft YaHei","Noto Sans CJK SC",sans-serif;
-    background:var(--bg); color:var(--text);
-    min-height:100vh; padding:18px;
-  }
-  h1{font-size:20px; text-align:center; margin-bottom:4px; font-weight:600}
-  .sub{text-align:center; color:var(--dim); font-size:13px; margin-bottom:16px}
-  .wrap{max-width:1080px; margin:0 auto; display:grid; gap:14px}
-
-  .stage-row{display:grid; grid-template-columns:1fr 1fr; gap:14px}
-  @media(max-width:860px){.stage-row{grid-template-columns:1fr}}
-
-  .card{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px}
-  .card h2{font-size:14px; margin-bottom:10px; font-weight:600; letter-spacing:1px; display:flex; align-items:center; gap:8px}
-  .card h2 .tag{font-size:11px; color:var(--dim); font-weight:400; letter-spacing:0}
-  .card.a h2{color:var(--a)}
-  .card.b h2{color:var(--b)}
-
-  canvas{display:block; width:100%; border-radius:8px; background:#0b1220}
-
-  .data{display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin-top:10px}
-  .cell{background:#0b1220; border:1px solid var(--line); border-radius:8px; padding:6px 8px}
-  .cell .k{font-size:10px; color:var(--dim); letter-spacing:.3px}
-  .cell .v{font-size:14px; font-weight:700; font-variant-numeric:tabular-nums; margin-top:2px}
-
-  .ctrl-card .controls{display:grid; grid-template-columns:repeat(2,1fr); gap:10px}
-  @media(max-width:560px){.ctrl-card .controls{grid-template-columns:1fr}}
-  .ctl label{display:flex; justify-content:space-between; font-size:12px; color:var(--dim); margin-bottom:3px}
-  .ctl label b{color:var(--text); font-weight:600}
-  input[type=range]{width:100%; accent-color:var(--a); cursor:pointer}
-  .btn-row{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px}
-  button{
-    flex:1; min-width:90px; padding:9px 10px; border-radius:8px; cursor:pointer;
-    border:1px solid var(--line); background:#0b1220; color:var(--text); font-size:13px;
-    transition:.15s; font-family:inherit;
-  }
-  button:hover{border-color:var(--a)}
-  button.on{background:var(--a); color:#0b1220; font-weight:700; border-color:var(--a)}
-  button:disabled{opacity:.4; cursor:not-allowed}
-
-  .conclusion{
-    margin-top:10px; padding:10px 12px; border-radius:8px;
-    background:rgba(74,222,128,.08); border:1px solid rgba(74,222,128,.4);
-    color:var(--good); font-size:13px; line-height:1.6; display:none;
-  }
-  .conclusion.show{display:block}
-  .conclusion b{color:#fff}
-
-  .legend{display:flex; gap:14px; flex-wrap:wrap; font-size:11px; color:var(--dim); margin-top:8px; justify-content:center}
-  .legend span{display:inline-flex; align-items:center; gap:5px}
-  .dot{width:10px; height:10px; border-radius:50%; display:inline-block}
-
-  .note{font-size:12px; color:var(--dim); margin-top:10px; line-height:1.7}
-  .note b{color:var(--warn)}
-  .state-strip{
-    text-align:center; padding:6px 8px; border-radius:6px; margin-top:8px;
-    font-size:12px; font-weight:600; background:rgba(56,189,248,.08); color:var(--dim);
-  }
-  .state-strip.cut{background:rgba(251,191,36,.12); color:var(--warn)}
-  .state-strip.done{background:rgba(74,222,128,.12); color:var(--good)}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background-color: #121212;
+  color: #fff;
+  font-family: system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 14px 10px 24px;
+  min-height: 100vh;
+}
+h1 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: #e8eef5;
+}
+.subtitle {
+  font-size: 12px;
+  color: #8899aa;
+  margin-bottom: 12px;
+}
+.main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 880px;
+  width: 100%;
+  gap: 14px;
+}
+.canvas-wrap {
+  position: relative;
+  width: 100%;
+}
+canvas { display: block; width: 100%; }
+canvas#cv {
+  aspect-ratio: 880 / 520;
+  border: 2px solid #3388dd;
+  border-radius: 10px;
+  background: #0b1828;
+}
+.charts-row {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+@media (max-width: 720px) {
+  .charts-row { grid-template-columns: 1fr; }
+}
+.chart-panel {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+}
+.chart-panel .group-title {
+  padding: 0 2px;
+}
+.chart-title {
+  font-size: 11px;
+  color: #8899aa;
+  margin-bottom: 8px;
+  letter-spacing: 0.4px;
+}
+.chart-panel canvas {
+  display: block;
+  width: 100%;
+  aspect-ratio: 20 / 9;
+  background: #0b1828;
+  border: 2px solid #3388dd;
+  border-radius: 10px;
+}
+.actions {
+  margin-top: 16px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.control-panel {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) minmax(280px, 1.25fr);
+  gap: 14px;
+}
+@media (max-width: 720px) {
+  .control-panel { grid-template-columns: 1fr; }
+}
+.param-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #aab;
+  margin-bottom: 6px;
+}
+.param-row label { flex: 0 0 130px; color: #c0c8d4; }
+.param-row input[type=range] { flex: 1; accent-color: #3388dd; }
+.param-row .val {
+  flex: 0 0 70px;
+  text-align: right;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+}
+.fixed-note {
+  font-size: 11px;
+  color: #667788;
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  line-height: 1.6;
+}
+.fixed-note b { color: #ffaa44; }
+.data-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+@media (max-width: 560px) {
+  .data-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+.data-item {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  padding: 6px 8px;
+  text-align: center;
+}
+.data-item span {
+  display: block;
+  font-size: 10px;
+  color: #8899aa;
+  margin-bottom: 2px;
+}
+.data-item b {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.data-item .accent { color: #ffaa44; }
+.data-item .green { color: #44dd88; }
+.data-item .cyan { color: #44ddff; }
+.data-item .blue { color: #38bdf8; }
+.data-item .red { color: #f87171; }
+.card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px;
+  padding: 10px 14px;
+  flex: 1;
+  min-width: 200px;
+}
+.group-title {
+  font-size: 11px;
+  color: #8899aa;
+  margin-bottom: 8px;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+input[type=range]:disabled { opacity: 0.45; cursor: not-allowed; }
+button {
+  background: #3388dd;
+  border: none;
+  color: #fff;
+  padding: 9px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-family: inherit;
+  transition: background-color 0.15s ease, transform 0.15s ease;
+}
+button:hover:not(:disabled) { background: #2f7cc8; }
+button:active:not(:disabled) { transform: translateY(1px); }
+button.alt { background: #445566; }
+button.alt:hover { background: #556677; }
+button:disabled { opacity: 0.45; cursor: not-allowed; }
+.legend {
+  display: flex;
+  gap: 14px;
+  font-size: 11px;
+  color: #8899aa;
+  margin-top: 4px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.legend span::before {
+  content: "";
+  display: inline-block;
+  width: 10px;
+  height: 3px;
+  margin-right: 4px;
+  vertical-align: middle;
+  border-radius: 2px;
+}
+.lg-a::before { background: #38bdf8; }
+.lg-b::before { background: #f87171; }
+.lg-spring::before { background: #7dd3fc; }
+footer {
+  margin-top: 18px;
+  font-size: 11px;
+  color: #556677;
+  text-align: center;
+}
 </style>
 </head>
 <body>
-  <h1>弹簧 vs 绳子 · 哪个球先落地？</h1>
-  <div class="sub">弹性约束 vs 不可伸长约束 · 高中物理对比演示</div>
+<h1>弹簧 vs 绳子 · 哪个球先落地？</h1>
+<div class="subtitle">弹性约束 vs 不可伸长约束 · 剪断瞬间弹力不能突变 vs 张力立即消失</div>
 
-  <div class="wrap">
-    <div class="stage-row">
-      <!-- A 球（弹簧） -->
-      <div class="card a">
-        <h2>A 球 · 细绳 + 弹簧悬挂 <span class="tag">剪断弹簧上方的细绳 · 弹力 = k·x</span></h2>
-        <canvas id="canvasA" width="520" height="560"></canvas>
-        <div class="legend">
-          <span><i class="dot" style="background:var(--a)"></i>A 球 (m=1 kg)</span>
-          <span><i class="dot" style="background:#cbd5e1"></i>细绳（弹簧上方）</span>
-          <span><i class="dot" style="background:#7dd3fc"></i>弹簧 (k=25 N/m)</span>
-        </div>
-        <div class="data">
-          <div class="cell"><div class="k">时间 t</div><div class="v" id="aT">0.00 s</div></div>
-          <div class="cell"><div class="k">速度 v</div><div class="v" id="aV">0.00 m/s</div></div>
-          <div class="cell"><div class="k">加速度 a</div><div class="v" id="aA">0.00 m/s²</div></div>
-          <div class="cell"><div class="k">形变 Δx</div><div class="v" id="aX">0.000 m</div></div>
-        </div>
-        <div class="state-strip" id="aState">就绪 · 绳张紧 + 弹簧伸长 0.392 m，A 球平衡静止</div>
-      </div>
-
-      <!-- B 球（绳子） -->
-      <div class="card b">
-        <h2>B 球 · 不可伸长绳 <span class="tag">剪断细绳 · 张力瞬时解除</span></h2>
-        <canvas id="canvasB" width="520" height="560"></canvas>
-        <div class="legend">
-          <span><i class="dot" style="background:var(--b)"></i>B 球 (m=1 kg)</span>
-          <span><i class="dot" style="background:#94a3b8"></i>轻绳 (T=mg)</span>
-        </div>
-        <div class="data">
-          <div class="cell"><div class="k">时间 t</div><div class="v" id="bT">0.00 s</div></div>
-          <div class="cell"><div class="k">速度 v</div><div class="v" id="bV">0.00 m/s</div></div>
-          <div class="cell"><div class="k">加速度 a</div><div class="v" id="bA">0.00 m/s²</div></div>
-          <div class="cell"><div class="k">位移 h</div><div class="v" id="bH">0.00 m</div></div>
-        </div>
-        <div class="state-strip" id="bState">就绪 · 绳张紧平衡静止</div>
-      </div>
-    </div>
-
-    <!-- 控制面板 -->
-    <div class="card ctrl-card">
-      <h2 style="color:var(--text)">实验控制</h2>
-      <div class="controls">
-        <div class="ctl">
-          <label>下落高度 h <b id="hVal">7.0 m</b></label>
-          <input type="range" id="height" min="2" max="8" value="7" step="0.5">
-        </div>
-        <div class="ctl">
-          <label>弹簧刚度 k <b id="kVal">25 N/m</b></label>
-          <input type="range" id="stiff" min="20" max="200" value="25" step="5">
-        </div>
-        <div class="ctl">
-          <label>质量 m <b id="mVal">1.0 kg</b></label>
-          <input type="range" id="mass" min="0.5" max="2" step="0.1" value="1">
-        </div>
-        <div class="ctl">
-          <label>弹簧阻尼比 ζ <b id="cVal">0.12</b></label>
-          <input type="range" id="damp" min="0.02" max="0.5" value="0.12" step="0.02">
-        </div>
-        <div class="ctl">
-          <label>重力 g <b id="gVal">9.8 m/s²</b></label>
-          <input type="range" id="grav" min="1.6" max="25" value="9.8" step="0.1">
-        </div>
-        <div class="ctl">
-          <label>播放速度 <b id="spVal">0.60x</b></label>
-          <input type="range" id="speed" min="0.25" max="2" value="0.6" step="0.05">
-        </div>
-      </div>
-      <div class="btn-row">
-        <button id="startBtn" class="on">▶ 开始实验（剪断）</button>
-        <button id="resetBtn">⟲ 重置</button>
-      </div>
-      <div class="conclusion" id="conclusion"></div>
-      <div class="note">
-        <b>物理要点</b>：左侧为<b>细绳（上）+ 弹簧（下）</b>串联悬挂，剪断的是<b>弹簧上方的细绳</b>。剪断瞬间弹簧<b>形变不能突变</b>，弹力仍 = kx₀ = mg，与重力抵消，A 球此刻加速度为 0、<b>不会立即下落</b>；<br>
-        随后弹簧随球整体下落，并在共落参考系中做<b>阻尼简谐振荡</b>（弹簧可看到反复伸缩），把球"拽住/释放"，使球下坠延迟；
-        右侧不可伸长绳被剪断瞬间，<b>约束张力立即消失</b>，B 球立即自由落体。因此 <b>B 球先落地</b>。
-      </div>
-    </div>
+<div class="main">
+  <div class="canvas-wrap">
+    <canvas id="cv" width="880" height="520" role="img"
+      aria-label="弹簧悬挂A球与绳子悬挂B球对比演示：剪断后B球自由落体，A球因弹簧振荡延迟下落"></canvas>
   </div>
 
+  <div class="charts-row">
+    <section class="chart-panel">
+      <div class="chart-title">速度-时间图 (v-t) · 蓝:A球 / 红:B球 / 阴影:速度差</div>
+      <canvas id="vtCv" width="440" height="198" role="img" aria-label="A球与B球速度随时间变化图像"></canvas>
+    </section>
+    <section class="chart-panel">
+      <div class="chart-title">位移-时间图 (s-t) · 蓝:A球 / 红:B球 / 阴影:位移差</div>
+      <canvas id="stCv" width="440" height="198" role="img" aria-label="A球与B球位移随时间变化图像"></canvas>
+    </section>
+  </div>
+
+  <div class="control-panel">
+    <section class="card param-group">
+      <div class="group-title">参数设定</div>
+      <div class="param-row">
+        <label>下落高度 h</label>
+        <input id="height" type="range" min="2" max="8" value="7" step="0.5">
+        <span class="val" id="hVal">7.0 m</span>
+      </div>
+      <div class="param-row">
+        <label>弹簧刚度 k</label>
+        <input id="stiff" type="range" min="20" max="200" value="25" step="5">
+        <span class="val" id="kVal">25 N/m</span>
+      </div>
+      <div class="param-row">
+        <label>质量 m</label>
+        <input id="mass" type="range" min="0.5" max="2" step="0.1" value="1">
+        <span class="val" id="mVal">1.0 kg</span>
+      </div>
+      <div class="param-row">
+        <label>弹簧阻尼比 ζ</label>
+        <input id="damp" type="range" min="0.02" max="0.5" value="0.12" step="0.02">
+        <span class="val" id="cVal">0.12</span>
+      </div>
+      <div class="param-row">
+        <label>重力 g</label>
+        <input id="grav" type="range" min="1.6" max="25" value="9.8" step="0.1">
+        <span class="val" id="gVal">9.8 m/s²</span>
+      </div>
+      <div class="param-row">
+        <label>播放速度</label>
+        <input id="speed" type="range" min="0.25" max="2" value="0.6" step="0.05">
+        <span class="val" id="spVal">0.60×</span>
+      </div>
+      <div class="fixed-note">
+        <b>物理要点</b>：左侧 A 球由<b>细绳 + 弹簧</b>串联悬挂，剪断的是<b>弹簧上方的细绳</b>。剪断瞬间弹簧<b>形变不能突变</b>，弹力仍 = kx₀ = mg，A 球此刻加速度为 0；<br>
+        随后弹簧随球整体下落，在共落参考系中做<b>阻尼简谐振荡</b>，使球下坠延迟。<br>
+        右侧 B 球由不可伸长绳悬挂，剪断瞬间<b>张力立即消失</b>，B 球立即自由落体。因此 <b>B 球先落地</b>。
+      </div>
+    </section>
+
+    <section class="card data-group" id="hudRow" aria-live="polite">
+      <div class="group-title">实时数值</div>
+      <div class="data-grid">
+        <div class="data-item"><span>时间 t</span><b id="tNum">0.00 s</b></div>
+        <div class="data-item"><span>A球速度 v</span><b class="blue" id="aV">0.00 m/s</b></div>
+        <div class="data-item"><span>B球速度 v</span><b class="red" id="bV">0.00 m/s</b></div>
+        <div class="data-item"><span>A球加速度 a</span><b class="blue" id="aA">0.00 m/s²</b></div>
+        <div class="data-item"><span>B球加速度 a</span><b class="red" id="bA">0.00 m/s²</b></div>
+        <div class="data-item"><span>弹簧形变 Δx</span><b class="cyan" id="aX">0.000 m</b></div>
+        <div class="data-item"><span>A球位移</span><b class="blue" id="aS">0.00 m</b></div>
+        <div class="data-item"><span>B球位移</span><b class="red" id="bS">0.00 m</b></div>
+        <div class="data-item"><span>位移差 Δs</span><b class="accent" id="dsNum">0.00 m</b></div>
+      </div>
+    </section>
+  </div>
+
+  <div class="actions">
+    <button id="startBtn">▶ 开始</button>
+    <button id="pauseBtn" disabled>⏸ 暂停</button>
+    <button id="resetBtn">⟲ 重置</button>
+  </div>
+
+  <div class="legend">
+    <span class="lg-a">A 球 (弹簧悬挂)</span>
+    <span class="lg-b">B 球 (绳子悬挂)</span>
+    <span class="lg-spring">弹簧 (k·x)</span>
+    <span>⌨ 空格 = 播放/暂停　R = 重置</span>
+  </div>
+</div>
+
+<footer>弹簧 vs 绳子 · 弹性约束与不可伸长约束对比演示 · 高中物理</footer>
+
 <script>
-(function(){
+(() => {
   'use strict';
 
-  // ---- DOM ----
-  var cA = document.getElementById('canvasA');
-  var cB = document.getElementById('canvasB');
-  var ctxA = cA.getContext('2d');
-  var ctxB = cB.getContext('2d');
+  const cv = document.getElementById('cv');
+  const ctx = cv.getContext('2d');
+  const vtCv = document.getElementById('vtCv');
+  const vtCtx = vtCv.getContext('2d');
+  const stCv = document.getElementById('stCv');
+  const stCtx = stCv.getContext('2d');
 
-  var elH      = document.getElementById('height');
-  var elK      = document.getElementById('stiff');
-  var elM      = document.getElementById('mass');
-  var elC      = document.getElementById('damp');
-  var elG      = document.getElementById('grav');
-  var elSp     = document.getElementById('speed');
-  var hVal     = document.getElementById('hVal');
-  var kVal     = document.getElementById('kVal');
-  var mVal     = document.getElementById('mVal');
-  var cVal     = document.getElementById('cVal');
-  var gVal     = document.getElementById('gVal');
-  var spVal    = document.getElementById('spVal');
-  var startBtn = document.getElementById('startBtn');
-  var resetBtn = document.getElementById('resetBtn');
-
-  var aT = document.getElementById('aT');
-  var aV = document.getElementById('aV');
-  var aA = document.getElementById('aA');
-  var aX = document.getElementById('aX');
-  var bT = document.getElementById('bT');
-  var bV = document.getElementById('bV');
-  var bA = document.getElementById('bA');
-  var bH = document.getElementById('bH');
-  var aState = document.getElementById('aState');
-  var bState = document.getElementById('bState');
-  var concl  = document.getElementById('conclusion');
-
-  // ---- 状态 ----
-  var PIXEL_PER_M = 45;      // 1m = 45px（5m 占 225px，给上方绳+弹簧留出可见长度）
-  var SCENE_TOP_PX = 70;     // 支点距离画布顶
-  var GROUND_PAD_PX = 30;    // 地面距画布底
-  var REMNANT_PX = 34;       // 剪断后残留在支点上的绳头长度
-  var STUB_PX = 9;           // 剪断后留在弹簧/球上方的绳头长度
-  var ROPE_MIN_PX = 16;      // 初始悬挂细绳的最小可见长度（极端参数下的几何保护）
-
-  var params = {
-    h: 7.0,        // 初始质心到地面高度（增大 → 细绳更短、下落更久，弹簧振荡更可见）
-    k: 25,         // 弹簧刚度（取较小值 → 静伸长 x₀=mg/k 更大，振荡伸缩更明显）
-    m: 1.0,        // 球质量
-    zeta: 0.12,    // 弹簧阻尼比（欠阻尼 → 有限时长的自由阻尼振荡）
-    g: 9.8,        // 重力
-    speed: 0.6     // 播放速度（默认慢放，不改变物理结果，仅延长屏幕观察时间）
-  };
-
-  var SPRING_NATURAL_M = 1.0;  // 弹簧自然长度（米，仅作图用，不参与受力）
-
-  var State = { READY:'ready', CUTTING:'cutting', FALLING:'falling', LANDED:'landed' };
-
-  var sysA = { state: State.READY, y:0, vy:0, ay:0, stretch:0, stretchV:0, landTime:null, landed:false };
-  var sysB = { state: State.READY, y:0, vy:0, ay:0, landTime:null, landed:false };
-  var time = 0;
-  var running = false;
-  var cutFlash = 0;       // 剪断动画 0..1
-  var cutYA = 0;          // A 侧剪断位置（弹簧上方细绳的中点）
-  var cutYB = 0;          // B 侧剪断位置（细绳中点）
-
-  // ---- 工具 ----
-  function groundY(c){ return c.height - GROUND_PAD_PX; }
-  function pivotY(c){ return SCENE_TOP_PX; }
-  function mToPx(m){ return m * PIXEL_PER_M; }
-
-  function computeEquilibriumA(){
-    // 弹簧静伸长 x0 = mg/k
-    return params.m * params.g / params.k;
+  function fit(c) {
+    const dpr = window.devicePixelRatio || 1;
+    const rect = c.getBoundingClientRect();
+    if (rect.width < 10 || rect.height < 10) return;
+    c.width = Math.floor(rect.width * dpr);
+    c.height = Math.floor(rect.height * dpr);
+    c.getContext('2d').setTransform(dpr, 0, 0, dpr, 0, 0);
   }
+  function fitAll() { [cv, vtCv, stCv].forEach(fit); drawAll(); }
+  window.addEventListener('resize', fitAll);
 
-  function computeDamping(){
-    // 由阻尼比 ζ 求阻尼系数 c = 2·ζ·√(mk)
-    return 2 * params.zeta * Math.sqrt(params.k * params.m);
-  }
+  const $ = id => document.getElementById(id);
+  const elH = $('height'), elK = $('stiff'), elM = $('mass'),
+        elC = $('damp'), elG = $('grav'), elSp = $('speed');
+  const hVal = $('hVal'), kVal = $('kVal'), mVal = $('mVal'),
+        cVal = $('cVal'), gVal = $('gVal'), spVal = $('spVal');
+  const startBtn = $('startBtn'), pauseBtn = $('pauseBtn'), resetBtn = $('resetBtn');
+  const hudRow = $('hudRow');
+  const tNum = $('tNum'), aV = $('aV'), bV = $('bV'),
+        aA = $('aA'), bA = $('bA'), aX = $('aX'),
+        aS = $('aS'), bS = $('bS'), dsNum = $('dsNum');
 
-  function reset(){
-    running = false;
-    time = 0;
-    cutFlash = 0;
-    cutYA = cutYB = 0;
+  const MASS = 1;
+  const SPRING_NATURAL_M = 1.0;
+  const PIVOT_Y = 56;
+  const GROUND_Y = 486;
+  const BALL_R = 16;
 
+  let params = { h: 7, k: 25, m: 1, zeta: 0.12, g: 9.8, speed: 0.6 };
+  let sysA = { y: 0, vy: 0, ay: 0, stretch: 0, stretchV: 0, landTime: null, landed: false };
+  let sysB = { y: 0, vy: 0, ay: 0, landTime: null, landed: false };
+  let time = 0, running = false, paused = false;
+  let phase = 'idle';
+  let cutFlash = 0, cutStartTime = 0;
+  let trace = [];
+
+  function getSceneWidth() { return cv.clientWidth || 880; }
+
+  function ballAx() { return getSceneWidth() * 0.33; }
+  function ballBx() { return getSceneWidth() * 0.67; }
+  function groundPx() { return GROUND_Y; }
+  function ballPxY(h) { return GROUND_Y - h * pixPerM(); }
+  function pixPerM() { return (GROUND_Y - PIVOT_Y - 40) / params.h; }
+
+  function computeEquilibriumA() { return params.m * params.g / params.k; }
+  function computeDamping() { return 2 * params.zeta * Math.sqrt(params.k * params.m); }
+
+  function reset() {
+    running = false; paused = false; phase = 'idle'; time = 0;
+    cutFlash = 0; cutStartTime = 0; trace = [];
     var x0 = computeEquilibriumA();
-    sysA.stretch = x0;      // 初态：弹簧被拉伸 x0，形变不能突变
-    sysA.stretchV = 0;      // 初态：共落系内弹簧相对静止
-    sysA.y = params.h;
-    sysA.vy = 0;
-    sysA.ay = 0;
-    sysA.state = State.READY;
-    sysA.landTime = null;
-    sysA.landed = false;
-
-    sysB.y = params.h;
-    sysB.vy = 0;
-    sysB.ay = 0;
-    sysB.state = State.READY;
-    sysB.landTime = null;
-    sysB.landed = false;
-
-    aState.className = 'state-strip';
-    aState.textContent = '就绪 · 绳张紧 + 弹簧伸长 ' + x0.toFixed(3) + ' m，A 球平衡静止';
-    bState.className = 'state-strip';
-    bState.textContent = '就绪 · 绳张紧，B 球平衡静止';
-    concl.className = 'conclusion';
-    concl.innerHTML = '';
-    startBtn.disabled = false;
-    startBtn.textContent = '▶ 开始实验（同时剪断两侧细绳）';
+    sysA.stretch = x0; sysA.stretchV = 0;
+    sysA.y = params.h; sysA.vy = 0; sysA.ay = 0;
+    sysA.landTime = null; sysA.landed = false;
+    sysB.y = params.h; sysB.vy = 0; sysB.ay = 0;
+    sysB.landTime = null; sysB.landed = false;
+    startBtn.disabled = false; startBtn.textContent = '▶ 开始';
+    pauseBtn.disabled = true; pauseBtn.textContent = '⏸ 暂停';
+    setSliders(false);
     drawAll();
   }
 
-  // ---- 物理更新 ----
-  //
-  // 物理模型（阻尼简谐振动，真实物理）：
-  //   整体下落参考系（自由落体、重力被惯性力抵消）内，弹簧做阻尼简谐振动：
-  //     m·ẍ = -k·x - c·ẋ ，初态 x(0) = x0 = mg/k，ẋ(0) = 0
-  //   地面系中球的离地高度：
-  //     y(t) = h - ½ g t² + (x0 - x(t))
-  //   即：整体自由落体 + 弹簧"拖住/抬升"带来的一段位移修正。
-  //   弹簧始终具有弹性形变 x（被拉伸 x0 起步），在共落系内周期性伸缩（阻尼衰减），
-  //   因此动画中弹簧会随小球自由下落并持续【可见地伸缩变形】。
-  //   B 球（不可伸长绳）：剪断瞬间张力消失，立即自由落体 a = g。
-  var cutStartTime = 0;
-  function step(dt){
-    if(!running) return;
+  function step(dt) {
+    if (!running || paused) return;
     time += dt;
 
-    // --- B 球：剪断后立即自由落体 ---
-    if(sysB.state === State.CUTTING || sysB.state === State.FALLING){
-      sysB.state = State.FALLING;
-      sysB.ay = params.g;
+    if (sysB.y > 0) {
       sysB.vy += params.g * dt;
       sysB.y -= sysB.vy * dt;
-      if(sysB.y <= 0){
-        sysB.y = 0;
-        sysB.vy = 0;
-        sysB.ay = 0;
-        sysB.state = State.LANDED;
-        if(sysB.landTime === null){ sysB.landTime = time; sysB.landed = true; }
+      sysB.ay = params.g;
+      if (sysB.y <= 0) {
+        sysB.y = 0; sysB.vy = 0; sysB.ay = 0;
+        if (sysB.landTime === null) { sysB.landTime = time; sysB.landed = true; }
       }
     }
 
-    // --- A 球：弹簧+质量脱离支点后整体下落，弹簧在共落系内做阻尼简谐振动 ---
-    if(sysA.state === State.CUTTING || sysA.state === State.FALLING){
-      sysA.state = State.FALLING;
+    if (sysA.y > 0) {
       var x0 = computeEquilibriumA();
       var cD = computeDamping();
-      // 共落系：m·ẍ = -k·x - c·ẋ（阻尼简谐振动）
-      var axS = -(params.k/params.m)*sysA.stretch - (cD/params.m)*sysA.stretchV;
+      var axS = -(params.k / params.m) * sysA.stretch - (cD / params.m) * sysA.stretchV;
       sysA.stretchV += axS * dt;
-      sysA.stretch  += sysA.stretchV * dt;
-      // 地面系：整体自由落体 + 形变修正
+      sysA.stretch += sysA.stretchV * dt;
       var tFall = time - cutStartTime;
       var yFree = params.h - 0.5 * params.g * tFall * tFall;
       var yA = yFree + (x0 - sysA.stretch);
-      sysA.y  = Math.max(0, yA);
-      sysA.vy = Math.max(0, params.g * tFall - sysA.stretchV);  // 向下速度
-      sysA.ay = params.g + axS;                                  // 地面系加速度
-      if(yA <= 0){
+      sysA.y = Math.max(0, yA);
+      sysA.vy = Math.max(0, params.g * tFall - sysA.stretchV);
+      sysA.ay = params.g + axS;
+      if (yA <= 0) {
         sysA.y = 0; sysA.vy = 0; sysA.ay = 0;
-        sysA.state = State.LANDED;
-        if(sysA.landTime === null){ sysA.landTime = time; sysA.landed = true; }
+        if (sysA.landTime === null) { sysA.landTime = time; sysA.landed = true; }
       }
     }
 
-    // 剪刀动画淡出
-    if(cutFlash > 0){ cutFlash = Math.max(0, cutFlash - dt*2); }
+    trace.push([time, sysA.vy, sysB.vy, sysA.y, sysB.y]);
+    if (trace.length > 4000) trace.splice(0, trace.length - 3600);
+
+    if (cutFlash > 0) cutFlash = Math.max(0, cutFlash - dt * 2);
+
+    if (sysA.landed && sysB.landed) {
+      phase = 'done';
+      running = false;
+      startBtn.disabled = true;
+      startBtn.textContent = '✓ 完成';
+      pauseBtn.disabled = true;
+      setSliders(false);
+    }
   }
 
-  // ---- 绘制工具 ----
-  function drawSupport(ctx, c, color){
-    // 顶部支点支架
-    var px = c.width/2, py = pivotY(c);
-    ctx.fillStyle = '#475569';
-    ctx.fillRect(px - 40, py - 6, 80, 6);
-    // 斜撑
-    ctx.beginPath();
-    ctx.moveTo(px - 30, py);
-    ctx.lineTo(px, py - 18);
-    ctx.lineTo(px + 30, py);
+  function drawAll() {
+    clear();
+    drawScene();
+    drawVT();
+    drawST();
+    updateHud();
+  }
+
+  function clear() {
+    const w = cv.clientWidth || 880;
+    const h = cv.clientHeight || 520;
+    ctx.fillStyle = '#0b1828';
+    ctx.fillRect(0, 0, w, h);
+    ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+    ctx.lineWidth = 1;
+    for (let x = 0; x < w; x += 24) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+    }
+    for (let y = 0; y < h; y += 24) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+    }
+  }
+
+  function drawScene() {
+    const w = cv.clientWidth || 880;
+    const h = cv.clientHeight || 520;
+    const pix = (GROUND_Y - PIVOT_Y - 40) / params.h;
+    const axA = w * 0.33, axB = w * 0.67;
+    const gY = GROUND_Y;
+
+    ctx.strokeStyle = '#3a4a5a';
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(40, gY); ctx.lineTo(w - 40, gY); ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+    ctx.lineWidth = 1;
+    for (let x = 44; x < w - 40; x += 14) {
+      ctx.beginPath(); ctx.moveTo(x, gY); ctx.lineTo(x - 8, gY + 10); ctx.stroke();
+    }
+
     ctx.strokeStyle = '#475569';
     ctx.lineWidth = 3;
-    ctx.stroke();
-    // 锚点
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.arc(px, py, 4, 0, Math.PI*2);
-    ctx.fill();
-  }
+    ctx.beginPath(); ctx.moveTo(axA - 36, PIVOT_Y); ctx.lineTo(axA + 36, PIVOT_Y); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(axB - 36, PIVOT_Y); ctx.lineTo(axB + 36, PIVOT_Y); ctx.stroke();
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(axA - 26, PIVOT_Y); ctx.lineTo(axA, PIVOT_Y - 16); ctx.lineTo(axA + 26, PIVOT_Y); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(axB - 26, PIVOT_Y); ctx.lineTo(axB, PIVOT_Y - 16); ctx.lineTo(axB + 26, PIVOT_Y); ctx.stroke();
 
-  function drawSpring(ctx, c, topY, botY, color, axisX){
-    // 锯齿折线弹簧，从 (axisX, topY) 到 (axisX, botY)，线圈疏密随弹簧实际长度变化（体现伸缩）
-    var len = botY - topY;
-    if(len <= 0) return;
-    var N = Math.max(8, Math.round(len / 6));  // 锯齿数随长度变化
-    var coilH = 6;          // 锯齿幅度
-    ctx.strokeStyle = color;
+    [axA, axB].forEach(ax => {
+      ctx.fillStyle = '#475569';
+      ctx.beginPath(); ctx.arc(ax, PIVOT_Y, 4, 0, Math.PI * 2); ctx.fill();
+    });
+
+    var ballAy = gY - sysA.y * pix;
+    var ballBy = gY - sysB.y * pix;
+
+    var springLenPx = (SPRING_NATURAL_M + sysA.stretch) * pix;
+    var springTop = Math.max(ballAy - springLenPx, PIVOT_Y + 16);
+
+    ctx.strokeStyle = '#cbd5e1';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.moveTo(axA, PIVOT_Y); ctx.lineTo(axA, springTop); ctx.stroke();
+
+    var N = Math.max(8, Math.round((ballAy - springTop) / 6));
+    var coilH = 6;
+    ctx.strokeStyle = '#7dd3fc';
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(axisX, topY);
-    // 顶部留一小段直线
+    ctx.moveTo(axA, springTop);
     var margin = 8;
-    var startY = topY + margin;
-    var endY = botY - 8;
-    ctx.lineTo(axisX, startY);
-    // 锯齿
-    for(var i = 0; i < N; i++){
-      var t0 = i / N;
-      var t1 = (i+1) / N;
+    var startY = springTop + margin;
+    var endY = ballAy - 8;
+    ctx.lineTo(axA, startY);
+    for (var i = 0; i < N; i++) {
+      var t0 = i / N, t1 = (i + 1) / N;
       var y0 = startY + (endY - startY) * t0;
       var y1 = startY + (endY - startY) * t1;
-      var x1 = axisX + (i % 2 === 0 ? coilH : -coilH);
-      ctx.lineTo(x1, (y0+y1)/2);
-      ctx.lineTo(axisX, y1);
+      ctx.lineTo(axA + (i % 2 === 0 ? coilH : -coilH), (y0 + y1) / 2);
+      ctx.lineTo(axA, y1);
     }
-    ctx.lineTo(axisX, botY);
+    ctx.lineTo(axA, ballAy - 8);
     ctx.stroke();
-  }
 
-  function drawStretchRef(ctx, c, ballY, stretchM){
-    // 自然长度参考刻度：以小球上方 L_nat 处为基准，标注当前形变量拉伸/压缩
-    var px = c.width/2;
-    var x0px = (px + 6);
-    var natTop = ballY - SPRING_NATURAL_M * PIXEL_PER_M;
-    ctx.strokeStyle = 'rgba(125,211,252,.35)';
-    ctx.lineWidth = 1;
-    ctx.setLineDash([3,4]);
-    // 一条过自然长度顶端的水平短虚线
-    ctx.beginPath();
-    ctx.moveTo(x0px - 4, natTop);
-    ctx.lineTo(x0px + 26, natTop);
-    ctx.stroke();
-    ctx.setLineDash([]);
-    // 当前弹簧顶端位置
-    var curTop = ballY - (SPRING_NATURAL_M + stretchM) * PIXEL_PER_M;
-    ctx.fillStyle = '#7dd3fc';
-    ctx.beginPath();
-    ctx.moveTo(x0px - 4, curTop);
-    ctx.lineTo(x0px + 6, curTop);
-    ctx.lineTo(x0px + 1, curTop + (curTop > natTop ? 6 : -6));
-    ctx.closePath();
-    ctx.fill();
-    // 标注拉伸量
-    ctx.fillStyle = '#7dd3fc';
-    ctx.font = '10px sans-serif';
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('L\u208b', px - 40, natTop);
-    ctx.fillText('Δx ' + stretchM.toFixed(3) + 'm', px - 40, (curTop + natTop)/2);
-  }
-
-  function drawRope(ctx, c, topY, botY, color, axisX, cut){
-    ctx.strokeStyle = color;
+    ctx.strokeStyle = '#cbd5e1';
     ctx.lineWidth = 2.5;
-    ctx.setLineDash(cut ? [4,4] : []);
-    ctx.beginPath();
-    ctx.moveTo(axisX, topY);
-    ctx.lineTo(axisX, botY);
-    ctx.stroke();
-    ctx.setLineDash([]);
-  }
+    ctx.beginPath(); ctx.moveTo(axB, PIVOT_Y); ctx.lineTo(axB, ballBy - BALL_R); ctx.stroke();
 
-  function drawHeightGuide(ctx, c, ballY, label){
-    // 初始状态两球等高的参考虚线（仅在静止时画）
-    ctx.save();
-    ctx.strokeStyle = 'rgba(148,163,184,.3)';
-    ctx.lineWidth = 1;
-    ctx.setLineDash([5,5]);
-    ctx.beginPath();
-    ctx.moveTo(14, ballY);
-    ctx.lineTo(c.width - 14, ballY);
-    ctx.stroke();
-    ctx.setLineDash([]);
-    ctx.fillStyle = 'rgba(148,163,184,.85)';
-    ctx.font = '10px sans-serif';
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(label, 18, ballY - 9);
-    ctx.restore();
-  }
-
-  function drawSegLabel(ctx, axisX, y, text, color){
-    ctx.fillStyle = color || '#94a3b8';
-    ctx.font = '11px sans-serif';
-    ctx.textAlign = 'right';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(text, axisX - 34, y);
-  }
-
-  function drawRopeRemnant(ctx, c, pY){
-    // 剪断后残留在支点上的绳头，轻微摆动、衰减
-    var axisX = c.width/2;
-    var t = Math.max(0, time - cutStartTime);
-    var ang = 0.38 * Math.sin(t * 9) * Math.exp(-t * 1.1);
-    var len = REMNANT_PX;
-    var ex = axisX + Math.sin(ang) * len;
-    var ey = pY + Math.cos(ang) * len;
-    ctx.strokeStyle = '#94a3b8';
-    ctx.lineWidth = 2.5;
-    ctx.beginPath();
-    ctx.moveTo(axisX, pY);
-    ctx.quadraticCurveTo(axisX + Math.sin(ang) * len * 0.4, pY + len * 0.5, ex, ey);
-    ctx.stroke();
-    // 断口
-    ctx.fillStyle = '#f87171';
-    ctx.beginPath();
-    ctx.arc(ex, ey, 2, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  function drawRopeStub(ctx, c, topY){
-    // 剪断后留在弹簧/球上方的一小段绳头
-    var axisX = c.width/2;
-    var t = Math.max(0, time - cutStartTime);
-    var ang = 0.22 * Math.sin(t * 11);
-    ctx.strokeStyle = '#94a3b8';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(axisX, topY);
-    ctx.lineTo(axisX + Math.sin(ang) * STUB_PX, topY - Math.cos(ang) * STUB_PX);
-    ctx.stroke();
-  }
-
-  function drawBall(ctx, c, ballPxY, color, label){
-    var r = 16;
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.arc(c.width/2, ballPxY, r, 0, Math.PI*2);
-    ctx.fill();
-    ctx.strokeStyle = '#fff';
-    ctx.lineWidth = 2;
-    ctx.stroke();
-    ctx.fillStyle = '#0b1220';
-    ctx.font = 'bold 13px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(label, c.width/2, ballPxY);
-  }
-
-  function drawGround(ctx, c, landMark){
-    var gy = groundY(c);
-    ctx.strokeStyle = '#475569';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(20, gy);
-    ctx.lineTo(c.width - 20, gy);
-    ctx.stroke();
-    // 阴影斜线
-    ctx.strokeStyle = '#334155';
-    ctx.lineWidth = 1;
-    for(var x = 24; x < c.width - 20; x += 14){
-      ctx.beginPath();
-      ctx.moveTo(x, gy);
-      ctx.lineTo(x - 8, gy + 10);
-      ctx.stroke();
+    if (sysA.landed) {
+      ctx.fillStyle = '#4ade80';
+    } else {
+      ctx.fillStyle = '#38bdf8';
     }
-    if(landMark){
-      ctx.fillStyle = '#94a3b8';
-      ctx.font = '11px sans-serif';
+    ctx.beginPath(); ctx.arc(axA, ballAy, BALL_R, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.fillStyle = '#0b1828';
+    ctx.font = 'bold 13px system-ui';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('A', axA, ballAy);
+
+    if (sysB.landed) {
+      ctx.fillStyle = '#4ade80';
+    } else {
+      ctx.fillStyle = '#f87171';
+    }
+    ctx.beginPath(); ctx.arc(axB, ballBy, BALL_R, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.fillStyle = '#0b1828';
+    ctx.font = 'bold 13px system-ui';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('B', axB, ballBy);
+
+    if (phase === 'idle') {
+      ctx.strokeStyle = 'rgba(148,163,184,0.3)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([5, 5]);
+      ctx.beginPath(); ctx.moveTo(60, ballAy); ctx.lineTo(w - 60, ballAy); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = 'rgba(148,163,184,0.8)';
+      ctx.font = '10px system-ui';
+      ctx.textAlign = 'left';
+      ctx.fillText('两球等高 h=' + params.h.toFixed(1) + 'm', 64, ballAy - 8);
+    }
+
+    if (cutFlash > 0) {
+      ctx.save();
+      ctx.globalAlpha = cutFlash;
+      ctx.fillStyle = 'rgba(251,191,36,0.6)';
+      ctx.beginPath(); ctx.arc((axA + axB) / 2, PIVOT_Y + 20, 18, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.moveTo(axA - 12, PIVOT_Y + 10); ctx.lineTo(axA + 4, PIVOT_Y + 26); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(axA + 12, PIVOT_Y + 10); ctx.lineTo(axA - 4, PIVOT_Y + 26); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(axB - 12, PIVOT_Y + 10); ctx.lineTo(axB + 4, PIVOT_Y + 26); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(axB + 12, PIVOT_Y + 10); ctx.lineTo(axB - 4, PIVOT_Y + 26); ctx.stroke();
+      ctx.restore();
+    }
+
+    if (sysA.landed) {
+      ctx.fillStyle = '#4ade80';
+      ctx.font = '11px system-ui';
       ctx.textAlign = 'center';
-      ctx.fillText(landMark, c.width/2, gy + 24);
+      ctx.fillText('A 落地 t=' + sysA.landTime.toFixed(2) + 's', axA, gY + 22);
     }
-  }
+    if (sysB.landed) {
+      ctx.fillStyle = '#4ade80';
+      ctx.font = '11px system-ui';
+      ctx.textAlign = 'center';
+      ctx.fillText('B 落地 t=' + sysB.landTime.toFixed(2) + 's', axB, gY + 22);
+    }
 
-  function drawScissors(ctx, c, yPx){
-    if(cutFlash <= 0) return;
-    var px = c.width/2;
-    var py = yPx;
-    var alpha = cutFlash;
-    ctx.save();
-    ctx.globalAlpha = alpha;
-    // 剪刀简笔画
-    ctx.strokeStyle = '#fbbf24';
-    ctx.lineWidth = 2.5;
-    ctx.fillStyle = '#fbbf24';
-    // 两片刀身
-    ctx.beginPath();
-    ctx.moveTo(px - 14, py - 10);
-    ctx.lineTo(px + 4, py + 8);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(px + 14, py - 10);
-    ctx.lineTo(px - 4, py + 8);
-    ctx.stroke();
-    // 把手
-    ctx.beginPath();
-    ctx.arc(px - 16, py - 12, 5, 0, Math.PI*2);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.arc(px + 16, py - 12, 5, 0, Math.PI*2);
-    ctx.stroke();
-    // 闪光
-    ctx.fillStyle = 'rgba(251,191,36,.6)';
-    ctx.beginPath();
-    ctx.arc(px, py, 18, 0, Math.PI*2);
-    ctx.fill();
-    ctx.restore();
-  }
-
-  function drawCutMark(ctx, c, yPx, label){
-    // 在剪断位置画一个“已剪断”标记
-    if(cutFlash <= 0) return;
-    ctx.save();
-    ctx.globalAlpha = cutFlash;
-    ctx.fillStyle = 'rgba(248,113,113,.15)';
-    ctx.fillRect(c.width/2 - 38, yPx - 8, 76, 16);
-    ctx.strokeStyle = '#f87171';
-    ctx.lineWidth = 1.5;
-    ctx.setLineDash([3,3]);
-    ctx.strokeRect(c.width/2 - 38, yPx - 8, 76, 16);
-    ctx.setLineDash([]);
-    ctx.fillStyle = '#f87171';
-    ctx.font = 'bold 11px sans-serif';
+    ctx.fillStyle = '#8899aa';
+    ctx.font = '11px system-ui';
     ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(label, c.width/2, yPx);
-    ctx.restore();
+    ctx.fillText('A · 弹簧悬挂', axA, PIVOT_Y - 24);
+    ctx.fillText('B · 绳子悬挂', axB, PIVOT_Y - 24);
   }
 
-  function drawAxis(ctx, c, label, color){
-    // 右侧标尺（每米一格）
-    var gY = groundY(c);
-    var pY = pivotY(c);
-    var totalPx = gY - pY;
-    var totalM = totalPx / PIXEL_PER_M;
-    ctx.strokeStyle = 'rgba(148,163,184,.18)';
-    ctx.lineWidth = 1;
-    ctx.fillStyle = '#64748b';
-    ctx.font = '10px sans-serif';
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'middle';
-    for(var i = 1; i < totalM; i++){
-      var yy = gY - i * PIXEL_PER_M;
-      ctx.beginPath();
-      ctx.moveTo(c.width - 30, yy);
-      ctx.lineTo(c.width - 24, yy);
-      ctx.stroke();
-      ctx.fillText(i + 'm', c.width - 22, yy);
+  function niceCeil(v) {
+    if (!isFinite(v) || v <= 0) return 1;
+    const m = Math.pow(10, Math.floor(Math.log10(v)));
+    const n = v / m;
+    return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10) * m;
+  }
+  function niceStep(mx) {
+    if (!isFinite(mx) || mx <= 0) return 1;
+    const r = mx / 5, m = Math.pow(10, Math.floor(Math.log10(r)));
+    const n = r / m;
+    return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10) * m;
+  }
+  function tickDec(s) { return s >= 1 ? 0 : Math.min(6, Math.ceil(-Math.log10(s) + 1e-9)); }
+
+  function drawTimeChart(c, cx, cfg) {
+    const w = c.clientWidth || c.width;
+    const h = c.clientHeight || c.height;
+    cx.clearRect(0, 0, w, h);
+    const padL = 46, padR = 14, padT = 18, padB = 26;
+    const gW = w - padL - padR, gH = h - padT - padB;
+    if (gW < 40 || gH < 40) return;
+    const tWin = 10;
+    const tAxEnd = Math.max(tWin, time);
+    const tStart = tAxEnd - tWin;
+    const px = t => padL + (t - tStart) / tWin * gW;
+    let lo = 0, hi = 0.5;
+    cfg.series.forEach(s => s.pts.forEach(([, y]) => { if (y < lo) lo = y; if (y > hi) hi = y; }));
+    const yMin = lo < 0 ? -niceCeil(-lo * 1.08) : 0;
+    const yMax = niceCeil(hi * 1.05);
+    const py = y => padT + gH - (y - yMin) / (yMax - yMin) * gH;
+
+    cx.fillStyle = 'rgba(255,255,255,0.03)';
+    cx.fillRect(padL, padT, gW, gH);
+    cx.font = '10px system-ui';
+    const yS = niceStep(yMax - yMin), yD = tickDec(yS);
+    cx.fillStyle = '#8899aa';
+    for (let i = Math.ceil(yMin / yS - 1e-9); i <= Math.floor(yMax / yS + 1e-9); i++) {
+      const y = py(i * yS);
+      const z = Math.abs(i * yS) < yS * 0.15;
+      cx.strokeStyle = z ? 'rgba(255,255,255,0.55)' : 'rgba(255,255,255,0.06)';
+      cx.lineWidth = z ? 1.5 : 1;
+      cx.beginPath(); cx.moveTo(padL, y); cx.lineTo(padL + gW, y); cx.stroke();
+      cx.textAlign = 'right';
+      cx.fillText((i * yS).toFixed(yD), padL - 6, y + 3);
     }
-    // 标签
-    ctx.fillStyle = color;
-    ctx.font = 'bold 11px sans-serif';
-    ctx.fillText(label, c.width - 30, pY - 8);
+    cx.textAlign = 'center';
+    for (let tt = Math.ceil(tStart / 2) * 2; tt <= tAxEnd + 1e-9; tt += 2) {
+      const x = px(tt);
+      cx.strokeStyle = 'rgba(255,255,255,0.06)';
+      cx.beginPath(); cx.moveTo(x, padT); cx.lineTo(x, padT + gH); cx.stroke();
+      cx.fillText(tt.toFixed(0), x, padT + gH + 15);
+    }
+    cx.strokeStyle = 'rgba(255,255,255,0.18)';
+    cx.lineWidth = 1;
+    cx.strokeRect(padL, padT, gW, gH);
+    cx.fillStyle = '#8899aa';
+    cx.textAlign = 'left';
+    cx.fillText(cfg.yLabel, padL + 6, padT + 12);
+    cx.textAlign = 'right';
+    cx.fillText('t/s', padL + gW, padT + gH - 6);
+
+    if (cfg.series[0].pts.length < 2) return;
+    cx.save();
+    cx.beginPath(); cx.rect(padL, padT, gW, gH); cx.clip();
+
+    if (cfg.shadePts && cfg.series.length >= 2) {
+      const a = cfg.series[0].pts, b = cfg.series[1].pts;
+      cx.beginPath();
+      a.forEach(([t, y], i) => { const X = px(t), Y = py(y); i === 0 ? cx.moveTo(X, Y) : cx.lineTo(X, Y); });
+      for (let i = b.length - 1; i >= 0; i--) cx.lineTo(px(b[i][0]), py(b[i][1]));
+      cx.closePath();
+      cx.fillStyle = 'rgba(255,170,68,0.10)';
+      cx.fill();
+    }
+
+    cfg.series.forEach(s => {
+      cx.strokeStyle = s.color;
+      cx.lineWidth = s.width || 2;
+      cx.beginPath();
+      s.pts.forEach(([t, y], i) => { const X = px(t), Y = py(y); i === 0 ? cx.moveTo(X, Y) : cx.lineTo(X, Y); });
+      cx.stroke();
+    });
+
+    if (cfg.curY !== undefined) {
+      cx.fillStyle = '#ffaa44';
+      cx.beginPath();
+      cx.arc(px(time), py(cfg.curY), 3.5, 0, Math.PI * 2);
+      cx.fill();
+    }
+    cx.restore();
   }
 
-  // ---- 主绘制 ----
-  function drawSceneA(){
-    var c = cA;
-    ctxA.clearRect(0, 0, c.width, c.height);
-    drawAxis(ctxA, c, 'A · 细绳 + 弹簧', '#38bdf8');
-
-    var pY = pivotY(c);
-    var gY = groundY(c);
-    var cx = c.width/2;
-    var ballY = gY - sysA.y * PIXEL_PER_M;
-
-    drawSupport(ctxA, c, '#38bdf8');
-
-    // 弹簧始终连着小球：当前长度 = 自然长 L₀ + 形变 x
-    // （顶端钳制：极端参数下保证悬挂细绳至少 ROPE_MIN_PX 可见，仅影响绘图、不影响物理量）
-    var springLenPx = (SPRING_NATURAL_M + sysA.stretch) * PIXEL_PER_M;
-    var springTop = Math.max(ballY - springLenPx, pY + ROPE_MIN_PX);
-
-    if(sysA.state === State.READY){
-      // 等高参考虚线（两球同一水平线）
-      drawHeightGuide(ctxA, c, ballY, '两球等高 · h = ' + params.h.toFixed(1) + ' m');
-      // 上方细绳：支点 → 弹簧顶端（张紧）
-      drawRope(ctxA, c, pY, springTop, '#cbd5e1', cx, false);
-      // 下方弹簧：弹簧顶端 → 球（已被拉伸 x₀）
-      drawSpring(ctxA, c, springTop, ballY, '#7dd3fc', cx);
-      // 标注
-      drawSegLabel(ctxA, cx, (pY + springTop) / 2, '细绳', '#cbd5e1');
-      drawSegLabel(ctxA, cx, (springTop + ballY) / 2, '弹簧（已拉伸）', '#7dd3fc');
-    } else {
-      // 剪断后：支点上残留的绳头（摆动）
-      drawRopeRemnant(ctxA, c, pY);
-      // 弹簧-球整体自由下落，弹簧长度随 x 的阻尼振荡而【可见地伸缩】
-      drawSpring(ctxA, c, springTop, ballY, '#7dd3fc', cx);
-      // 留在弹簧顶端的一小段绳头
-      drawRopeStub(ctxA, c, springTop);
-      // 自然长度参考刻度（细线，对照可见形变量）
-      drawStretchRef(ctxA, c, ballY, sysA.stretch);
-    }
-
-    // 球
-    var ballColor = sysA.state === State.LANDED ? '#4ade80' : '#38bdf8';
-    drawBall(ctxA, c, ballY, ballColor, 'A');
-
-    // 剪断标记/剪刀（剪断的是弹簧上方的细绳）
-    if(sysA.state !== State.READY){
-      drawCutMark(ctxA, c, cutYA, '已剪断细绳');
-      drawScissors(ctxA, c, cutYA);
-    }
-
-    // 地面
-    var landMark = sysA.landed ? ('A 落地 t = ' + sysA.landTime.toFixed(2) + 's') : null;
-    drawGround(ctxA, c, landMark);
+  function drawVT() {
+    const ptsA = trace.map(([t, v]) => [t, v]);
+    const ptsB = trace.map(([t, , v]) => [t, v]);
+    const tEnd = Math.max(10, time);
+    drawTimeChart(vtCv, vtCtx, {
+      series: [
+        { pts: ptsA, color: '#38bdf8', width: 2 },
+        { pts: ptsB, color: '#f87171', width: 2 }
+      ],
+      shadePts: true,
+      yLabel: 'v/(m/s)',
+      curY: sysA.vy
+    });
   }
 
-  function drawSceneB(){
-    var c = cB;
-    ctxB.clearRect(0, 0, c.width, c.height);
-    drawAxis(ctxB, c, 'B · 细绳', '#f87171');
-
-    var pY = pivotY(c);
-    var gY = groundY(c);
-    var cx = c.width/2;
-    var ballY = gY - sysB.y * PIXEL_PER_M;
-
-    drawSupport(ctxB, c, '#f87171');
-
-    if(sysB.state === State.READY){
-      // 等高参考虚线（两球同一水平线）
-      drawHeightGuide(ctxB, c, ballY, '两球等高 · h = ' + params.h.toFixed(1) + ' m');
-      // 细绳：支点 → 球（张紧）
-      drawRope(ctxB, c, pY, ballY, '#cbd5e1', cx, false);
-      drawSegLabel(ctxB, cx, (pY + ballY) / 2, '细绳（T = mg）', '#cbd5e1');
-    } else {
-      // 剪断后：支点上残留的绳头（摆动）
-      drawRopeRemnant(ctxB, c, pY);
-      // 留在球上方的一小段绳头
-      drawRopeStub(ctxB, c, ballY - 16);
-    }
-
-    var ballColor = sysB.state === State.LANDED ? '#4ade80' : '#f87171';
-    drawBall(ctxB, c, ballY, ballColor, 'B');
-
-    if(sysB.state !== State.READY){
-      drawCutMark(ctxB, c, cutYB, '已剪断细绳');
-      drawScissors(ctxB, c, cutYB);
-    }
-
-    var landMark = sysB.landed ? ('B 落地 t = ' + sysB.landTime.toFixed(2) + 's') : null;
-    drawGround(ctxB, c, landMark);
+  function drawST() {
+    const ptsA = trace.map(([t, , , s]) => [t, params.h - s]);
+    const ptsB = trace.map(([t, , , , s]) => [t, params.h - s]);
+    drawTimeChart(stCv, stCtx, {
+      series: [
+        { pts: ptsA, color: '#38bdf8', width: 2 },
+        { pts: ptsB, color: '#f87171', width: 2 }
+      ],
+      shadePts: true,
+      yLabel: 's/m',
+      curY: params.h - sysA.y
+    });
   }
 
-  function updateData(){
-    aT.textContent = time.toFixed(2) + ' s';
-    aV.textContent = (sysA.vy).toFixed(2) + ' m/s';
-    aA.textContent = (sysA.ay).toFixed(2) + ' m/s²';
-    aX.textContent = (sysA.stretch).toFixed(3) + ' m';
-    bT.textContent = time.toFixed(2) + ' s';
-    bV.textContent = (sysB.vy).toFixed(2) + ' m/s';
-    bA.textContent = (sysB.ay).toFixed(2) + ' m/s²';
-    bH.textContent = (params.h - sysB.y).toFixed(2) + ' m';
-
-    if(sysA.state === State.READY){
-      aState.className = 'state-strip';
-      aState.textContent = '就绪 · 绳张紧 + 弹簧伸长 ' + (params.m*params.g/params.k).toFixed(3) + ' m，A 球平衡静止';
-    } else if(sysA.state === State.FALLING){
-      aState.className = 'state-strip cut';
-      aState.textContent = '已剪断弹簧上方细绳 · 初始 a = 0，弹簧随球下落并阻尼简谐振荡';
-    } else {
-      aState.className = 'state-strip done';
-      aState.textContent = 'A 球已落地（t = ' + sysA.landTime.toFixed(2) + 's）';
-    }
-
-    if(sysB.state === State.READY){
-      bState.className = 'state-strip';
-      bState.textContent = '就绪 · 绳张紧，B 球平衡静止';
-    } else if(sysB.state === State.FALLING){
-      bState.className = 'state-strip cut';
-      bState.textContent = '细绳已剪断 · 张力立即消失，B 球立即自由落体（a = g）';
-    } else {
-      bState.className = 'state-strip done';
-      bState.textContent = 'B 球已落地（t = ' + sysB.landTime.toFixed(2) + 's）';
-    }
-
-    // 结论
-    if(sysA.landed && sysB.landed){
-      var dt = sysA.landTime - sysB.landTime;
-      var winner = dt > 0 ? 'B 球先落地' : 'A 球先落地';
-      concl.className = 'conclusion show';
-      concl.innerHTML = '<b>实验结论：</b>' + winner + '，A 比 B 晚落地 <b>' + Math.abs(dt).toFixed(2) + ' s</b>。<br>' +
-        '物理原因：左侧剪断的是<b>弹簧上方的细绳</b>，剪断瞬间弹簧形变 <b>不能突变</b>，弹力 kx₀ = mg 仍与重力抵消，A 球初始加速度为 0；' +
-        '此后弹簧-球整体下落，弹簧在共落参考系内做<b>阻尼简谐振荡</b>，反复把球"拽住 / 释放"，使其下坠被延迟；' +
-        '而右侧不可伸长绳约束是<b>瞬时解除</b>，B 球从剪断瞬间起就直接自由落体。';
-      startBtn.disabled = true;
-      startBtn.textContent = '✓ 实验完成';
-    }
+  function updateHud() {
+    tNum.textContent = time.toFixed(2) + ' s';
+    aV.textContent = sysA.vy.toFixed(2) + ' m/s';
+    bV.textContent = sysB.vy.toFixed(2) + ' m/s';
+    aA.textContent = sysA.ay.toFixed(2) + ' m/s²';
+    bA.textContent = sysB.ay.toFixed(2) + ' m/s²';
+    aX.textContent = sysA.stretch.toFixed(3) + ' m';
+    aS.textContent = (params.h - sysA.y).toFixed(2) + ' m';
+    bS.textContent = (params.h - sysB.y).toFixed(2) + ' m';
+    dsNum.textContent = Math.abs(sysA.y - sysB.y).toFixed(2) + ' m';
   }
 
-  function drawAll(){
-    drawSceneA();
-    drawSceneB();
-    updateData();
+  function setSliders(dis) {
+    [elH, elK, elM, elC, elG, elSp].forEach(el => { el.disabled = dis; });
   }
 
-  // ---- 主循环 ----
-  var lastTs = 0;
-  function loop(ts){
-    if(lastTs === 0) lastTs = ts;
-    var rawDt = Math.min((ts - lastTs) / 1000, 0.05);
-    lastTs = ts;
-    if(running){
-      step(rawDt * params.speed);
-    }
-    drawAll();
-    requestAnimationFrame(loop);
-  }
-
-  // ---- 事件 ----
-  function refreshParams(){
-    params.h  = +elH.value;
-    params.k  = +elK.value;
-    params.m  = +elM.value;
-    params.zeta = +elC.value;
-    params.g  = +elG.value;
-    params.speed = +elSp.value;
+  function refreshParams() {
+    params.h = +elH.value; params.k = +elK.value; params.m = +elM.value;
+    params.zeta = +elC.value; params.g = +elG.value; params.speed = +elSp.value;
     hVal.textContent = params.h.toFixed(1) + ' m';
     kVal.textContent = params.k + ' N/m';
     mVal.textContent = params.m.toFixed(1) + ' kg';
     cVal.textContent = params.zeta.toFixed(2);
     gVal.textContent = params.g.toFixed(1) + ' m/s²';
-    spVal.textContent = params.speed.toFixed(2) + 'x';
+    spVal.textContent = params.speed.toFixed(2) + '×';
   }
-  function onParamChange(){
+
+  function onParamChange() {
     refreshParams();
-    if(!running) reset();
+    if (phase === 'idle' || phase === 'done') reset();
   }
-  elH.addEventListener('input', onParamChange);
-  elK.addEventListener('input', onParamChange);
-  elM.addEventListener('input', onParamChange);
-  elC.addEventListener('input', onParamChange);
-  elG.addEventListener('input', onParamChange);
+
+  [elH, elK, elM, elC, elG].forEach(el => el.addEventListener('input', onParamChange));
   elSp.addEventListener('input', refreshParams);
 
-  startBtn.addEventListener('click', function(){
-    if(sysA.landed && sysB.landed) return;
-    if(sysA.state === State.READY && sysB.state === State.READY){
-      // 记录两侧剪断位置（细绳中点）
-      var pYA = pivotY(cA), gYA = groundY(cA);
-      var ballYA0 = gYA - sysA.y * PIXEL_PER_M;
-      var springTopA0 = Math.max(ballYA0 - (SPRING_NATURAL_M + sysA.stretch) * PIXEL_PER_M, pYA + ROPE_MIN_PX);
-      cutYA = (pYA + springTopA0) / 2;          // A：弹簧上方细绳的中点
-      var ballYB0 = groundY(cB) - sysB.y * PIXEL_PER_M;
-      cutYB = (pivotY(cB) + ballYB0) / 2;       // B：细绳中点
-
-      // 同时剪断：左侧弹簧上方的细绳、右侧细绳
-      sysA.state = State.CUTTING;
-      sysB.state = State.FALLING;   // B 立即自由落体
-      cutStartTime = time;
-      running = true;
-      cutFlash = 1;
-    } else {
-      // 已经在跑 -> 暂停/继续
-      running = !running;
+  startBtn.addEventListener('click', () => {
+    if (phase === 'done') return;
+    if (phase === 'idle') {
+      running = true; paused = false; phase = 'run';
+      cutStartTime = time; cutFlash = 1;
+      startBtn.disabled = true; startBtn.textContent = '运行中…';
+      pauseBtn.disabled = false; pauseBtn.textContent = '⏸ 暂停';
+      setSliders(true);
+      hudRow.setAttribute('aria-live', 'off');
     }
   });
 
-  resetBtn.addEventListener('click', function(){
-    lastTs = 0;
-    reset();
+  pauseBtn.addEventListener('click', () => {
+    if (phase !== 'run' && phase !== 'pause') return;
+    if (phase === 'run') {
+      phase = 'pause'; paused = true;
+      pauseBtn.textContent = '▶ 继续';
+      hudRow.setAttribute('aria-live', 'polite');
+    } else {
+      phase = 'run'; paused = false;
+      pauseBtn.textContent = '⏸ 暂停';
+      hudRow.setAttribute('aria-live', 'off');
+    }
   });
 
-  // ---- 启动 ----
+  resetBtn.addEventListener('click', () => { lastTs = 0; reset(); });
+
+  document.addEventListener('keydown', e => {
+    const tag = e.target && e.target.tagName;
+    if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA' || tag === 'BUTTON') return;
+    if (e.code === 'Space') { e.preventDefault(); if (phase === 'idle') startBtn.click(); else pauseBtn.click(); }
+    else if (e.code === 'KeyR') { e.preventDefault(); resetBtn.click(); }
+  });
+
+  let lastTs = 0;
+  function loop(ts) {
+    if (lastTs === 0) lastTs = ts;
+    const rawDt = Math.min((ts - lastTs) / 1000, 0.05);
+    lastTs = ts;
+    if (running && !paused) step(rawDt * params.speed);
+    drawAll();
+    requestAnimationFrame(loop);
+  }
+
+  fit(cv); fit(vtCv); fit(stCv);
   refreshParams();
   reset();
   requestAnimationFrame(loop);
