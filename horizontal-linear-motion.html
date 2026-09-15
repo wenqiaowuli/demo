@@ -8,8 +8,8 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            background-color: #121212;
-            color: #ffffff;
+            background-color: #eef2f6;
+            color: #1f2937;
             font-family: system-ui, sans-serif;
             min-height: 100vh;
             display: flex;
@@ -34,9 +34,9 @@
             display: block;
             width: 100%;
             aspect-ratio: 880 / 520;
-            border: 2px solid #3388dd;
+            border: 2px solid #2563eb;
             border-radius: 10px;
-            background-color: #0b1828;
+            background-color: #ffffff;
         }
         .control-panel {
             margin-top: 14px;
@@ -50,10 +50,11 @@
         }
         .param-group,
         .data-group {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
             border-radius: 10px;
             padding: 14px 16px;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
         }
         .chart-panel {
             background: transparent;
@@ -66,7 +67,7 @@
         }
         .group-title {
             font-size: 12px;
-            color: #8899aa;
+            color: #6b7280;
             margin-bottom: 10px;
             letter-spacing: 0.5px;
         }
@@ -78,7 +79,7 @@
         }
         .param-row label {
             font-size: 13px;
-            color: #ccd;
+            color: #1f2937;
             white-space: nowrap;
             min-width: 82px;
         }
@@ -88,15 +89,15 @@
             text-align: right;
             font-size: 13px;
             font-variant-numeric: tabular-nums;
-            color: #ccd;
+            color: #1f2937;
         }
         .fixed-note {
             margin-top: 4px;
             font-size: 12px;
-            color: #8899aa;
+            color: #6b7280;
             line-height: 1.7;
         }
-        .fixed-note b { color: #ff9933; font-weight: 600; }
+        .fixed-note b { color: #b45309; font-weight: 600; }
         .data-grid {
             display: grid;
             grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -106,8 +107,8 @@
             .data-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         }
         .data-item {
-            background: rgba(255, 255, 255, 0.035);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: #f8fafc;
+            border: 1px solid #e5e7eb;
             border-radius: 8px;
             padding: 8px 10px;
         }
@@ -115,13 +116,13 @@
         .data-item span {
             display: block;
             font-size: 11px;
-            color: #8899aa;
+            color: #6b7280;
             margin-bottom: 4px;
         }
         .data-item b {
             display: block;
             font-size: 14px;
-            color: #ffffff;
+            color: #1f2937;
             font-variant-numeric: tabular-nums;
         }
         .charts-row {
@@ -138,8 +139,8 @@
             display: block;
             width: 100%;
             aspect-ratio: 20 / 9;
-            background: #0b1828;
-            border: 2px solid #3388dd;
+            background: #ffffff;
+            border: 2px solid #2563eb;
             border-radius: 10px;
         }
         .actions {
@@ -150,7 +151,7 @@
             justify-content: center;
         }
         button {
-            background: #3388dd;
+            background: #2563eb;
             border: none;
             color: white;
             padding: 9px 16px;
@@ -159,7 +160,7 @@
             font-size: 14px;
             transition: background-color 0.15s ease, transform 0.15s ease;
         }
-        button:hover:not(:disabled) { background: #2f7cc8; }
+        button:hover:not(:disabled) { background: #1d4ed8; }
         button:active:not(:disabled) { transform: translateY(1px); }
         button:disabled {
             opacity: 0.45;
@@ -168,7 +169,7 @@
         .legend {
             margin-top: 12px;
             font-size: 12px;
-            color: #aab;
+            color: #6b7280;
             text-align: center;
             line-height: 1.8;
         }
@@ -236,10 +237,10 @@
         </div>
         <div class="legend">
             <span>⚪ 小球（从原点出发）</span>
-            <span style="color:#ff5555">→ 速度 v</span>
-            <span style="color:#ff9933">→ 加速度 a</span>
-            <span style="color:#66aaff">● 运动轨迹（最近 6 秒）</span>
-            <span style="color:#ff5555">● 图中当前点</span>
+            <span style="color:#dc2626">→ 速度 v</span>
+            <span style="color:#ea580c">→ 加速度 a</span>
+            <span style="color:#2563eb">● 运动轨迹（最近 6 秒）</span>
+            <span style="color:#dc2626">● 图中当前点</span>
             <span>虚线：越界边界 ±20 m</span>
         </div>
     </main>
@@ -359,13 +360,13 @@
         }
 
         function drawAxis(g) {
-            sctx.strokeStyle = '#7b8ea3';
+            sctx.strokeStyle = '#94a3b8';
             sctx.lineWidth = 2;
             sctx.beginPath();
             sctx.moveTo(g.plotL - 6, g.axisY);
             sctx.lineTo(g.plotR + 10, g.axisY);
             sctx.stroke();
-            sctx.fillStyle = '#7b8ea3';
+            sctx.fillStyle = '#94a3b8';
             sctx.beginPath();
             sctx.moveTo(g.plotR + 16, g.axisY);
             sctx.lineTo(g.plotR + 6, g.axisY - 5);
@@ -373,26 +374,26 @@
             sctx.closePath();
             sctx.fill();
             sctx.font = '12px system-ui, sans-serif';
-            sctx.fillStyle = '#8899aa';
+            sctx.fillStyle = '#6b7280';
             sctx.textAlign = 'right';
             sctx.fillText('x/m', g.plotR + 16, g.axisY - 12);
             sctx.textAlign = 'center';
             for (let m = -X_HALF; m <= X_HALF; m += 2) {
                 const px = g.xToScreen(m);
                 const major = (m % 4 === 0);
-                sctx.strokeStyle = '#7b8ea3';
+                sctx.strokeStyle = '#94a3b8';
                 sctx.lineWidth = 1;
                 sctx.beginPath();
                 sctx.moveTo(px, g.axisY);
                 sctx.lineTo(px, g.axisY + (major ? 8 : 5));
                 sctx.stroke();
                 if (major) {
-                    sctx.fillStyle = m === 0 ? '#dde6f0' : '#8899aa';
+                    sctx.fillStyle = m === 0 ? '#1f2937' : '#6b7280';
                     sctx.fillText(String(m), px, g.axisY + 22);
                 }
             }
             sctx.save();
-            sctx.strokeStyle = 'rgba(102, 170, 255, 0.45)';
+            sctx.strokeStyle = 'rgba(37, 99, 235, 0.35)';
             sctx.lineWidth = 1;
             sctx.setLineDash([5, 5]);
             for (const m of [-X_HALF, X_HALF]) {
@@ -403,12 +404,12 @@
                 sctx.stroke();
             }
             sctx.restore();
-            sctx.fillStyle = 'rgba(102, 170, 255, 0.8)';
+            sctx.fillStyle = 'rgba(37, 99, 235, 0.8)';
             sctx.font = '11px system-ui, sans-serif';
             sctx.textAlign = 'center';
             sctx.fillText('+20 m', g.xToScreen(X_HALF) - 6, g.axisY - 46);
             sctx.fillText('-20 m', g.xToScreen(-X_HALF) + 6, g.axisY - 46);
-            sctx.fillStyle = '#667788';
+            sctx.fillStyle = '#6b7280';
             sctx.font = '12px system-ui, sans-serif';
             sctx.textAlign = 'left';
             sctx.fillText('x 轴 · 向右为正', 18, 22);
@@ -420,7 +421,7 @@
                 const age = t - trail[i][0];
                 const alpha = Math.max(0, 0.55 * (1 - age / 6));
                 if (alpha <= 0.02) continue;
-                sctx.fillStyle = 'rgba(102, 170, 255, ' + alpha.toFixed(3) + ')';
+                sctx.fillStyle = 'rgba(37, 99, 235, ' + alpha.toFixed(3) + ')';
                 sctx.beginPath();
                 sctx.arc(g.xToScreen(trail[i][1]), g.axisY, 2.5, 0, Math.PI * 2);
                 sctx.fill();
@@ -453,28 +454,28 @@
             if (Math.abs(v) >= 0.05) {
                 let dx = v * 7;
                 dx = Math.sign(dx) * Math.min(Math.abs(dx), 90);
-                const tip = drawArrowH(bx, by, dx, '#ff5555');
+                const tip = drawArrowH(bx, by, dx, '#dc2626');
                 if (tip) {
-                    sctx.fillStyle = '#ff5555';
+                    sctx.fillStyle = '#dc2626';
                     sctx.textAlign = dx > 0 ? 'left' : 'right';
                     sctx.fillText('v = ' + v.toFixed(1) + ' m/s', tip.x + (dx > 0 ? 8 : -8), tip.y + 4);
                 }
             } else {
-                sctx.fillStyle = '#ff5555';
+                sctx.fillStyle = '#dc2626';
                 sctx.textAlign = 'left';
                 sctx.fillText('v = 0', bx + 12, by + 4);
             }
             if (Math.abs(a) >= 0.05) {
                 let dx = a * 10;
                 dx = Math.sign(dx) * Math.min(Math.abs(dx), 60);
-                const tip = drawArrowH(bx, by + 24, dx, '#ff9933');
+                const tip = drawArrowH(bx, by + 24, dx, '#ea580c');
                 if (tip) {
-                    sctx.fillStyle = '#ff9933';
+                    sctx.fillStyle = '#ea580c';
                     sctx.textAlign = dx > 0 ? 'left' : 'right';
                     sctx.fillText('a = ' + a.toFixed(1) + ' m/s²', tip.x + (dx > 0 ? 8 : -8), tip.y + 4);
                 }
             } else {
-                sctx.fillStyle = '#ff9933';
+                sctx.fillStyle = '#ea580c';
                 sctx.textAlign = 'center';
                 sctx.fillText('a = 0', bx, by + 28);
             }
@@ -492,7 +493,7 @@
 
         function drawScene() {
             const g = sceneGeometry();
-            sctx.fillStyle = '#0b1828';
+            sctx.fillStyle = '#ffffff';
             sctx.fillRect(0, 0, sceneView.width, sceneView.height);
             drawAxis(g);
             drawTrail(g);
@@ -501,12 +502,12 @@
             const by = g.axisY;
             drawVectors(g, bx, by);
             drawBall(bx, by);
-            sctx.fillStyle = '#dde6f0';
+            sctx.fillStyle = '#1f2937';
             sctx.font = '12px system-ui, sans-serif';
             sctx.textAlign = 'center';
             sctx.fillText('x = ' + s.toFixed(2) + ' m', bx, by - 48);
             if (state === 'ended') {
-                sctx.fillStyle = '#ff9933';
+                sctx.fillStyle = '#ea580c';
                 sctx.fillText('已越界停止', bx, by - 26);
             }
         }
@@ -533,19 +534,19 @@
             for (let i = iStart; i <= iEnd; i++) {
                 const val = i * yStep;
                 const py = yOfVal(val);
-                ctx.strokeStyle = '#1f2d3d';
+                ctx.strokeStyle = '#e5e7eb';
                 ctx.lineWidth = 1;
                 ctx.beginPath();
                 ctx.moveTo(padL, py);
                 ctx.lineTo(padL + plotW, py);
                 ctx.stroke();
-                ctx.fillStyle = '#8899aa';
+                ctx.fillStyle = '#6b7280';
                 ctx.textAlign = 'right';
                 ctx.fillText(val.toFixed(yDecimals), padL - 6, py + 3);
             }
             if (yLo < 0 && yHi > 0) {
                 const py0 = yOfVal(0);
-                ctx.strokeStyle = '#7b8ea3';
+                ctx.strokeStyle = '#94a3b8';
                 ctx.lineWidth = 1.5;
                 ctx.beginPath();
                 ctx.moveTo(padL, py0);
@@ -556,17 +557,17 @@
             ctx.textAlign = 'center';
             for (let tt = Math.ceil(tStart / 2) * 2; tt <= tAxEnd + 1e-9; tt += 2) {
                 const px = xOfTime(tt);
-                ctx.strokeStyle = '#1f2d3d';
+                ctx.strokeStyle = '#e5e7eb';
                 ctx.lineWidth = 1;
                 ctx.beginPath();
                 ctx.moveTo(px, padT);
                 ctx.lineTo(px, padT + plotH);
                 ctx.stroke();
-                ctx.fillStyle = '#8899aa';
+                ctx.fillStyle = '#6b7280';
                 ctx.fillText(tt.toFixed(0), px, padT + plotH + 16);
             }
 
-            ctx.strokeStyle = '#7b8ea3';
+            ctx.strokeStyle = '#94a3b8';
             ctx.lineWidth = 2;
             ctx.beginPath();
             ctx.moveTo(padL, padT);
@@ -574,7 +575,7 @@
             ctx.lineTo(padL + plotW, padT + plotH);
             ctx.stroke();
 
-            ctx.fillStyle = '#8899aa';
+            ctx.fillStyle = '#6b7280';
             ctx.textAlign = 'left';
             ctx.fillText(yLabel, padL + 6, padT + 12);
             ctx.textAlign = 'right';
@@ -582,7 +583,7 @@
 
             const tCurveEnd = Math.min(t, tAxEnd);
             if (tCurveEnd > tStart + 1e-6) {
-                ctx.strokeStyle = '#3388dd';
+                ctx.strokeStyle = '#2563eb';
                 ctx.lineWidth = 2.5;
                 ctx.lineJoin = 'round';
                 ctx.beginPath();
@@ -599,13 +600,13 @@
 
             const pxNow = xOfTime(t);
             const pyNow = yOfVal(fn(t));
-            ctx.strokeStyle = 'rgba(51, 136, 221, 0.4)';
+            ctx.strokeStyle = 'rgba(37, 99, 235, 0.35)';
             ctx.lineWidth = 1;
             ctx.beginPath();
             ctx.moveTo(pxNow, padT);
             ctx.lineTo(pxNow, padT + plotH);
             ctx.stroke();
-            ctx.fillStyle = '#ff5555';
+            ctx.fillStyle = '#dc2626';
             ctx.beginPath();
             ctx.arc(pxNow, pyNow, 4.5, 0, Math.PI * 2);
             ctx.fill();
@@ -615,7 +616,7 @@
             if (lx > padL + plotW - 44) lx = pxNow - 48;
             if (ly < padT + 10) ly = pyNow + 16;
             ctx.textAlign = 'left';
-            ctx.fillStyle = '#dde6f0';
+            ctx.fillStyle = '#1f2937';
             ctx.fillText(valText, lx, ly);
         }
 

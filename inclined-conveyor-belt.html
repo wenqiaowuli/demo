@@ -25,8 +25,8 @@
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body {
-  background-color: #121212;
-  color: #fff;
+  background-color: #eef2f6;
+  color: #1f2937;
   font-family: system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
   display: flex;
   flex-direction: column;
@@ -38,11 +38,11 @@ h1 {
   font-size: 18px;
   font-weight: 600;
   margin-bottom: 4px;
-  color: #e8eef5;
+  color: #1f2937;
 }
 .subtitle {
   font-size: 12px;
-  color: #8899aa;
+  color: #6b7280;
   margin-bottom: 12px;
 }
 .main {
@@ -60,9 +60,9 @@ h1 {
 canvas { display: block; width: 100%; }
 canvas#cv {
   aspect-ratio: 880 / 520;
-  border: 2px solid #3388dd;
+  border: 2px solid #2563eb;
   border-radius: 10px;
-  background: #0b1828;
+  background: #ffffff;
 }
 .charts-row {
   width: 100%;
@@ -84,7 +84,7 @@ canvas#cv {
 }
 .chart-title {
   font-size: 11px;
-  color: #8899aa;
+  color: #6b7280;
   margin-bottom: 8px;
   letter-spacing: 0.4px;
 }
@@ -92,8 +92,8 @@ canvas#cv {
   display: block;
   width: 100%;
   aspect-ratio: 20 / 9;
-  background: #0b1828;
-  border: 2px solid #3388dd;
+  background: #ffffff;
+  border: 2px solid #2563eb;
   border-radius: 10px;
 }
 .actions {
@@ -117,28 +117,28 @@ canvas#cv {
   align-items: center;
   gap: 8px;
   font-size: 12px;
-  color: #aab;
+  color: #6b7280;
   margin-bottom: 6px;
 }
-.param-row label { flex: 0 0 118px; color: #c0c8d4; }
-.param-row input[type=range] { flex: 1; accent-color: #3388dd; }
+.param-row label { flex: 0 0 118px; color: #1f2937; }
+.param-row input[type=range] { flex: 1; accent-color: #2563eb; }
 .param-row .val {
   flex: 0 0 74px;
   text-align: right;
-  color: #fff;
+  color: #1f2937;
   font-variant-numeric: tabular-nums;
   font-size: 12px;
 }
 .fixed-note {
   font-size: 11px;
-  color: #667788;
+  color: #6b7280;
   margin-top: 8px;
   padding-top: 6px;
-  border-top: 1px solid rgba(255,255,255,0.08);
+  border-top: 1px solid #e5e7eb;
   line-height: 1.6;
 }
-.fixed-note b { color: #ffaa44; }
-.fixed-note em { font-style: normal; color: #aabbcc; }
+.fixed-note b { color: #b45309; }
+.fixed-note em { font-style: normal; color: #6b7280; }
 .data-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -148,8 +148,8 @@ canvas#cv {
   .data-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 .data-item {
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.08);
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
   border-radius: 8px;
   padding: 6px 8px;
   text-align: center;
@@ -157,22 +157,23 @@ canvas#cv {
 .data-item span {
   display: block;
   font-size: 10px;
-  color: #8899aa;
+  color: #6b7280;
   margin-bottom: 2px;
 }
 .data-item b {
   font-size: 14px;
   font-weight: 600;
-  color: #fff;
+  color: #1f2937;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
-.data-item .accent { color: #ffaa44; }
-.data-item .green { color: #44dd88; }
-.data-item .cyan { color: #44ddff; }
+.data-item .accent { color: #ea580c; }
+.data-item .green { color: #16a34a; }
+.data-item .cyan { color: #0d9488; }
 .card {
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.1);
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 2px rgba(15,23,42,.05);
   border-radius: 10px;
   padding: 10px 14px;
   flex: 1;
@@ -180,14 +181,14 @@ canvas#cv {
 }
 .group-title {
   font-size: 11px;
-  color: #8899aa;
+  color: #6b7280;
   margin-bottom: 8px;
   letter-spacing: 0.4px;
   text-transform: uppercase;
 }
 .note {
   font-size: 11px;
-  color: #667788;
+  color: #6b7280;
   margin-top: 6px;
   line-height: 1.5;
 }
@@ -199,7 +200,7 @@ input[type=range]:disabled { opacity: 0.45; cursor: not-allowed; }
   margin-top: 4px;
 }
 button {
-  background: #3388dd;
+  background: #2563eb;
   border: none;
   color: #fff;
   padding: 9px 16px;
@@ -209,16 +210,16 @@ button {
   font-family: inherit;
   transition: background-color 0.15s ease, transform 0.15s ease;
 }
-button:hover:not(:disabled) { background: #2f7cc8; }
+button:hover:not(:disabled) { background: #1d4ed8; }
 button:active:not(:disabled) { transform: translateY(1px); }
-button.alt { background: #445566; }
-button.alt:hover { background: #556677; }
+button.alt { background: #64748b; }
+button.alt:hover { background: #475569; }
 button:disabled { opacity: 0.45; cursor: not-allowed; }
 .legend {
   display: flex;
   gap: 14px;
   font-size: 11px;
-  color: #8899aa;
+  color: #6b7280;
   margin-top: 4px;
   flex-wrap: wrap;
   justify-content: center;
@@ -232,16 +233,16 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
   vertical-align: middle;
   border-radius: 2px;
 }
-.lg-v::before { background: #ffaa44; }
-.lg-vbelt::before { background: #44ddff; }
-.lg-f::before { background: #ff5577; }
-.lg-static::before { background: #aaff66; }
-.lg-g::before { background: #ff6666; }
-.lg-n::before { background: #c084fc; }
+.lg-v::before { background: #ea580c; }
+.lg-vbelt::before { background: #0d9488; }
+.lg-f::before { background: #e11d48; }
+.lg-static::before { background: #16a34a; }
+.lg-g::before { background: #dc2626; }
+.lg-n::before { background: #7c3aed; }
 footer {
   margin-top: 18px;
   font-size: 11px;
-  color: #556677;
+  color: #6b7280;
   text-align: center;
 }
 </style>
@@ -362,8 +363,8 @@ footer {
   const MASS = 1;            // 物块质量 kg
   const BLOCK = 40;          // 物块边长 px（与水平传送带页统一为 40×40）
   const FS = 3.6;            // 力箭头比例 px/N
-  const ORANGE = '#ffaa44', CYAN = '#44ddff', PINK = '#ff5577', GREEN = '#aaff66';
-  const RED = '#ff6666', PURPLE = '#c084fc';
+  const ORANGE = '#ea580c', CYAN = '#0d9488', PINK = '#e11d48', GREEN = '#16a34a';
+  const RED = '#dc2626', PURPLE = '#7c3aed';
 
   // ===== Canvas =====
   const cv = document.getElementById('cv');
@@ -541,9 +542,9 @@ footer {
   function clear() {
     const w = cv.clientWidth || 880;
     const h = cv.clientHeight || 520;
-    ctx.fillStyle = '#0b1828';
+    ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, w, h);
-    ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+    ctx.strokeStyle = 'rgba(31,41,55,0.07)';
     ctx.lineWidth = 1;
     for (let x = 0; x < w; x += 24) {
       ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
@@ -601,10 +602,10 @@ footer {
     const G = geom();
     const { Ax, Ay, Bx, By, ux, uy, nx, ny, band, lenPx } = G;
     // ---- 地面 ----
-    ctx.strokeStyle = '#3a4a5a';
+    ctx.strokeStyle = '#cbd5e1';
     ctx.lineWidth = 2;
     ctx.beginPath(); ctx.moveTo(0, G.groundY); ctx.lineTo(G.w, G.groundY); ctx.stroke();
-    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+    ctx.strokeStyle = 'rgba(31,41,55,0.12)';
     ctx.lineWidth = 1;
     ctx.beginPath();
     for (let x = 8; x < G.w; x += 16) {
@@ -612,7 +613,7 @@ footer {
     }
     ctx.stroke();
     // ---- 机架支腿 + 横撑（先画，让带压在上面）----
-    ctx.strokeStyle = '#22303e';
+    ctx.strokeStyle = '#64748b';
     ctx.lineWidth = 6;
     ctx.beginPath();
     ctx.moveTo(Ax, Ay); ctx.lineTo(Ax, G.groundY);
@@ -631,11 +632,11 @@ footer {
     ctx.lineTo(Bx + nx * band, By + ny * band);
     ctx.arc(Bx, By, band, angN, angNn, false);      // 顶端半圆（经 +u 侧）
     ctx.closePath();
-    ctx.strokeStyle = '#2a3340';
+    ctx.strokeStyle = '#94a3b8';
     ctx.lineWidth = 8;
     ctx.stroke();
     // 带边缘线（±4）
-    ctx.strokeStyle = 'rgba(120,160,200,0.22)';
+    ctx.strokeStyle = 'rgba(71,85,105,0.35)';
     ctx.lineWidth = 1;
     ctx.beginPath();
     [band + 4, band - 4, -(band - 4), -(band + 4)].forEach(d => {
@@ -645,7 +646,7 @@ footer {
     ctx.stroke();
     // ---- 带面纹理（上承载随带 / 下回程反向）----
     const off1 = mod(state.beltClock * state.vBelt * G.pix, 40);
-    ctx.strokeStyle = 'rgba(120,160,200,0.35)';
+    ctx.strokeStyle = 'rgba(71,85,105,0.5)';
     ctx.lineWidth = 1.5;
     ctx.beginPath();
     for (let x = -40; x < lenPx + 40; x += 40) {
@@ -664,7 +665,7 @@ footer {
     // ---- 滑动擦痕（带参考系，随带面平移，裁剪于 [0, L]）----
     if (state.scratches.length) {
       const beltShift = state.vBelt * state.beltClock;
-      ctx.strokeStyle = 'rgba(255,85,119,0.6)';
+      ctx.strokeStyle = 'rgba(220,38,38,0.6)';
       ctx.lineWidth = 3;
       ctx.beginPath();
       state.scratches.forEach(([qa, qb]) => {
@@ -682,13 +683,13 @@ footer {
     drawRoller(G, Ax, Ay);
     drawRoller(G, Bx, By);
     // ---- θ 角圆弧 + 端点标注 ----
-    ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+    ctx.strokeStyle = 'rgba(31,41,55,0.55)';
     ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.arc(Ax, Ay, 44, 0, -G.th, true);
     ctx.stroke();
-    ctx.fillStyle = '#8899aa';
-    ctx.font = '11px system-ui';
+    ctx.fillStyle = '#1f2937';
+    ctx.font = 'bold 11px system-ui';
     ctx.textAlign = 'center';
     ctx.fillText('θ=' + state.theta + '°',
       Ax + 58 * Math.cos(-G.th / 2), Ay + 58 * Math.sin(-G.th / 2) + 4);
@@ -783,7 +784,7 @@ footer {
     ctx.translate(cx0, cy0);
     ctx.rotate(rot);
     if (!state.offbelt) {
-      ctx.fillStyle = 'rgba(0,0,0,0.4)';
+      ctx.fillStyle = 'rgba(15,23,42,0.15)';
       ctx.fillRect(-halfW + 3, -2, BLOCK - 6, 4);
     }
     const grad = ctx.createLinearGradient(0, -BLOCK, 0, 0);
@@ -791,7 +792,7 @@ footer {
     grad.addColorStop(1, '#a07030');
     ctx.fillStyle = grad;
     ctx.fillRect(-halfW, -BLOCK, BLOCK, BLOCK);
-    ctx.strokeStyle = ORANGE;
+    ctx.strokeStyle = '#ffaa44';
     ctx.lineWidth = 2;
     ctx.strokeRect(-halfW, -BLOCK, BLOCK, BLOCK);
     ctx.fillStyle = '#ffffff';
@@ -801,7 +802,7 @@ footer {
     ctx.restore();
 
     if (state.offbelt) {
-      ctx.fillStyle = '#8899aa';
+      ctx.fillStyle = '#6b7280';
       ctx.font = '11px system-ui';
       ctx.textAlign = 'center';
       const tag = state.s > state.L ? '已从顶端离开（匀速）' : '已从底端离开（匀速）';
@@ -894,16 +895,16 @@ footer {
     const yMax = niceCeil(hi * 1.05);
     const py = y => padT + gH - (y - yMin) / (yMax - yMin) * gH;
 
-    ctx2.fillStyle = 'rgba(255,255,255,0.03)';
+    ctx2.fillStyle = 'rgba(31,41,55,0.04)';
     ctx2.fillRect(padL, padT, gW, gH);
     ctx2.font = '10px system-ui';
     const yStep = niceStep(yMax - yMin);
     const yDec = tickDecimals(yStep);
-    ctx2.fillStyle = '#8899aa';
+    ctx2.fillStyle = '#6b7280';
     for (let i = Math.ceil(yMin / yStep - 1e-9); i <= Math.floor(yMax / yStep + 1e-9); i++) {
       const y = py(i * yStep);
       const onZero = Math.abs(i * yStep) < yStep * 0.15;
-      ctx2.strokeStyle = onZero ? 'rgba(255,255,255,0.55)' : 'rgba(255,255,255,0.06)';
+      ctx2.strokeStyle = onZero ? 'rgba(31,41,55,0.5)' : 'rgba(31,41,55,0.07)';
       ctx2.lineWidth = onZero ? 1.5 : 1;
       ctx2.beginPath(); ctx2.moveTo(padL, y); ctx2.lineTo(padL + gW, y); ctx2.stroke();
       ctx2.textAlign = 'right';
@@ -912,14 +913,14 @@ footer {
     ctx2.textAlign = 'center';
     for (let tt = Math.ceil(tStart / 2) * 2; tt <= tAxEnd + 1e-9; tt += 2) {
       const x = px(tt);
-      ctx2.strokeStyle = 'rgba(255,255,255,0.06)';
+      ctx2.strokeStyle = 'rgba(31,41,55,0.07)';
       ctx2.beginPath(); ctx2.moveTo(x, padT); ctx2.lineTo(x, padT + gH); ctx2.stroke();
       ctx2.fillText(tt.toFixed(0), x, padT + gH + 15);
     }
-    ctx2.strokeStyle = 'rgba(255,255,255,0.18)';
+    ctx2.strokeStyle = 'rgba(31,41,55,0.25)';
     ctx2.lineWidth = 1;
     ctx2.strokeRect(padL, padT, gW, gH);
-    ctx2.fillStyle = '#8899aa';
+    ctx2.fillStyle = '#6b7280';
     ctx2.textAlign = 'left';
     ctx2.fillText(cfg.yLabel, padL + 6, padT + 12);
     ctx2.textAlign = 'right';
@@ -940,7 +941,7 @@ footer {
       });
       cfg.beltPts.forEach(([t, y]) => ctx2.lineTo(px(t), py(y)));
       ctx2.closePath();
-      ctx2.fillStyle = 'rgba(170,255,102,0.10)';
+      ctx2.fillStyle = 'rgba(22,163,74,0.10)';
       ctx2.fill();
     }
     // 曲线
@@ -955,7 +956,7 @@ footer {
       ctx2.stroke();
     });
     // 当前点
-    ctx2.fillStyle = '#ffaa44';
+    ctx2.fillStyle = '#ea580c';
     ctx2.beginPath();
     ctx2.arc(px(state.t), py(cfg.curY), 3.5, 0, Math.PI * 2);
     ctx2.fill();
@@ -963,7 +964,7 @@ footer {
     // 共速竖线
     if (state.tSync !== null && state.tSync >= tStart && state.tSync <= tAxEnd) {
       const x = px(state.tSync);
-      ctx2.strokeStyle = 'rgba(170,255,102,0.5)';
+      ctx2.strokeStyle = 'rgba(22,163,74,0.5)';
       ctx2.lineWidth = 1;
       ctx2.setLineDash([3, 3]);
       ctx2.beginPath();

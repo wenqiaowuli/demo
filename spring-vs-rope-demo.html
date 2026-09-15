@@ -7,8 +7,8 @@
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body {
-  background-color: #121212;
-  color: #fff;
+  background-color: #eef2f6;
+  color: #1f2937;
   font-family: system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
   display: flex;
   flex-direction: column;
@@ -20,11 +20,11 @@ h1 {
   font-size: 18px;
   font-weight: 600;
   margin-bottom: 4px;
-  color: #e8eef5;
+  color: #1f2937;
 }
 .subtitle {
   font-size: 12px;
-  color: #8899aa;
+  color: #6b7280;
   margin-bottom: 12px;
 }
 .main {
@@ -42,9 +42,9 @@ h1 {
 canvas { display: block; width: 100%; }
 canvas#cv {
   aspect-ratio: 880 / 520;
-  border: 2px solid #3388dd;
+  border: 2px solid #2563eb;
   border-radius: 10px;
-  background: #0b1828;
+  background: #ffffff;
 }
 .charts-row {
   width: 100%;
@@ -66,7 +66,7 @@ canvas#cv {
 }
 .chart-title {
   font-size: 11px;
-  color: #8899aa;
+  color: #6b7280;
   margin-bottom: 8px;
   letter-spacing: 0.4px;
 }
@@ -74,8 +74,8 @@ canvas#cv {
   display: block;
   width: 100%;
   aspect-ratio: 20 / 9;
-  background: #0b1828;
-  border: 2px solid #3388dd;
+  background: #ffffff;
+  border: 2px solid #2563eb;
   border-radius: 10px;
 }
 .actions {
@@ -99,27 +99,27 @@ canvas#cv {
   align-items: center;
   gap: 8px;
   font-size: 12px;
-  color: #aab;
+  color: #6b7280;
   margin-bottom: 6px;
 }
-.param-row label { flex: 0 0 130px; color: #c0c8d4; }
-.param-row input[type=range] { flex: 1; accent-color: #3388dd; }
+.param-row label { flex: 0 0 130px; color: #1f2937; }
+.param-row input[type=range] { flex: 1; accent-color: #2563eb; }
 .param-row .val {
   flex: 0 0 70px;
   text-align: right;
-  color: #fff;
+  color: #1f2937;
   font-variant-numeric: tabular-nums;
   font-size: 12px;
 }
 .fixed-note {
   font-size: 11px;
-  color: #667788;
+  color: #6b7280;
   margin-top: 8px;
   padding-top: 6px;
-  border-top: 1px solid rgba(255,255,255,0.08);
+  border-top: 1px solid #e5e7eb;
   line-height: 1.6;
 }
-.fixed-note b { color: #ffaa44; }
+.fixed-note b { color: #b45309; }
 .data-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -129,8 +129,8 @@ canvas#cv {
   .data-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 .data-item {
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.08);
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
   border-radius: 8px;
   padding: 6px 8px;
   text-align: center;
@@ -138,39 +138,40 @@ canvas#cv {
 .data-item span {
   display: block;
   font-size: 10px;
-  color: #8899aa;
+  color: #6b7280;
   margin-bottom: 2px;
 }
 .data-item b {
   font-size: 14px;
   font-weight: 600;
-  color: #fff;
+  color: #1f2937;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
-.data-item .accent { color: #ffaa44; }
-.data-item .green { color: #44dd88; }
-.data-item .cyan { color: #44ddff; }
-.data-item .blue { color: #38bdf8; }
-.data-item .red { color: #f87171; }
+.data-item .accent { color: #d97706; }
+.data-item .green { color: #16a34a; }
+.data-item .cyan { color: #0891b2; }
+.data-item .blue { color: #0284c7; }
+.data-item .red { color: #dc2626; }
 .card {
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.1);
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
   border-radius: 10px;
+  box-shadow: 0 1px 2px rgba(15,23,42,.05);
   padding: 10px 14px;
   flex: 1;
   min-width: 200px;
 }
 .group-title {
   font-size: 11px;
-  color: #8899aa;
+  color: #6b7280;
   margin-bottom: 8px;
   letter-spacing: 0.4px;
   text-transform: uppercase;
 }
 input[type=range]:disabled { opacity: 0.45; cursor: not-allowed; }
 button {
-  background: #3388dd;
+  background: #2563eb;
   border: none;
   color: #fff;
   padding: 9px 16px;
@@ -180,16 +181,16 @@ button {
   font-family: inherit;
   transition: background-color 0.15s ease, transform 0.15s ease;
 }
-button:hover:not(:disabled) { background: #2f7cc8; }
+button:hover:not(:disabled) { background: #1d4ed8; }
 button:active:not(:disabled) { transform: translateY(1px); }
-button.alt { background: #445566; }
-button.alt:hover { background: #556677; }
+button.alt { background: #475569; }
+button.alt:hover { background: #64748b; }
 button:disabled { opacity: 0.45; cursor: not-allowed; }
 .legend {
   display: flex;
   gap: 14px;
   font-size: 11px;
-  color: #8899aa;
+  color: #6b7280;
   margin-top: 4px;
   flex-wrap: wrap;
   justify-content: center;
@@ -203,13 +204,13 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
   vertical-align: middle;
   border-radius: 2px;
 }
-.lg-a::before { background: #38bdf8; }
-.lg-b::before { background: #f87171; }
-.lg-spring::before { background: #7dd3fc; }
+.lg-a::before { background: #0284c7; }
+.lg-b::before { background: #dc2626; }
+.lg-spring::before { background: #0ea5e9; }
 footer {
   margin-top: 18px;
   font-size: 11px;
-  color: #556677;
+  color: #6b7280;
   text-align: center;
 }
 </style>
@@ -434,9 +435,9 @@ footer {
   function clear() {
     const w = cv.clientWidth || 880;
     const h = cv.clientHeight || 520;
-    ctx.fillStyle = '#0b1828';
+    ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, w, h);
-    ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+    ctx.strokeStyle = 'rgba(31,41,55,0.06)';
     ctx.lineWidth = 1;
     for (let x = 0; x < w; x += 24) {
       ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
@@ -453,10 +454,10 @@ footer {
     const axA = w * 0.33, axB = w * 0.67;
     const gY = GROUND_Y;
 
-    ctx.strokeStyle = '#3a4a5a';
+    ctx.strokeStyle = '#cbd5e1';
     ctx.lineWidth = 2;
     ctx.beginPath(); ctx.moveTo(40, gY); ctx.lineTo(w - 40, gY); ctx.stroke();
-    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+    ctx.strokeStyle = '#e5e7eb';
     ctx.lineWidth = 1;
     for (let x = 44; x < w - 40; x += 14) {
       ctx.beginPath(); ctx.moveTo(x, gY); ctx.lineTo(x - 8, gY + 10); ctx.stroke();
@@ -481,13 +482,13 @@ footer {
     var springLenPx = (SPRING_NATURAL_M + sysA.stretch) * pix;
     var springTop = Math.max(ballAy - springLenPx, PIVOT_Y + 16);
 
-    ctx.strokeStyle = '#cbd5e1';
+    ctx.strokeStyle = '#94a3b8';
     ctx.lineWidth = 2.5;
     ctx.beginPath(); ctx.moveTo(axA, PIVOT_Y); ctx.lineTo(axA, springTop); ctx.stroke();
 
     var N = Math.max(8, Math.round((ballAy - springTop) / 6));
     var coilH = 6;
-    ctx.strokeStyle = '#7dd3fc';
+    ctx.strokeStyle = '#0ea5e9';
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(axA, springTop);
@@ -505,41 +506,41 @@ footer {
     ctx.lineTo(axA, ballAy - 8);
     ctx.stroke();
 
-    ctx.strokeStyle = '#cbd5e1';
+    ctx.strokeStyle = '#94a3b8';
     ctx.lineWidth = 2.5;
     ctx.beginPath(); ctx.moveTo(axB, PIVOT_Y); ctx.lineTo(axB, ballBy - BALL_R); ctx.stroke();
 
     if (sysA.landed) {
-      ctx.fillStyle = '#4ade80';
+      ctx.fillStyle = '#16a34a';
     } else {
-      ctx.fillStyle = '#38bdf8';
+      ctx.fillStyle = '#0284c7';
     }
     ctx.beginPath(); ctx.arc(axA, ballAy, BALL_R, 0, Math.PI * 2); ctx.fill();
     ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
-    ctx.fillStyle = '#0b1828';
+    ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 13px system-ui';
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillText('A', axA, ballAy);
 
     if (sysB.landed) {
-      ctx.fillStyle = '#4ade80';
+      ctx.fillStyle = '#16a34a';
     } else {
-      ctx.fillStyle = '#f87171';
+      ctx.fillStyle = '#dc2626';
     }
     ctx.beginPath(); ctx.arc(axB, ballBy, BALL_R, 0, Math.PI * 2); ctx.fill();
     ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
-    ctx.fillStyle = '#0b1828';
+    ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 13px system-ui';
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillText('B', axB, ballBy);
 
     if (phase === 'idle') {
-      ctx.strokeStyle = 'rgba(148,163,184,0.3)';
+      ctx.strokeStyle = 'rgba(100,116,139,0.5)';
       ctx.lineWidth = 1;
       ctx.setLineDash([5, 5]);
       ctx.beginPath(); ctx.moveTo(60, ballAy); ctx.lineTo(w - 60, ballAy); ctx.stroke();
       ctx.setLineDash([]);
-      ctx.fillStyle = 'rgba(148,163,184,0.8)';
+      ctx.fillStyle = '#6b7280';
       ctx.font = '10px system-ui';
       ctx.textAlign = 'left';
       ctx.fillText('两球等高 h=' + params.h.toFixed(1) + 'm', 64, ballAy - 8);
@@ -548,9 +549,9 @@ footer {
     if (cutFlash > 0) {
       ctx.save();
       ctx.globalAlpha = cutFlash;
-      ctx.fillStyle = 'rgba(251,191,36,0.6)';
+      ctx.fillStyle = 'rgba(217,119,6,0.6)';
       ctx.beginPath(); ctx.arc((axA + axB) / 2, PIVOT_Y + 20, 18, 0, Math.PI * 2); ctx.fill();
-      ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 2.5;
+      ctx.strokeStyle = '#d97706'; ctx.lineWidth = 2.5;
       ctx.beginPath(); ctx.moveTo(axA - 12, PIVOT_Y + 10); ctx.lineTo(axA + 4, PIVOT_Y + 26); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(axA + 12, PIVOT_Y + 10); ctx.lineTo(axA - 4, PIVOT_Y + 26); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(axB - 12, PIVOT_Y + 10); ctx.lineTo(axB + 4, PIVOT_Y + 26); ctx.stroke();
@@ -559,19 +560,19 @@ footer {
     }
 
     if (sysA.landed) {
-      ctx.fillStyle = '#4ade80';
+      ctx.fillStyle = '#16a34a';
       ctx.font = '11px system-ui';
       ctx.textAlign = 'center';
       ctx.fillText('A 落地 t=' + sysA.landTime.toFixed(2) + 's', axA, gY + 22);
     }
     if (sysB.landed) {
-      ctx.fillStyle = '#4ade80';
+      ctx.fillStyle = '#16a34a';
       ctx.font = '11px system-ui';
       ctx.textAlign = 'center';
       ctx.fillText('B 落地 t=' + sysB.landTime.toFixed(2) + 's', axB, gY + 22);
     }
 
-    ctx.fillStyle = '#8899aa';
+    ctx.fillStyle = '#6b7280';
     ctx.font = '11px system-ui';
     ctx.textAlign = 'center';
     ctx.fillText('A · 弹簧悬挂', axA, PIVOT_Y - 24);
@@ -609,15 +610,15 @@ footer {
     const yMax = niceCeil(hi * 1.05);
     const py = y => padT + gH - (y - yMin) / (yMax - yMin) * gH;
 
-    cx.fillStyle = 'rgba(255,255,255,0.03)';
+    cx.fillStyle = '#f8fafc';
     cx.fillRect(padL, padT, gW, gH);
     cx.font = '10px system-ui';
     const yS = niceStep(yMax - yMin), yD = tickDec(yS);
-    cx.fillStyle = '#8899aa';
+    cx.fillStyle = '#6b7280';
     for (let i = Math.ceil(yMin / yS - 1e-9); i <= Math.floor(yMax / yS + 1e-9); i++) {
       const y = py(i * yS);
       const z = Math.abs(i * yS) < yS * 0.15;
-      cx.strokeStyle = z ? 'rgba(255,255,255,0.55)' : 'rgba(255,255,255,0.06)';
+      cx.strokeStyle = z ? 'rgba(31,41,55,0.6)' : 'rgba(31,41,55,0.08)';
       cx.lineWidth = z ? 1.5 : 1;
       cx.beginPath(); cx.moveTo(padL, y); cx.lineTo(padL + gW, y); cx.stroke();
       cx.textAlign = 'right';
@@ -626,14 +627,14 @@ footer {
     cx.textAlign = 'center';
     for (let tt = Math.ceil(tStart / 2) * 2; tt <= tAxEnd + 1e-9; tt += 2) {
       const x = px(tt);
-      cx.strokeStyle = 'rgba(255,255,255,0.06)';
+      cx.strokeStyle = 'rgba(31,41,55,0.08)';
       cx.beginPath(); cx.moveTo(x, padT); cx.lineTo(x, padT + gH); cx.stroke();
       cx.fillText(tt.toFixed(0), x, padT + gH + 15);
     }
-    cx.strokeStyle = 'rgba(255,255,255,0.18)';
+    cx.strokeStyle = '#94a3b8';
     cx.lineWidth = 1;
     cx.strokeRect(padL, padT, gW, gH);
-    cx.fillStyle = '#8899aa';
+    cx.fillStyle = '#6b7280';
     cx.textAlign = 'left';
     cx.fillText(cfg.yLabel, padL + 6, padT + 12);
     cx.textAlign = 'right';
@@ -649,7 +650,7 @@ footer {
       a.forEach(([t, y], i) => { const X = px(t), Y = py(y); i === 0 ? cx.moveTo(X, Y) : cx.lineTo(X, Y); });
       for (let i = b.length - 1; i >= 0; i--) cx.lineTo(px(b[i][0]), py(b[i][1]));
       cx.closePath();
-      cx.fillStyle = 'rgba(255,170,68,0.10)';
+      cx.fillStyle = 'rgba(217,119,6,0.12)';
       cx.fill();
     }
 
@@ -662,7 +663,7 @@ footer {
     });
 
     if (cfg.curY !== undefined) {
-      cx.fillStyle = '#ffaa44';
+      cx.fillStyle = '#d97706';
       cx.beginPath();
       cx.arc(px(time), py(cfg.curY), 3.5, 0, Math.PI * 2);
       cx.fill();
@@ -676,8 +677,8 @@ footer {
     const tEnd = Math.max(10, time);
     drawTimeChart(vtCv, vtCtx, {
       series: [
-        { pts: ptsA, color: '#38bdf8', width: 2 },
-        { pts: ptsB, color: '#f87171', width: 2 }
+        { pts: ptsA, color: '#0284c7', width: 2 },
+        { pts: ptsB, color: '#dc2626', width: 2 }
       ],
       shadePts: true,
       yLabel: 'v/(m/s)',
@@ -690,8 +691,8 @@ footer {
     const ptsB = trace.map(([t, , , , s]) => [t, params.h - s]);
     drawTimeChart(stCv, stCtx, {
       series: [
-        { pts: ptsA, color: '#38bdf8', width: 2 },
-        { pts: ptsB, color: '#f87171', width: 2 }
+        { pts: ptsA, color: '#0284c7', width: 2 },
+        { pts: ptsB, color: '#dc2626', width: 2 }
       ],
       shadePts: true,
       yLabel: 's/m',

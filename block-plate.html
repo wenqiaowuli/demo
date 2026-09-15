@@ -36,8 +36,8 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            background-color: #121212;
-            color: #ffffff;
+            background-color: #eef2f6;
+            color: #1f2937;
             font-family: system-ui, sans-serif;
             min-height: 100vh;
             display: flex;
@@ -61,9 +61,9 @@
         canvas {
             display: block;
             width: 100%;
-            border: 2px solid #3388dd;
+            border: 2px solid #2563eb;
             border-radius: 10px;
-            background-color: #0b1828;
+            background-color: #ffffff;
         }
         canvas#scene { aspect-ratio: 880 / 520; }
         .charts-row {
@@ -77,8 +77,9 @@
             .charts-row { grid-template-columns: 1fr; }
         }
         .chart-panel {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, .05);
             border-radius: 10px;
             padding: 14px 16px;
         }
@@ -88,7 +89,7 @@
         }
         .group-title {
             font-size: 12px;
-            color: #8899aa;
+            color: #6b7280;
             margin-bottom: 10px;
             letter-spacing: 0.5px;
         }
@@ -104,8 +105,9 @@
         }
         .param-group,
         .data-group {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, .05);
             border-radius: 10px;
             padding: 14px 16px;
         }
@@ -118,7 +120,7 @@
         .param-row:last-child { margin-bottom: 0; }
         .param-row label {
             font-size: 13px;
-            color: #ccd;
+            color: #1f2937;
             white-space: nowrap;
             min-width: 122px;
         }
@@ -128,7 +130,7 @@
             text-align: right;
             font-size: 13px;
             font-variant-numeric: tabular-nums;
-            color: #ccd;
+            color: #1f2937;
         }
         .data-grid {
             display: grid;
@@ -139,21 +141,21 @@
             .data-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         }
         .data-item {
-            background: rgba(255, 255, 255, 0.035);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: #f8fafc;
+            border: 1px solid #e5e7eb;
             border-radius: 8px;
             padding: 8px 10px;
         }
         .data-item span {
             display: block;
             font-size: 11px;
-            color: #8899aa;
+            color: #6b7280;
             margin-bottom: 4px;
         }
         .data-item b {
             display: block;
             font-size: 13px;
-            color: #ffffff;
+            color: #1f2937;
             font-variant-numeric: tabular-nums;
         }
         .actions {
@@ -164,7 +166,7 @@
             justify-content: center;
         }
         button {
-            background: #3388dd;
+            background: #2563eb;
             border: none;
             color: white;
             padding: 9px 16px;
@@ -173,7 +175,7 @@
             font-size: 14px;
             transition: background-color 0.15s ease, transform 0.15s ease;
         }
-        button:hover:not(:disabled) { background: #2f7cc8; }
+        button:hover:not(:disabled) { background: #1d4ed8; }
         button:active:not(:disabled) { transform: translateY(1px); }
         button:disabled {
             opacity: 0.45;
@@ -182,14 +184,14 @@
         .status {
             margin-top: 10px;
             font-size: 12px;
-            color: #99aabb;
+            color: #6b7280;
             text-align: center;
             min-height: 16px;
         }
         .legend {
             margin-top: 12px;
             font-size: 12px;
-            color: #aab;
+            color: #6b7280;
             text-align: center;
             line-height: 1.8;
         }
@@ -282,10 +284,10 @@
         <div class="legend">
             <span>🟦 物块</span>
             <span><span style="color:#8a8f98">■</span> 板块</span>
-            <span style="color:#3399ff">— v<sub>A</sub>/s<sub>A</sub> 蓝线</span>
+            <span style="color:#2563eb">— v<sub>A</sub>/s<sub>A</sub> 蓝线</span>
             <span style="color:#8a8f98">— v<sub>B</sub>/s<sub>B</sub> 灰线</span>
-            <span style="color:#ff4444">→ f（红，物块受摩擦）</span>
-            <span style="color:#ffdd57">→ f（黄，板块受摩擦）</span>
+            <span style="color:#dc2626">→ f（红，物块受摩擦）</span>
+            <span style="color:#d97706">→ f（黄，板块受摩擦）</span>
             <span>虚线：共速/滑出时刻（v-t 与 s-t 同步）</span>
         </div>
     </main>
@@ -751,9 +753,9 @@
                         const fDir = -sig;
                         const aMidY = groundY - PLATE_H - blockH / 2;
                         // 需求二：物块摩擦力箭头红色定长（3×物块长），只示方向
-                        drawArrow(aScreenX, aMidY, fDir, arrowLen(fMag), `rgba(255,68,68,${fAlpha})`, 'f', 'tail');
+                        drawArrow(aScreenX, aMidY, fDir, arrowLen(fMag), `rgba(220,38,38,${fAlpha})`, 'f', 'tail');
                         const bTopY = groundY - PLATE_H - 6;
-                        drawArrow(bScreenX, groundY - PLATE_H / 2, -fDir, arrowLen(fMag), `rgba(255,221,87,${fAlpha})`, 'f', 'tail');
+                        drawArrow(bScreenX, groundY - PLATE_H / 2, -fDir, arrowLen(fMag), `rgba(217,119,6,${fAlpha})`, 'f', 'tail');
                     }
                 }
                 // 需求修订 4（v8）：共速锁定后 A-B 间摩擦标记消失（整体分析口径），不再绘制
@@ -763,14 +765,14 @@
                     const fDir = Math.sign(drawB.v) > 0 ? -1 : 1;
                     if (fGnd > 0.1) {
                         const fGndY = groundY + 12;
-                        drawArrow(bScreenX, groundY - PLATE_H / 2, fDir, arrowLen(fGnd), '#ffdd57', 'f', 'tail');
+                        drawArrow(bScreenX, groundY - PLATE_H / 2, fDir, arrowLen(fGnd), '#d97706', 'f', 'tail');
                     }
                 } else if (mu2 > 0 && Math.abs(drawA.v) > 1e-6) {
                     const driveF = mu1 * P.mA * g;
                     if (driveF <= mu2 * (P.mA + P.mB) * g + 1e-9 && driveF > 0.1) {
                         const fDir = -sig;
                         const fGndY = groundY + 12;
-                        drawArrow(bScreenX, groundY - PLATE_H / 2, fDir, arrowLen(driveF), '#ffdd57', 'f', 'tail');
+                        drawArrow(bScreenX, groundY - PLATE_H / 2, fDir, arrowLen(driveF), '#d97706', 'f', 'tail');
                     }
                 }
             } else {
@@ -783,13 +785,13 @@
                     const aBotNow = groundY - PLATE_H + PLATE_H * dropFrac;
                     const aMidY = aBotNow - blockH / 2;
                     const alpha = (0.15 + 0.85 * dropFrac).toFixed(2);
-                    drawArrow(aScreenX, aMidY, fDir, arrowLen(fA), `rgba(255,68,68,${alpha})`, 'f', 'tail');
+                    drawArrow(aScreenX, aMidY, fDir, arrowLen(fA), `rgba(220,38,38,${alpha})`, 'f', 'tail');
                 }
                 if (mu2 > 0 && Math.abs(drawB.v) > 1e-6) {
                     const fB = mu2 * P.mB * g;
                     const fDir = Math.sign(drawB.v) > 0 ? -1 : 1;
                     const bMidY = groundY - PLATE_H / 2;
-                    drawArrow(bScreenX, bMidY, fDir, arrowLen(fB), '#ffdd57', 'f', 'tail');
+                    drawArrow(bScreenX, bMidY, fDir, arrowLen(fB), '#d97706', 'f', 'tail');
                 }
             }
         }
@@ -803,7 +805,7 @@
             const SX = x => PAD_X + (x - REGION_MIN) * s;
 
             // 水平网格
-            ctx.strokeStyle = '#16222e';
+            ctx.strokeStyle = '#e5e7eb';
             ctx.lineWidth = 1;
             for (let gy = groundY - 44; gy > 24; gy -= 44) {
                 ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(view.width, gy); ctx.stroke();
@@ -816,13 +818,13 @@
             }
 
             // 正方向标注（需求五）：左上角
-            ctx.fillStyle = '#8899aa';
+            ctx.fillStyle = '#6b7280';
             ctx.font = '11px system-ui';
             ctx.textAlign = 'left';
             ctx.fillText('正方向 →', SX(REGION_MIN) + 6, 24);
 
             // 地面
-            ctx.strokeStyle = '#3a4a5a';
+            ctx.strokeStyle = '#cbd5e1';
             ctx.lineWidth = 2;
             ctx.beginPath();
             ctx.moveTo(0, groundY);
@@ -831,7 +833,7 @@
 
             // 地面距离标注（世界坐标，覆盖整个运动区域含负半轴）
             const labelStep = s >= 90 ? 2 : (s >= 40 ? 5 : 10);
-            ctx.fillStyle = '#556677';
+            ctx.fillStyle = '#6b7280';
             ctx.font = '11px system-ui';
             ctx.textAlign = 'center';
             for (let m = Math.ceil(REGION_MIN / labelStep) * labelStep; m <= REGION_MAX; m += labelStep) {
@@ -850,7 +852,7 @@
             const bTop   = groundY - PLATE_H;
             const bBot   = groundY;
 
-            ctx.fillStyle = 'rgba(0,0,0,0.35)';
+            ctx.fillStyle = 'rgba(15,23,42,0.15)';
             ctx.fillRect(bLeft + 4, bBot + 3, bRight - bLeft, 7);
 
             // 需求二（v8）：板块纯灰色填充，无渐变
@@ -877,7 +879,7 @@
             if (drawA.onPlate) {
                 const aLeft = SX(drawA.x);
 
-                ctx.fillStyle = 'rgba(0,0,0,0.3)';
+                ctx.fillStyle = 'rgba(15,23,42,0.15)';
                 ctx.fillRect(aLeft + 3, aBot + 3, blockW, 5);
 
                 const ag = ctx.createLinearGradient(aLeft, aTopY, aLeft, aBot);
@@ -886,14 +888,14 @@
                 ctx.fillStyle = ag;
                 ctx.fillRect(aLeft, aTopY, blockW, aBot - aTopY);
 
-                ctx.strokeStyle = '#7dd0ff';
+                ctx.strokeStyle = '#2563eb';
                 ctx.lineWidth = 2;
                 ctx.strokeRect(aLeft, aTopY, blockW, aBot - aTopY);
 
             } else {
                 const ax = Math.max(4, Math.min(SX(drawA.x), view.width - blockW - 4));
 
-                ctx.fillStyle = 'rgba(0,0,0,0.3)';
+                ctx.fillStyle = 'rgba(15,23,42,0.15)';
                 ctx.fillRect(ax + 3, aBot + 3, blockW, 5);
 
                 const ag = ctx.createLinearGradient(ax, aTopY, ax, aBot);
@@ -902,7 +904,7 @@
                 ctx.fillStyle = ag;
                 ctx.fillRect(ax, aTopY, blockW, blockH);
 
-                ctx.strokeStyle = '#7dd0ff';
+                ctx.strokeStyle = '#2563eb';
                 ctx.lineWidth = 2;
                 ctx.strokeRect(ax, aTopY, blockW, blockH);
 
@@ -935,7 +937,7 @@
             const plotW = w - padL - padR;
             const plotH = h - padT - padB;
 
-            gctx.strokeStyle = '#7b8ea3';
+            gctx.strokeStyle = '#94a3b8';
             gctx.lineWidth = 2;
             gctx.beginPath();
             gctx.moveTo(padL, padT);
@@ -944,7 +946,7 @@
             gctx.stroke();
 
             if (!sim || playIdx < 1) {
-                gctx.fillStyle = '#44586c';
+                gctx.fillStyle = '#6b7280';
                 gctx.font = '12px system-ui';
                 gctx.textAlign = 'center';
                 gctx.fillText('开始后将显示 v-t 图', w / 2, h / 2);
@@ -965,13 +967,13 @@
             const VY = v => padT + plotH - ((v - vLo) / (vHi - vLo)) * plotH;
 
             // 网格
-            gctx.strokeStyle = '#1f2d3d';
+            gctx.strokeStyle = '#e5e7eb';
             gctx.lineWidth = 1;
             const tStep = tMax <= 6 ? 1 : 2;
             for (let t = 0; t <= tMax; t += tStep) {
                 const x = TX(t);
                 gctx.beginPath(); gctx.moveTo(x, padT); gctx.lineTo(x, padT + plotH); gctx.stroke();
-                gctx.fillStyle = '#8899aa';
+                gctx.fillStyle = '#6b7280';
                 gctx.font = '10px system-ui';
                 gctx.textAlign = 'center';
                 gctx.fillText(t.toFixed(0) + 's', x, padT + plotH + 14);
@@ -987,7 +989,7 @@
             for (let v = vStart; v <= vHi; v += vStep) {
                 const y = VY(v);
                 gctx.beginPath(); gctx.moveTo(padL, y); gctx.lineTo(padL + plotW, y); gctx.stroke();
-                gctx.fillStyle = '#8899aa';
+                gctx.fillStyle = '#6b7280';
                 gctx.font = '10px system-ui';
                 gctx.textAlign = 'right';
                 gctx.fillText(v.toFixed(0), padL - 5, y + 3);
@@ -995,21 +997,21 @@
             // 零线
             if (vLo < 0 && vHi > 0) {
                 const y0 = VY(0);
-                gctx.strokeStyle = 'rgba(255,255,255,0.25)';
+                gctx.strokeStyle = 'rgba(31,41,55,0.3)';
                 gctx.lineWidth = 1;
                 gctx.beginPath(); gctx.moveTo(padL, y0); gctx.lineTo(padL + plotW, y0); gctx.stroke();
             }
 
             // 事件标注
             if (sim.t1 !== null && sim.t1 <= tMax) {
-                gctx.strokeStyle = 'rgba(255,255,255,0.18)';
+                gctx.strokeStyle = 'rgba(31,41,55,0.25)';
                 gctx.setLineDash([4, 4]);
                 gctx.beginPath();
                 gctx.moveTo(TX(sim.t1), padT);
                 gctx.lineTo(TX(sim.t1), padT + plotH);
                 gctx.stroke();
                 gctx.setLineDash([]);
-                gctx.fillStyle = sim.slipAfter ? '#ffdd57' : '#ffaa22';
+                gctx.fillStyle = sim.slipAfter ? '#d97706' : '#ea580c';
                 gctx.font = '10px system-ui';
                 gctx.textAlign = 'center';
                 gctx.fillText(
@@ -1018,21 +1020,21 @@
                 );
             }
             if (sim.willSlideOff && sim.tOff !== null && sim.tOff <= tMax) {
-                gctx.strokeStyle = 'rgba(255,102,68,0.35)';
+                gctx.strokeStyle = 'rgba(220,38,38,0.35)';
                 gctx.setLineDash([4, 4]);
                 gctx.beginPath();
                 gctx.moveTo(TX(sim.tOff), padT);
                 gctx.lineTo(TX(sim.tOff), padT + plotH);
                 gctx.stroke();
                 gctx.setLineDash([]);
-                gctx.fillStyle = '#ff8866';
+                gctx.fillStyle = '#dc2626';
                 gctx.font = '10px system-ui';
                 gctx.textAlign = 'center';
                 gctx.fillText('滑出', TX(sim.tOff), padT + 10);
             }
 
             // 曲线 A
-            gctx.strokeStyle = '#3399ff';
+            gctx.strokeStyle = '#2563eb';
             gctx.lineWidth = 2;
             gctx.lineJoin = 'round';
             gctx.beginPath();
@@ -1056,19 +1058,19 @@
             // 播放头
             const ci = Math.min(playIdx, sim.T.length - 1);
             const pxNow = TX(sim.T[ci]);
-            gctx.strokeStyle = 'rgba(51, 136, 221, 0.4)';
+            gctx.strokeStyle = 'rgba(37, 99, 235, 0.35)';
             gctx.lineWidth = 1;
             gctx.beginPath();
             gctx.moveTo(pxNow, padT);
             gctx.lineTo(pxNow, padT + plotH);
             gctx.stroke();
-            gctx.fillStyle = '#3399ff';
+            gctx.fillStyle = '#2563eb';
             gctx.beginPath(); gctx.arc(pxNow, VY(sim.VA[ci]), 3.5, 0, Math.PI * 2); gctx.fill();
             gctx.fillStyle = '#8a8f98';
             gctx.beginPath(); gctx.arc(pxNow, VY(sim.VB[ci]), 3.5, 0, Math.PI * 2); gctx.fill();
 
             // 轴标签
-            gctx.fillStyle = '#8899aa';
+            gctx.fillStyle = '#6b7280';
             gctx.font = '11px system-ui';
             gctx.textAlign = 'center';
             gctx.fillText('t (s)', padL + plotW / 2, h - 4);
@@ -1080,14 +1082,14 @@
 
             // 图例
             gctx.textAlign = 'left';
-            gctx.fillStyle = '#3399ff';
+            gctx.fillStyle = '#2563eb';
             gctx.fillRect(padL + 6, padT + 22, 14, 3);
-            gctx.fillStyle = '#8899aa';
+            gctx.fillStyle = '#6b7280';
             gctx.font = '10px system-ui';
             gctx.fillText('vₐ', padL + 24, padT + 28);
             gctx.fillStyle = '#8a8f98';
             gctx.fillRect(padL + 52, padT + 22, 14, 3);
-            gctx.fillStyle = '#8899aa';
+            gctx.fillStyle = '#6b7280';
             gctx.fillText('vᵦ', padL + 70, padT + 28);
         }
 
@@ -1100,7 +1102,7 @@
             const plotW = w - padL - padR;
             const plotH = h - padT - padB;
 
-            stctx.strokeStyle = '#7b8ea3';
+            stctx.strokeStyle = '#94a3b8';
             stctx.lineWidth = 2;
             stctx.beginPath();
             stctx.moveTo(padL, padT);
@@ -1109,7 +1111,7 @@
             stctx.stroke();
 
             if (!sim || playIdx < 1) {
-                stctx.fillStyle = '#44586c';
+                stctx.fillStyle = '#6b7280';
                 stctx.font = '12px system-ui';
                 stctx.textAlign = 'center';
                 stctx.fillText('开始后将显示 s-t 图', w / 2, h / 2);
@@ -1131,13 +1133,13 @@
             const SY = s => padT + plotH - ((s - sLo) / (sHi - sLo)) * plotH;
 
             // 时间网格（与 v-t 图一致）
-            stctx.strokeStyle = '#1f2d3d';
+            stctx.strokeStyle = '#e5e7eb';
             stctx.lineWidth = 1;
             const tStep = tMax <= 6 ? 1 : 2;
             for (let t = 0; t <= tMax; t += tStep) {
                 const x = TX(t);
                 stctx.beginPath(); stctx.moveTo(x, padT); stctx.lineTo(x, padT + plotH); stctx.stroke();
-                stctx.fillStyle = '#8899aa';
+                stctx.fillStyle = '#6b7280';
                 stctx.font = '10px system-ui';
                 stctx.textAlign = 'center';
                 stctx.fillText(t.toFixed(0) + 's', x, padT + plotH + 14);
@@ -1155,7 +1157,7 @@
             for (let s = sStart; s <= sHi; s += sStep) {
                 const y = SY(s);
                 stctx.beginPath(); stctx.moveTo(padL, y); stctx.lineTo(padL + plotW, y); stctx.stroke();
-                stctx.fillStyle = '#8899aa';
+                stctx.fillStyle = '#6b7280';
                 stctx.font = '10px system-ui';
                 stctx.textAlign = 'right';
                 stctx.fillText(s.toFixed(sDec), padL - 5, y + 3);
@@ -1163,41 +1165,41 @@
             // 零线
             if (sLo < 0 && sHi > 0) {
                 const y0 = SY(0);
-                stctx.strokeStyle = 'rgba(255,255,255,0.25)';
+                stctx.strokeStyle = 'rgba(31,41,55,0.3)';
                 stctx.lineWidth = 1;
                 stctx.beginPath(); stctx.moveTo(padL, y0); stctx.lineTo(padL + plotW, y0); stctx.stroke();
             }
 
             // 事件标注
             if (sim.t1 !== null && sim.t1 <= tMax) {
-                stctx.strokeStyle = 'rgba(255,255,255,0.18)';
+                stctx.strokeStyle = 'rgba(31,41,55,0.25)';
                 stctx.setLineDash([4, 4]);
                 stctx.beginPath();
                 stctx.moveTo(TX(sim.t1), padT);
                 stctx.lineTo(TX(sim.t1), padT + plotH);
                 stctx.stroke();
                 stctx.setLineDash([]);
-                stctx.fillStyle = sim.slipAfter ? '#ffdd57' : '#ffaa22';
+                stctx.fillStyle = sim.slipAfter ? '#d97706' : '#ea580c';
                 stctx.font = '10px system-ui';
                 stctx.textAlign = 'center';
                 stctx.fillText(sim.slipAfter ? '共速后滑' : '共速', TX(sim.t1), padT + 10);
             }
             if (sim.willSlideOff && sim.tOff !== null && sim.tOff <= tMax) {
-                stctx.strokeStyle = 'rgba(255,102,68,0.35)';
+                stctx.strokeStyle = 'rgba(220,38,38,0.35)';
                 stctx.setLineDash([4, 4]);
                 stctx.beginPath();
                 stctx.moveTo(TX(sim.tOff), padT);
                 stctx.lineTo(TX(sim.tOff), padT + plotH);
                 stctx.stroke();
                 stctx.setLineDash([]);
-                stctx.fillStyle = '#ff8866';
+                stctx.fillStyle = '#dc2626';
                 stctx.font = '10px system-ui';
                 stctx.textAlign = 'center';
                 stctx.fillText('滑出', TX(sim.tOff), padT + 10);
             }
 
             // 曲线 A（位移 = XA - XA[0]）
-            stctx.strokeStyle = '#3399ff';
+            stctx.strokeStyle = '#2563eb';
             stctx.lineWidth = 2;
             stctx.lineJoin = 'round';
             stctx.beginPath();
@@ -1228,7 +1230,7 @@
 
                 stctx.font = '9px system-ui';
                 stctx.textAlign = 'left';
-                stctx.fillStyle = '#3399ff';
+                stctx.fillStyle = '#2563eb';
                 stctx.fillText(sAEnd.toFixed(1) + 'm', pxEndA + 5, SY(sAEnd) + 3);
                 stctx.fillStyle = '#8a8f98';
                 stctx.fillText(sBEnd.toFixed(1) + 'm', pxEndB + 5, SY(sBEnd) + 3);
@@ -1237,19 +1239,19 @@
             // 播放头
             const ci = Math.min(playIdx, sim.T.length - 1);
             const pxNow = TX(sim.T[ci]);
-            stctx.strokeStyle = 'rgba(51, 136, 221, 0.4)';
+            stctx.strokeStyle = 'rgba(37, 99, 235, 0.35)';
             stctx.lineWidth = 1;
             stctx.beginPath();
             stctx.moveTo(pxNow, padT);
             stctx.lineTo(pxNow, padT + plotH);
             stctx.stroke();
-            stctx.fillStyle = '#3399ff';
+            stctx.fillStyle = '#2563eb';
             stctx.beginPath(); stctx.arc(pxNow, SY(sim.XA[ci] - s0A), 3.5, 0, Math.PI * 2); stctx.fill();
             stctx.fillStyle = '#8a8f98';
             stctx.beginPath(); stctx.arc(pxNow, SY(sim.XB[ci] - s0B), 3.5, 0, Math.PI * 2); stctx.fill();
 
             // 轴标签
-            stctx.fillStyle = '#8899aa';
+            stctx.fillStyle = '#6b7280';
             stctx.font = '11px system-ui';
             stctx.textAlign = 'center';
             stctx.fillText('t (s)', padL + plotW / 2, h - 4);
@@ -1261,14 +1263,14 @@
 
             // 图例
             stctx.textAlign = 'left';
-            stctx.fillStyle = '#3399ff';
+            stctx.fillStyle = '#2563eb';
             stctx.fillRect(padL + 6, padT + 22, 14, 3);
-            stctx.fillStyle = '#8899aa';
+            stctx.fillStyle = '#6b7280';
             stctx.font = '10px system-ui';
             stctx.fillText('sₐ', padL + 24, padT + 28);
             stctx.fillStyle = '#8a8f98';
             stctx.fillRect(padL + 52, padT + 22, 14, 3);
-            stctx.fillStyle = '#8899aa';
+            stctx.fillStyle = '#6b7280';
             stctx.fillText('sᵦ', padL + 70, padT + 28);
         }
 
@@ -1333,22 +1335,22 @@
 
             if (!onPlate) {
                 elState.textContent = 'A 已滑出（各自运动）';
-                elState.style.color = '#ff6644';
+                elState.style.color = '#dc2626';
             } else if (Math.abs(vA - vB) < 1e-6) {
                 if (Math.abs(vA) < 1e-6) {
                     elState.textContent = '共同停止';
-                    elState.style.color = '#aab';
+                    elState.style.color = '#6b7280';
                 } else {
                     elState.textContent = '共速一起运动';
-                    elState.style.color = '#ffaa22';
+                    elState.style.color = '#ea580c';
                 }
             } else {
                 if (Math.abs(vB) < 1e-6 && Math.abs(vA) > 1e-6) {
                     elState.textContent = 'A 在静止板上滑动';
-                    elState.style.color = '#3399ff';
+                    elState.style.color = '#2563eb';
                 } else {
                     elState.textContent = 'A 在 B 上滑动';
-                    elState.style.color = '#3399ff';
+                    elState.style.color = '#2563eb';
                 }
             }
 
@@ -1370,7 +1372,7 @@
             drawCharts();
 
             elState.textContent = '结束';
-            elState.style.color = '#aab';
+            elState.style.color = '#6b7280';
             btnStart.disabled = true;
             btnPause.disabled = true;
             btnPause.textContent = '暂停';
@@ -1448,7 +1450,7 @@
             }
             elRel.textContent  = sim.sRel1.toFixed(2) + ' m';
             elSlide.textContent = sim.willSlideOff ? '✓ 滑出' : '✗ 未滑出';
-            elSlide.style.color = sim.willSlideOff ? '#ff6644' : '#33dd66';
+            elSlide.style.color = sim.willSlideOff ? '#dc2626' : '#16a34a';
             elHeat.textContent = sim.heat.toFixed(2) + ' J';
             elMass.textContent = P.mA.toFixed(1) + ' + ' + P.mB.toFixed(1) + ' kg';
 
@@ -1494,7 +1496,7 @@
                 elVR.textContent = '—';
                 elFric.textContent = '— N';
                 elState.textContent = '待开始';
-                elState.style.color = '#99aabb';
+                elState.style.color = '#6b7280';
                 elStatus.textContent = '';
                 btnStart.disabled = false;
                 btnPause.disabled = true;
@@ -1569,7 +1571,7 @@
             elVR.textContent = '—';
             elFric.textContent = '— N';
             elState.textContent = '待开始';
-            elState.style.color = '#99aabb';
+            elState.style.color = '#6b7280';
             elStatus.textContent = '';
 
             // 重置数据面板标签（需求 19）

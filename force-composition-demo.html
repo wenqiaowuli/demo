@@ -8,8 +8,8 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            background-color: #121212;
-            color: #ffffff;
+            background-color: #eef2f6;
+            color: #1f2937;
             font-family: system-ui, sans-serif;
             min-height: 100vh;
             display: flex;
@@ -35,19 +35,19 @@
             margin-bottom: 12px;
         }
         .mode-tabs .tab {
-            background: rgba(255, 255, 255, 0.06);
-            border: 1px solid rgba(255, 255, 255, 0.18);
-            color: #ccd;
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            color: #475569;
             padding: 7px 22px;
             border-radius: 999px;
             font-size: 14px;
             cursor: pointer;
             transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
         }
-        .mode-tabs .tab:hover { background: rgba(255, 255, 255, 0.12); }
+        .mode-tabs .tab:hover { background: #eef2f7; }
         .mode-tabs .tab.active {
-            background: #3388dd;
-            border-color: #3388dd;
+            background: #2563eb;
+            border-color: #2563eb;
             color: #ffffff;
         }
         .canvas-wrap { width: 100%; }
@@ -55,9 +55,9 @@
             display: block;
             width: 100%;
             aspect-ratio: 880 / 520;
-            border: 2px solid #3388dd;
+            border: 2px solid #2563eb;
             border-radius: 10px;
-            background-color: #0b1828;
+            background-color: #ffffff;
             touch-action: none;
         }
         .control-panel {
@@ -72,9 +72,10 @@
         }
         .param-group,
         .data-group {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
             border-radius: 10px;
+            box-shadow: 0 1px 2px rgba(15,23,42,.05);
             padding: 14px 16px;
         }
         .chart-panel {
@@ -88,7 +89,7 @@
         }
         .group-title {
             font-size: 12px;
-            color: #8899aa;
+            color: #6b7280;
             margin-bottom: 10px;
             letter-spacing: 0.5px;
         }
@@ -100,7 +101,7 @@
         }
         .param-row label {
             font-size: 13px;
-            color: #ccd;
+            color: #1f2937;
             white-space: nowrap;
             min-width: 82px;
         }
@@ -110,7 +111,7 @@
             text-align: right;
             font-size: 13px;
             font-variant-numeric: tabular-nums;
-            color: #ccd;
+            color: #1f2937;
         }
         .param-row input[type=range]:disabled + .val { opacity: 0.5; }
         .seg-row {
@@ -121,7 +122,7 @@
         }
         .seg-row .seg-label {
             font-size: 13px;
-            color: #ccd;
+            color: #1f2937;
             min-width: 82px;
         }
         .seg {
@@ -131,27 +132,27 @@
         }
         .seg button {
             flex: 1;
-            background: rgba(255, 255, 255, 0.06);
-            border: 1px solid rgba(255, 255, 255, 0.18);
-            color: #ccd;
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            color: #475569;
             padding: 6px 4px;
             border-radius: 7px;
             font-size: 12.5px;
             white-space: nowrap;
         }
-        .seg button:hover { background: rgba(255, 255, 255, 0.12); }
+        .seg button:hover { background: #eef2f7; }
         .seg button.active {
-            background: #3388dd;
-            border-color: #3388dd;
+            background: #2563eb;
+            border-color: #2563eb;
             color: #ffffff;
         }
         .fixed-note {
             margin-top: 4px;
             font-size: 12px;
-            color: #8899aa;
+            color: #6b7280;
             line-height: 1.6;
         }
-        .fixed-note b { color: #ff9933; font-weight: 600; }
+        .fixed-note b { color: #b45309; font-weight: 600; }
         .data-grid {
             display: grid;
             grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -161,8 +162,8 @@
             .data-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         }
         .data-item {
-            background: rgba(255, 255, 255, 0.035);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: #f8fafc;
+            border: 1px solid #e5e7eb;
             border-radius: 8px;
             padding: 8px 10px;
         }
@@ -170,13 +171,13 @@
         .data-item span {
             display: block;
             font-size: 11px;
-            color: #8899aa;
+            color: #6b7280;
             margin-bottom: 4px;
         }
         .data-item b {
             display: block;
             font-size: 14px;
-            color: #ffffff;
+            color: #1f2937;
             font-variant-numeric: tabular-nums;
         }
         .charts-row {
@@ -193,8 +194,8 @@
             display: block;
             width: 100%;
             aspect-ratio: 20 / 9;
-            background: #0b1828;
-            border: 2px solid #3388dd;
+            background: #ffffff;
+            border: 2px solid #2563eb;
             border-radius: 10px;
         }
         .actions {
@@ -205,7 +206,7 @@
             justify-content: center;
         }
         button {
-            background: #3388dd;
+            background: #2563eb;
             border: none;
             color: white;
             padding: 9px 16px;
@@ -214,7 +215,7 @@
             font-size: 14px;
             transition: background-color 0.15s ease, transform 0.15s ease;
         }
-        button:hover:not(:disabled) { background: #2f7cc8; }
+        button:hover:not(:disabled) { background: #1d4ed8; }
         button:active:not(:disabled) { transform: translateY(1px); }
         button:disabled {
             opacity: 0.45;
@@ -223,7 +224,7 @@
         .legend {
             margin-top: 12px;
             font-size: 12px;
-            color: #aab;
+            color: #6b7280;
             text-align: center;
             line-height: 1.8;
         }
@@ -344,10 +345,10 @@
             <button id="btnReset" type="button">重置</button>
         </div>
         <div class="legend">
-            <span style="color:#ffcc44">—— F₁ / F₁′ / Fx（黄）</span>
-            <span style="color:#33ddcc">—— F₂ / F₂′ / Fy（青）</span>
-            <span style="color:#ff5555">—— 合力 F（红）</span>
-            <span style="color:#aab">– – 平行四边形辅助线与方向线</span>
+            <span style="color:#d97706">—— F₁ / F₁′ / Fx（黄）</span>
+            <span style="color:#0d9488">—— F₂ / F₂′ / Fy（青）</span>
+            <span style="color:#dc2626">—— 合力 F（红）</span>
+            <span style="color:#6b7280">– – 平行四边形辅助线与方向线</span>
             <span>⊙ 待机时可拖拽端点 / 方向线</span>
             <span>空格 = 演示/暂停 · R = 重置</span>
         </div>
@@ -358,11 +359,11 @@
         const BASE_WIDTH = 880;
         const BASE_HEIGHT = 520;
         const CHART_ASPECT = 20 / 9;
-        const C_F1 = '#ffcc44', C_F2 = '#33ddcc', C_F = '#ff5555';
-        const C_FX = '#ff9933', C_FY = '#66aaff';
-        const C_DASH = 'rgba(255,255,255,0.4)';
-        const C_GRID = 'rgba(255,255,255,0.05)';
-        const C_AXIS = '#3a4a5c';
+        const C_F1 = '#d97706', C_F2 = '#0d9488', C_F = '#dc2626';
+        const C_FX = '#ea580c', C_FY = '#2563eb';
+        const C_DASH = 'rgba(31,41,55,0.45)';
+        const C_GRID = 'rgba(31,41,55,0.07)';
+        const C_AXIS = '#cbd5e1';
         const SCAN_DUR_COMPOSE = 8;   // θ 0→180° 单程秒数 @1×
         const SCAN_DUR_RESOLVE = 6;
 
@@ -417,11 +418,11 @@
         function dispAlpha() { return (scan.active && resolve.method === 'ortho') ? scan.value : resolve.alpha; }
         function dispPhi2() { return (scan.active && resolve.method !== 'ortho') ? scan.value : resolve.phi2; }
         function composeClass(theta) {
-            if (theta <= 0.01) return { label: '同向（合力最大）', color: '#ffffff' };
-            if (theta >= 179.99) return { label: '反向（合力最小）', color: '#66aaff' };
-            if (Math.abs(theta - 90) < 0.01) return { label: '垂直（F=√(F₁²+F₂²)）', color: '#33ddcc' };
-            if (theta < 90) return { label: '锐角夹角', color: '#ffffff' };
-            return { label: '钝角夹角', color: '#ff9933' };
+            if (theta <= 0.01) return { label: '同向（合力最大）', color: '#1f2937' };
+            if (theta >= 179.99) return { label: '反向（合力最小）', color: '#2563eb' };
+            if (Math.abs(theta - 90) < 0.01) return { label: '垂直（F=√(F₁²+F₂²)）', color: '#0d9488' };
+            if (theta < 90) return { label: '锐角夹角', color: '#1f2937' };
+            return { label: '钝角夹角', color: '#ea580c' };
         }
 
         // ---------- 刻度工具（与系列一致） ----------
@@ -569,7 +570,7 @@
             sctx.moveTo(tr.ox, 6); sctx.lineTo(tr.ox, BASE_HEIGHT - 6);
             sctx.stroke();
             // O 点
-            sctx.fillStyle = '#ffffff';
+            sctx.fillStyle = '#1f2937';
             sctx.beginPath();
             sctx.arc(tr.ox, tr.oy, 4, 0, Math.PI * 2);
             sctx.fill();
@@ -587,14 +588,14 @@
             for (const s of [1, 2, 5, 10]) { unit = s; if (s * tr.scale >= 56) break; }
             const len = unit * tr.scale;
             const y = BASE_HEIGHT - 26, x0 = 20;
-            sctx.strokeStyle = '#8899aa';
+            sctx.strokeStyle = '#6b7280';
             sctx.lineWidth = 2;
             sctx.beginPath();
             sctx.moveTo(x0, y - 5); sctx.lineTo(x0, y + 5);
             sctx.moveTo(x0, y); sctx.lineTo(x0 + len, y);
             sctx.moveTo(x0 + len, y - 5); sctx.lineTo(x0 + len, y + 5);
             sctx.stroke();
-            sctx.fillStyle = '#8899aa';
+            sctx.fillStyle = '#6b7280';
             sctx.font = '11px system-ui, sans-serif';
             sctx.textAlign = 'left';
             sctx.fillText(unit + ' N', x0 + len + 7, y + 4);
@@ -616,12 +617,12 @@
             sctx.font = 'bold 13px system-ui, sans-serif';
             const w = sctx.measureText(text).width + 28;
             const x = (BASE_WIDTH - w) / 2, y = 12;
-            sctx.fillStyle = 'rgba(255,85,85,0.16)';
-            sctx.strokeStyle = 'rgba(255,85,85,0.7)';
+            sctx.fillStyle = 'rgba(220,38,38,0.12)';
+            sctx.strokeStyle = 'rgba(220,38,38,0.6)';
             sctx.lineWidth = 1;
             roundRectPath(sctx, x, y, w, 28, 7);
             sctx.fill(); sctx.stroke();
-            sctx.fillStyle = '#ff7777';
+            sctx.fillStyle = '#b91c1c';
             sctx.textAlign = 'center';
             sctx.fillText(text, BASE_WIDTH / 2, y + 19);
         }
@@ -657,14 +658,14 @@
 
             // 角弧：θ（F₁→F₂）与 φ（F₁→F）；小夹角时标签上下分行避让
             if (th < 40) {
-                drawAngleArc(tr, 34, 0, th, '#dceeff', 'θ=' + Math.round(th) + '°',
+                drawAngleArc(tr, 34, 0, th, '#334155', 'θ=' + Math.round(th) + '°',
                     { x: tr.ox + Math.cos(th / 2 * RAD) * 50, y: tr.oy - 14 });
                 if (res.F > 0.5 && th > 0.5 && th < 179.5) {
                     drawAngleArc(tr, 54, 0, res.phi, C_F, 'φ=' + res.phi.toFixed(1) + '°',
                         { x: tr.ox + Math.cos(res.phi / 2 * RAD) * 70, y: tr.oy + 20 });
                 }
             } else {
-                drawAngleArc(tr, 34, 0, th, '#dceeff', 'θ=' + Math.round(th) + '°');
+                drawAngleArc(tr, 34, 0, th, '#334155', 'θ=' + Math.round(th) + '°');
                 if (res.F > 0.5 && th > 0.5 && th < 179.5) {
                     drawAngleArc(tr, 54, 0, res.phi, C_F, 'φ=' + res.phi.toFixed(1) + '°');
                 }
@@ -707,14 +708,14 @@
             sctx.fillStyle = cls.color;
             sctx.textAlign = 'left';
             sctx.fillText('当前情形：' + cls.label, 18, 24);
-            sctx.fillStyle = '#667788';
+            sctx.fillStyle = '#6b7280';
             sctx.font = '11.5px system-ui, sans-serif';
             sctx.textAlign = 'right';
             sctx.fillText('待机时可拖拽 F₁ / F₂ 箭头端点调整（吸附 0.5 N / 5°）', BASE_WIDTH - 16, 24);
             drawScaleBar(tr);
         }
         function drawHandle(x, y, color) {
-            sctx.fillStyle = '#0b1828';
+            sctx.fillStyle = '#ffffff';
             sctx.strokeStyle = color;
             sctx.lineWidth = 2.5;
             sctx.beginPath();
@@ -764,7 +765,7 @@
 
             // α 角弧
             if (Math.abs(alpha) > 0.5) {
-                drawAngleArc(tr, 30, 0, alpha, '#dceeff', 'α=' + Math.round(alpha) + '°');
+                drawAngleArc(tr, 30, 0, alpha, '#334155', 'α=' + Math.round(alpha) + '°');
             }
 
             // 分解分量
@@ -840,13 +841,13 @@
             sctx.font = 'bold 13px system-ui, sans-serif';
             sctx.textAlign = 'left';
             if (method === 'multi') {
-                sctx.fillStyle = '#ff9933';
+                sctx.fillStyle = '#ea580c';
                 sctx.fillText('多解性观察：同一合力 F 有无穷多组分解（拖 φ₂ 观察右图）', 18, 24);
             } else {
-                sctx.fillStyle = '#dceeff';
+                sctx.fillStyle = '#1f2937';
                 sctx.fillText(method === 'ortho' ? '正交分解：沿水平 / 竖直方向分解' : '按两已知方向分解：平行四边形作图求唯一解', 18, 24);
             }
-            sctx.fillStyle = '#667788';
+            sctx.fillStyle = '#6b7280';
             sctx.font = '11.5px system-ui, sans-serif';
             sctx.textAlign = 'right';
             sctx.fillText(method === 'ortho' ? '调整 F 与 α 观察分量变化' : '待机时可拖拽方向线手柄（吸附 5°）', BASE_WIDTH - 16, 24);
@@ -877,14 +878,14 @@
             for (let i = Math.ceil(cfg.yMin / yStep - 1e-9); i <= Math.floor(cfg.yMax / yStep + 1e-9); i++) {
                 const val = i * yStep;
                 const py = yOf(val);
-                ctx.strokeStyle = '#1f2d3d'; ctx.lineWidth = 1;
+                ctx.strokeStyle = '#e5e7eb'; ctx.lineWidth = 1;
                 ctx.beginPath(); ctx.moveTo(padL, py); ctx.lineTo(padL + plotW, py); ctx.stroke();
-                ctx.fillStyle = '#8899aa'; ctx.textAlign = 'right';
+                ctx.fillStyle = '#6b7280'; ctx.textAlign = 'right';
                 ctx.fillText(val.toFixed(yDec), padL - 6, py + 3);
             }
             if (cfg.yMin < 0 && cfg.yMax > 0) {
                 const py0 = yOf(0);
-                ctx.strokeStyle = '#7b8ea3'; ctx.lineWidth = 1.5;
+                ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 1.5;
                 ctx.beginPath(); ctx.moveTo(padL, py0); ctx.lineTo(padL + plotW, py0); ctx.stroke();
             }
             // 竖直网格
@@ -894,20 +895,20 @@
             for (let x = Math.ceil(cfg.xMin / xStep - 1e-9); x <= Math.floor(cfg.xMax / xStep + 1e-9); x++) {
                 const val = x * xStep;
                 const px = xOf(val);
-                ctx.strokeStyle = '#1f2d3d'; ctx.lineWidth = 1;
+                ctx.strokeStyle = '#e5e7eb'; ctx.lineWidth = 1;
                 ctx.beginPath(); ctx.moveTo(px, padT); ctx.lineTo(px, padT + plotH); ctx.stroke();
-                ctx.fillStyle = '#8899aa';
+                ctx.fillStyle = '#6b7280';
                 ctx.fillText(val.toFixed(xDec) + (cfg.xUnit || ''), px, padT + plotH + 16);
             }
             // 特殊点标注
             (cfg.specialX || []).forEach((s) => {
                 const px = xOf(s.x);
-                ctx.strokeStyle = 'rgba(255,153,51,0.4)';
+                ctx.strokeStyle = 'rgba(234,88,12,0.4)';
                 ctx.lineWidth = 1;
                 ctx.setLineDash && ctx.setLineDash([3, 4]);
                 ctx.beginPath(); ctx.moveTo(px, padT); ctx.lineTo(px, padT + plotH); ctx.stroke();
                 ctx.setLineDash && ctx.setLineDash([]);
-                ctx.fillStyle = '#ff9933';
+                ctx.fillStyle = '#ea580c';
                 ctx.fillText(s.label, px, padT - 4);
             });
             // 参考虚线
@@ -923,11 +924,11 @@
                 ctx.fillText(rf.label, padL + plotW - 4, py - 5);
             });
             // 外框
-            ctx.strokeStyle = '#7b8ea3'; ctx.lineWidth = 2;
+            ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 2;
             ctx.beginPath();
             ctx.moveTo(padL, padT); ctx.lineTo(padL, padT + plotH); ctx.lineTo(padL + plotW, padT + plotH);
             ctx.stroke();
-            ctx.fillStyle = '#8899aa';
+            ctx.fillStyle = '#6b7280';
             ctx.textAlign = 'left';
             ctx.fillText(cfg.yLabel, padL + 6, padT + 12);
             ctx.textAlign = 'right';
@@ -951,7 +952,7 @@
             // 游标与当前点
             if (cfg.cursorX != null) {
                 const pxNow = xOf(cfg.cursorX);
-                ctx.strokeStyle = 'rgba(51,136,221,0.4)'; ctx.lineWidth = 1;
+                ctx.strokeStyle = 'rgba(37,99,235,0.35)'; ctx.lineWidth = 1;
                 ctx.beginPath(); ctx.moveTo(pxNow, padT); ctx.lineTo(pxNow, padT + plotH); ctx.stroke();
                 const vals = [];
                 cfg.series.forEach((s) => {
@@ -969,7 +970,7 @@
                     const tw = ctx.measureText(text).width;
                     let lx = pxNow + 7;
                     if (lx + tw > padL + plotW) lx = pxNow - tw - 14;
-                    ctx.fillStyle = '#dde6f0'; ctx.textAlign = 'left';
+                    ctx.fillStyle = '#1f2937'; ctx.textAlign = 'left';
                     ctx.fillText(text, lx, padT + 12);
                 }
             }
@@ -989,14 +990,14 @@
                 roundRectPath(ctx, padL, y - 8, w, 16, 4);
                 ctx.fill();
                 ctx.font = '11px system-ui, sans-serif';
-                ctx.fillStyle = '#8899aa';
+                ctx.fillStyle = '#6b7280';
                 ctx.textAlign = 'right';
                 ctx.fillText(b.label, padL - 8, y + 4);
                 ctx.fillStyle = b.color;
                 ctx.textAlign = 'left';
                 ctx.fillText(b.value.toFixed(2) + ' N', padL + w + 7, y + 4);
             });
-            ctx.fillStyle = '#667788';
+            ctx.fillStyle = '#6b7280';
             ctx.font = '11px system-ui, sans-serif';
             ctx.textAlign = 'left';
             ctx.fillText('同一合力 F 与其分力大小对比（按效果分解，分力可大于合力）', padL, view.height - 6);
@@ -1015,8 +1016,8 @@
                     yMin: 0, yMax: niceCeil((F1 + F2) * 1.08), yLabel: 'F (N)',
                     series: [{ f: (x) => composeResult(F1, F2, x).F, color: C_F }],
                     refs: [
-                        { v: F1 + F2, color: 'rgba(255,255,255,0.45)', label: 'F₁+F₂=' + (F1 + F2).toFixed(1) },
-                        { v: Math.abs(F1 - F2), color: 'rgba(255,255,255,0.45)', label: '|F₁−F₂|=' + Math.abs(F1 - F2).toFixed(1) },
+                        { v: F1 + F2, color: 'rgba(31,41,55,0.5)', label: 'F₁+F₂=' + (F1 + F2).toFixed(1) },
+                        { v: Math.abs(F1 - F2), color: 'rgba(31,41,55,0.5)', label: '|F₁−F₂|=' + Math.abs(F1 - F2).toFixed(1) },
                     ],
                     specialX: special,
                     cursorX: th,
@@ -1059,7 +1060,7 @@
                             ],
                             cursorX: dispPhi2(),
                         });
-                        ctxR.fillStyle = '#8899aa';
+                        ctxR.fillStyle = '#6b7280';
                         ctxR.font = '10px system-ui, sans-serif';
                         ctxR.textAlign = 'right';
                         ctxR.fillText('分解有无穷多组解：分力可任意大', views.R.width - 10, views.R.height - 8);
@@ -1088,7 +1089,7 @@
         }
         function drawNoSolution(ctx, view) {
             ctx.clearRect(0, 0, view.width, view.height);
-            ctx.fillStyle = '#667788';
+            ctx.fillStyle = '#6b7280';
             ctx.font = '13px system-ui, sans-serif';
             ctx.textAlign = 'center';
             ctx.fillText('当前 φ₁ 与 α 组合下无可行分解', view.width / 2, view.height / 2 - 6);
@@ -1139,13 +1140,13 @@
                 $('dRFx').textContent = o.Fx.toFixed(2) + ' N';
                 $('dRFy').textContent = o.Fy.toFixed(2) + ' N';
                 const elFea = $('dFeature');
-                if (r.method === 'ortho') { elFea.textContent = '唯一解（正交分解）'; elFea.style.color = '#ffffff'; }
+                if (r.method === 'ortho') { elFea.textContent = '唯一解（正交分解）'; elFea.style.color = '#1f2937'; }
                 else if (r.method === 'twoDir') {
                     elFea.textContent = td.feasible ? '唯一解（两方向确定）' : '不可分解（α 不在两方向之间）';
-                    elFea.style.color = td.feasible ? '#33ddcc' : '#ff5555';
+                    elFea.style.color = td.feasible ? '#0d9488' : '#dc2626';
                 } else {
                     elFea.textContent = td.feasible ? '无穷多组解（分力可任意大）' : '无可行分解（调整 φ₁ 或 α）';
-                    elFea.style.color = td.feasible ? '#ff9933' : '#ff5555';
+                    elFea.style.color = td.feasible ? '#ea580c' : '#dc2626';
                 }
                 sceneCanvas.setAttribute('aria-label',
                     `力的分解演示：合力${r.F.toFixed(1)}牛，方向角${Math.round(alpha)}度，${methodNames[r.method]}，Fx=${o.Fx.toFixed(2)}牛，Fy=${o.Fy.toFixed(2)}牛`);

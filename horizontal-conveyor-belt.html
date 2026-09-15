@@ -21,8 +21,8 @@
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body {
-  background-color: #121212;
-  color: #fff;
+  background-color: #eef2f6;
+  color: #1f2937;
   font-family: system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
   display: flex;
   flex-direction: column;
@@ -34,11 +34,11 @@ h1 {
   font-size: 18px;
   font-weight: 600;
   margin-bottom: 4px;
-  color: #e8eef5;
+  color: #1f2937;
 }
 .subtitle {
   font-size: 12px;
-  color: #8899aa;
+  color: #6b7280;
   margin-bottom: 12px;
 }
 .main {
@@ -56,9 +56,9 @@ h1 {
 canvas { display: block; width: 100%; }
 canvas#cv {
   aspect-ratio: 880 / 520;
-  border: 2px solid #3388dd;
+  border: 2px solid #2563eb;
   border-radius: 10px;
-  background: #0b1828;
+  background: #ffffff;
 }
 .charts-row {
   width: 100%;
@@ -80,7 +80,7 @@ canvas#cv {
 }
 .chart-title {
   font-size: 11px;
-  color: #8899aa;
+  color: #6b7280;
   margin-bottom: 8px;
   letter-spacing: 0.4px;
 }
@@ -88,8 +88,8 @@ canvas#cv {
   display: block;
   width: 100%;
   aspect-ratio: 20 / 9;
-  background: #0b1828;
-  border: 2px solid #3388dd;
+  background: #ffffff;
+  border: 2px solid #2563eb;
   border-radius: 10px;
 }
 .actions {
@@ -115,15 +115,15 @@ canvas#cv {
   align-items: center;
   gap: 8px;
   font-size: 12px;
-  color: #aab;
+  color: #6b7280;
   margin-bottom: 6px;
 }
-.param-row label { flex: 0 0 110px; color: #c0c8d4; }
-.param-row input[type=range] { flex: 1; accent-color: #3388dd; }
+.param-row label { flex: 0 0 110px; color: #1f2937; }
+.param-row input[type=range] { flex: 1; accent-color: #2563eb; }
 .param-row .val {
   flex: 0 0 70px;
   text-align: right;
-  color: #fff;
+  color: #1f2937;
   font-variant-numeric: tabular-nums;
   font-size: 12px;
 }
@@ -134,13 +134,13 @@ canvas#cv {
 }
 .fixed-note {
   font-size: 11px;
-  color: #667788;
+  color: #6b7280;
   margin-top: 8px;
   padding-top: 6px;
-  border-top: 1px solid rgba(255,255,255,0.08);
+  border-top: 1px solid #e5e7eb;
   line-height: 1.6;
 }
-.fixed-note b { color: #ffaa44; }
+.fixed-note b { color: #b45309; }
 .data-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -150,8 +150,8 @@ canvas#cv {
   .data-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 .data-item {
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.08);
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
   border-radius: 8px;
   padding: 6px 8px;
   text-align: center;
@@ -159,22 +159,23 @@ canvas#cv {
 .data-item span {
   display: block;
   font-size: 10px;
-  color: #8899aa;
+  color: #6b7280;
   margin-bottom: 2px;
 }
 .data-item b {
   font-size: 15px;
   font-weight: 600;
-  color: #fff;
+  color: #1f2937;
   font-variant-numeric: tabular-nums;
 }
-.data-item .accent { color: #ffaa44; }
-.data-item .green { color: #44dd88; }
-.data-item .cyan { color: #44ddff; }
+.data-item .accent { color: #ea580c; }
+.data-item .green { color: #16a34a; }
+.data-item .cyan { color: #0d9488; }
 .data-item span.full { grid-column: 1 / -1; }
 .card {
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.1);
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 2px rgba(15,23,42,.05);
   border-radius: 10px;
   padding: 10px 14px;
   flex: 1;
@@ -182,14 +183,14 @@ canvas#cv {
 }
 .group-title {
   font-size: 11px;
-  color: #8899aa;
+  color: #6b7280;
   margin-bottom: 8px;
   letter-spacing: 0.4px;
   text-transform: uppercase;
 }
 .note {
   font-size: 11px;
-  color: #667788;
+  color: #6b7280;
   margin-top: 6px;
   line-height: 1.5;
 }
@@ -201,7 +202,7 @@ input[type=range]:disabled { opacity: 0.45; cursor: not-allowed; }
   margin-top: 4px;
 }
 button {
-  background: #3388dd;
+  background: #2563eb;
   border: none;
   color: #fff;
   padding: 9px 16px;
@@ -211,16 +212,16 @@ button {
   font-family: inherit;
   transition: background-color 0.15s ease, transform 0.15s ease;
 }
-button:hover:not(:disabled) { background: #2f7cc8; }
+button:hover:not(:disabled) { background: #1d4ed8; }
 button:active:not(:disabled) { transform: translateY(1px); }
-button.alt { background: #445566; }
-button.alt:hover { background: #556677; }
+button.alt { background: #64748b; }
+button.alt:hover { background: #475569; }
 button:disabled { opacity: 0.45; cursor: not-allowed; }
 .legend {
   display: flex;
   gap: 14px;
   font-size: 11px;
-  color: #8899aa;
+  color: #6b7280;
   margin-top: 4px;
   flex-wrap: wrap;
   justify-content: center;
@@ -234,15 +235,15 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
   vertical-align: middle;
   border-radius: 2px;
 }
-.lg-v::before { background: #ffaa44; }
-.lg-vbelt::before { background: #44ddff; }
-.lg-f::before { background: #ff5577; }
-.lg-rel::before { background: #aaff66; }
-.lg-shade::before { background: rgba(170,255,102,0.25); }
+.lg-v::before { background: #ea580c; }
+.lg-vbelt::before { background: #0d9488; }
+.lg-f::before { background: #e11d48; }
+.lg-rel::before { background: #16a34a; }
+.lg-shade::before { background: rgba(22,163,74,0.25); }
 footer {
   margin-top: 18px;
   font-size: 11px;
-  color: #556677;
+  color: #6b7280;
   text-align: center;
 }
 </style>
@@ -505,9 +506,9 @@ footer {
   function clear() {
     const w = cv.clientWidth || cv.width || 880;
     const h = cv.clientHeight || cv.height || 520;
-    ctx.fillStyle = '#0b1828';
+    ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, w, h);
-    ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+    ctx.strokeStyle = 'rgba(31,41,55,0.07)';
     ctx.lineWidth = 1;
     for (let x = 0; x < w; x += 24) {
       ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
@@ -571,13 +572,13 @@ footer {
     const G = geom();
     const w = G.w;
     // ---- 地面 ----
-    ctx.strokeStyle = '#3a4a5a';
+    ctx.strokeStyle = '#cbd5e1';
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(0, G.ground);
     ctx.lineTo(w, G.ground);
     ctx.stroke();
-    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+    ctx.strokeStyle = 'rgba(31,41,55,0.12)';
     ctx.lineWidth = 1;
     ctx.beginPath();
     for (let x = 8; x < w; x += 16) {
@@ -586,7 +587,7 @@ footer {
     }
     ctx.stroke();
     // ---- 机架（支腿 + 横撑，先画让带压在上面）----
-    ctx.strokeStyle = '#22303e';
+    ctx.strokeStyle = '#64748b';
     ctx.lineWidth = 6;
     ctx.beginPath();
     ctx.moveTo(G.xL, G.yC);
@@ -607,11 +608,11 @@ footer {
     ctx.lineTo(G.xL, G.yC + G.band);
     ctx.arc(G.xL, G.yC, G.band, Math.PI / 2, Math.PI * 1.5);
     ctx.closePath();
-    ctx.strokeStyle = '#2a3340';
+    ctx.strokeStyle = '#94a3b8';
     ctx.lineWidth = 8;
     ctx.stroke();
     // 带边缘线
-    ctx.strokeStyle = 'rgba(120,160,200,0.22)';
+    ctx.strokeStyle = 'rgba(71,85,105,0.35)';
     ctx.lineWidth = 1;
     ctx.beginPath();
       ctx.moveTo(G.xL, G.yC - G.band - 4);
@@ -627,7 +628,7 @@ footer {
     const span = G.xR - G.xL;
     const offTop = mod(state.beltClock * state.vBelt * G.pix, 40);
     const offBot = mod(-state.beltClock * state.vBelt * G.pix, 40);
-    ctx.strokeStyle = 'rgba(120,160,200,0.35)';
+    ctx.strokeStyle = 'rgba(71,85,105,0.5)';
     ctx.lineWidth = 1.5;
     ctx.beginPath();
     for (let x = -40; x < span + 40; x += 40) {
@@ -645,7 +646,7 @@ footer {
     ctx.stroke();
     // ---- 滑动擦痕（带参考系，已偏移至物块后方外露部分，长度 = s相对）----
     if (state.scratches.length) {
-      ctx.strokeStyle = 'rgba(255,85,119,0.6)';
+      ctx.strokeStyle = 'rgba(220,38,38,0.6)';
       ctx.lineWidth = 3;
       ctx.lineCap = 'butt';
       ctx.beginPath();
@@ -668,7 +669,7 @@ footer {
     // ---- 带速指示（环内居中）----
     const cx = (G.xL + G.xR) / 2;
     ctx.font = '12px system-ui';
-    ctx.fillStyle = '#44ddff';
+    ctx.fillStyle = '#0d9488';
     ctx.textAlign = 'center';
     if (Math.abs(state.vBelt) > 0.01) {
       const sign = Math.sign(state.vBelt);
@@ -677,7 +678,7 @@ footer {
       ctx.beginPath();
       ctx.moveTo(cx - len / 2, G.yC + 7);
       ctx.lineTo(cx + len / 2, G.yC + 7);
-      ctx.strokeStyle = '#44ddff'; ctx.lineWidth = 2; ctx.stroke();
+      ctx.strokeStyle = '#0d9488'; ctx.lineWidth = 2; ctx.stroke();
       ctx.beginPath();
       ctx.moveTo(cx + len / 2, G.yC + 7);
       ctx.lineTo(cx + len / 2 - sign * 6, G.yC + 3);
@@ -689,13 +690,13 @@ footer {
     }
     // ---- 带长刻度 / 放上点 / 出料 ----
     ctx.font = '10px system-ui';
-    ctx.fillStyle = '#8899aa';
+    ctx.fillStyle = '#6b7280';
     ctx.textAlign = 'center';
     ctx.fillText('0', G.xL, G.ground - 4);
     ctx.fillText(`${state.L} m`, G.xR, G.ground - 4);
     ctx.fillText(`带长 L = ${state.L} m`, (G.xL + G.xR) / 2, G.ground - 4);
     const x0s = G.xL + (state.L / 2 + state.x0) * G.pix;
-    ctx.fillStyle = '#aaff66';
+    ctx.fillStyle = '#16a34a';
     ctx.beginPath();
     ctx.moveTo(x0s, G.ground - 9);
     ctx.lineTo(x0s - 4, G.ground - 2);
@@ -708,8 +709,8 @@ footer {
       const isRight = state.vBelt > 0;
       const axx = isRight ? (G.xR + G.R + 4) : (G.xL - G.R - 4);
       const dir = isRight ? 1 : -1;
-      ctx.strokeStyle = '#44ddff';
-      ctx.fillStyle = '#44ddff';
+      ctx.strokeStyle = '#0d9488';
+      ctx.fillStyle = '#0d9488';
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.moveTo(axx, G.topY + 4);
@@ -733,7 +734,7 @@ footer {
     const drawY = G.topY - blockH;
     // 阴影（物块在带上时有）
     if (!state.offbelt) {
-      ctx.fillStyle = 'rgba(0,0,0,0.4)';
+      ctx.fillStyle = 'rgba(15,23,42,0.15)';
       ctx.fillRect(drawX - blockW / 2 + 3, G.topY - 2, blockW - 6, 4);
     }
     // 物块
@@ -759,17 +760,17 @@ footer {
       ctx.beginPath();
       ctx.moveTo(drawX + Math.sign(state.v) * (blockW / 2 + 2), ay);
       ctx.lineTo(ax0 + len, ay);
-      ctx.strokeStyle = '#ffaa44'; ctx.lineWidth = 2.5; ctx.stroke();
+      ctx.strokeStyle = '#ea580c'; ctx.lineWidth = 2.5; ctx.stroke();
       ctx.beginPath();
       ctx.moveTo(ax0 + len, ay);
       ctx.lineTo(ax0 + len - Math.sign(state.v) * 6, ay - 4);
       ctx.lineTo(ax0 + len - Math.sign(state.v) * 6, ay + 4);
-      ctx.closePath(); ctx.fillStyle = '#ffaa44'; ctx.fill();
+      ctx.closePath(); ctx.fillStyle = '#ea580c'; ctx.fill();
     }
 
     const vR = state.v - state.vBelt;
     if (state.offbelt) {
-      ctx.fillStyle = '#8899aa';
+      ctx.fillStyle = '#6b7280';
       ctx.font = '11px system-ui';
       ctx.textAlign = 'center';
       ctx.fillText('已离开传送带（匀速）', drawX, drawY - 10);
@@ -783,13 +784,13 @@ footer {
       ctx.beginPath();
       ctx.moveTo(fx0, fy);
       ctx.lineTo(fx0 + len, fy);
-      ctx.strokeStyle = '#ff5577'; ctx.lineWidth = 2.5; ctx.stroke();
+      ctx.strokeStyle = '#e11d48'; ctx.lineWidth = 2.5; ctx.stroke();
       ctx.beginPath();
       ctx.moveTo(fx0 + len, fy);
       ctx.lineTo(fx0 + len - fDir * 6, fy - 4);
       ctx.lineTo(fx0 + len - fDir * 6, fy + 4);
-      ctx.closePath(); ctx.fillStyle = '#ff5577'; ctx.fill();
-      ctx.fillStyle = '#ff5577';
+      ctx.closePath(); ctx.fillStyle = '#e11d48'; ctx.fill();
+      ctx.fillStyle = '#e11d48';
       ctx.font = '11px system-ui';
       ctx.textAlign = 'center';
       ctx.fillText(`f=${fMag.toFixed(2)}N`, fx0 + len / 2, fy + 16);
@@ -801,18 +802,18 @@ footer {
       ctx.beginPath();
       ctx.moveTo(rx0 - rlen / 2, ry);
       ctx.lineTo(rx0 + rlen / 2, ry);
-      ctx.strokeStyle = '#aaff66'; ctx.lineWidth = 2; ctx.stroke();
+      ctx.strokeStyle = '#16a34a'; ctx.lineWidth = 2; ctx.stroke();
       ctx.beginPath();
       ctx.moveTo(rx0 + rlen / 2, ry);
       ctx.lineTo(rx0 + rlen / 2 - rDir * 5, ry - 3);
       ctx.lineTo(rx0 + rlen / 2 - rDir * 5, ry + 3);
-      ctx.closePath(); ctx.fillStyle = '#aaff66'; ctx.fill();
-      ctx.fillStyle = '#aaff66';
+      ctx.closePath(); ctx.fillStyle = '#16a34a'; ctx.fill();
+      ctx.fillStyle = '#16a34a';
       ctx.font = '10px system-ui';
       ctx.textAlign = 'center';
       ctx.fillText(`v相对 = ${vR.toFixed(2)} m/s`, rx0, ry - 4);
     } else {
-      ctx.fillStyle = '#aaff66';
+      ctx.fillStyle = '#16a34a';
       ctx.font = '10px system-ui';
       ctx.textAlign = 'center';
       ctx.fillText('v相对 = 0  (共速)', drawX, drawY - 6);
@@ -842,17 +843,17 @@ footer {
     const py = y => padT + gH - (y - yMin) / (yMax - yMin) * gH;
 
     // 背景
-    ctx2.fillStyle = 'rgba(255,255,255,0.03)';
+    ctx2.fillStyle = 'rgba(31,41,55,0.04)';
     ctx2.fillRect(padL, padT, gW, gH);
     // y 网格
     ctx2.font = '10px system-ui';
     const yStep = niceStep(yMax - yMin);
     const yDec = tickDecimals(yStep);
-    ctx2.fillStyle = '#8899aa';
+    ctx2.fillStyle = '#6b7280';
     for (let i = Math.ceil(yMin / yStep - 1e-9); i <= Math.floor(yMax / yStep + 1e-9); i++) {
       const y = py(i * yStep);
       const onZero = Math.abs(i * yStep) < yStep * 0.15;
-      ctx2.strokeStyle = onZero ? 'rgba(255,255,255,0.55)' : 'rgba(255,255,255,0.06)';
+      ctx2.strokeStyle = onZero ? 'rgba(31,41,55,0.5)' : 'rgba(31,41,55,0.07)';
       ctx2.lineWidth = onZero ? 1.5 : 1;
       ctx2.beginPath(); ctx2.moveTo(padL, y); ctx2.lineTo(padL + gW, y); ctx2.stroke();
       ctx2.textAlign = 'right'; ctx2.fillText((i * yStep).toFixed(yDec), padL - 6, y + 3);
@@ -861,7 +862,7 @@ footer {
     ctx2.textAlign = 'center';
     for (let tt = Math.ceil(tStart / 2) * 2; tt <= tAxEnd + 1e-9; tt += 2) {
       const x = px(tt);
-      ctx2.strokeStyle = 'rgba(255,255,255,0.06)';
+      ctx2.strokeStyle = 'rgba(31,41,55,0.07)';
       ctx2.beginPath();
       ctx2.moveTo(x, padT);
       ctx2.lineTo(x, padT + gH);
@@ -869,10 +870,10 @@ footer {
       ctx2.fillText(tt.toFixed(0), x, padT + gH + 15);
     }
     // 框与轴名
-    ctx2.strokeStyle = 'rgba(255,255,255,0.18)';
+    ctx2.strokeStyle = 'rgba(31,41,55,0.25)';
     ctx2.lineWidth = 1;
     ctx2.strokeRect(padL, padT, gW, gH);
-    ctx2.fillStyle = '#8899aa';
+    ctx2.fillStyle = '#6b7280';
     ctx2.textAlign = 'left';
     ctx2.fillText(cfg.yLabel, padL + 6, padT + 12);
     ctx2.textAlign = 'right';
@@ -894,7 +895,7 @@ footer {
       });
       shadePts.forEach(([t, y]) => ctx2.lineTo(px(t), py(y)));
       ctx2.closePath();
-      ctx2.fillStyle = 'rgba(170,255,102,0.10)';
+      ctx2.fillStyle = 'rgba(22,163,74,0.10)';
       ctx2.fill();
     } else if (cfg.series.length > 1) {
       const a = cfg.series[0].pts, b = cfg.series[1].pts;
@@ -905,7 +906,7 @@ footer {
       });
       for (let i = b.length - 1; i >= 0; i--) ctx2.lineTo(px(b[i][0]), py(b[i][1]));
       ctx2.closePath();
-      ctx2.fillStyle = 'rgba(170,255,102,0.10)';
+      ctx2.fillStyle = 'rgba(22,163,74,0.10)';
       ctx2.fill();
     }
     // 曲线
@@ -923,7 +924,7 @@ footer {
     });
 
     // 当前点（限制在绘图区内）
-    ctx2.fillStyle = '#ffaa44';
+    ctx2.fillStyle = '#ea580c';
     ctx2.beginPath();
     ctx2.arc(px(state.t), py(cfg.curY), 3.5, 0, Math.PI * 2);
     ctx2.fill();
@@ -932,7 +933,7 @@ footer {
     // 共速时刻标注
     if (state.tSync !== null && state.tSync >= tStart && state.tSync <= tAxEnd) {
       const x = px(state.tSync);
-      ctx2.strokeStyle = 'rgba(170,255,102,0.5)';
+      ctx2.strokeStyle = 'rgba(22,163,74,0.5)';
       ctx2.lineWidth = 1;
       ctx2.setLineDash([3, 3]);
       ctx2.beginPath();
@@ -940,7 +941,7 @@ footer {
       ctx2.lineTo(x, padT + gH);
       ctx2.stroke();
       ctx2.setLineDash([]);
-      ctx2.fillStyle = '#aaff66';
+      ctx2.fillStyle = '#16a34a';
       ctx2.font = '10px system-ui';
       ctx2.textAlign = 'center';
       ctx2.fillText(`共速 t=${state.tSync.toFixed(2)}s`, x, padT - 5);
@@ -953,8 +954,8 @@ footer {
     const tEnd = Math.max(10, state.t);
     drawTimeChart(vtCv, vtCtx, {
       series: [
-        { pts: state.trace.map(([t, v]) => [t, v * sign]), color: '#ffaa44', width: 2 },
-        { pts: [[0, absV], [tEnd, absV]], color: '#44ddff', width: 2 }
+        { pts: state.trace.map(([t, v]) => [t, v * sign]), color: '#ea580c', width: 2 },
+        { pts: [[0, absV], [tEnd, absV]], color: '#0d9488', width: 2 }
       ],
       shadePts: [[state.t, absV], [0, absV]],
       yMin: -7, yMax: 7, yLabel: 'v/(m/s)', curY: state.v * sign
@@ -977,8 +978,8 @@ footer {
     const yMax = Math.max(sMax * 1.2, yMin + 1);
     drawTimeChart(stCv, stCtx, {
       series: [
-        { pts: state.trace.map(([t, , x]) => [t, x * sign]), color: '#ffaa44', width: 2 },
-        { pts: [[0, 0], [tEnd, absV * tEnd]], color: '#44ddff', width: 2 }
+        { pts: state.trace.map(([t, , x]) => [t, x * sign]), color: '#ea580c', width: 2 },
+        { pts: [[0, 0], [tEnd, absV * tEnd]], color: '#0d9488', width: 2 }
       ],
       shadePts: [[state.t, absV * state.t], [0, 0]],
       yMin, yMax, yLabel: 's/m', curY: (state.x - state.x0) * sign

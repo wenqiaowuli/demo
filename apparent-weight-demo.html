@@ -8,8 +8,8 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            background-color: #121212;
-            color: #ffffff;
+            background-color: #eef2f6;
+            color: #1f2937;
             font-family: system-ui, sans-serif;
             min-height: 100vh;
             display: flex;
@@ -34,9 +34,9 @@
             display: block;
             width: 100%;
             aspect-ratio: 880 / 520;
-            border: 2px solid #3388dd;
+            border: 2px solid #2563eb;
             border-radius: 10px;
-            background-color: #0b1828;
+            background-color: #ffffff;
         }
         .control-panel {
             margin-top: 14px;
@@ -50,10 +50,11 @@
         }
         .param-group,
         .data-group {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
             border-radius: 10px;
             padding: 14px 16px;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
         }
         .chart-panel {
             background: transparent;
@@ -66,7 +67,7 @@
         }
         .group-title {
             font-size: 12px;
-            color: #8899aa;
+            color: #6b7280;
             margin-bottom: 10px;
             letter-spacing: 0.5px;
         }
@@ -78,7 +79,7 @@
         }
         .param-row label {
             font-size: 13px;
-            color: #ccd;
+            color: #1f2937;
             white-space: nowrap;
             min-width: 82px;
         }
@@ -88,15 +89,15 @@
             text-align: right;
             font-size: 13px;
             font-variant-numeric: tabular-nums;
-            color: #ccd;
+            color: #1f2937;
         }
         .fixed-note {
             margin-top: 4px;
             font-size: 12px;
-            color: #8899aa;
+            color: #6b7280;
             line-height: 1.6;
         }
-        .fixed-note b { color: #ff9933; font-weight: 600; }
+        .fixed-note b { color: #b45309; font-weight: 600; }
         .data-grid {
             display: grid;
             grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -106,8 +107,8 @@
             .data-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         }
         .data-item {
-            background: rgba(255, 255, 255, 0.035);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: #f8fafc;
+            border: 1px solid #e5e7eb;
             border-radius: 8px;
             padding: 8px 10px;
         }
@@ -115,13 +116,13 @@
         .data-item span {
             display: block;
             font-size: 11px;
-            color: #8899aa;
+            color: #6b7280;
             margin-bottom: 4px;
         }
         .data-item b {
             display: block;
             font-size: 14px;
-            color: #ffffff;
+            color: #1f2937;
             font-variant-numeric: tabular-nums;
         }
         .charts-row {
@@ -138,8 +139,8 @@
             display: block;
             width: 100%;
             aspect-ratio: 20 / 9;
-            background: #0b1828;
-            border: 2px solid #3388dd;
+            background: #ffffff;
+            border: 2px solid #2563eb;
             border-radius: 10px;
         }
         .actions {
@@ -150,7 +151,7 @@
             justify-content: center;
         }
         button {
-            background: #3388dd;
+            background: #2563eb;
             border: none;
             color: white;
             padding: 9px 16px;
@@ -159,7 +160,7 @@
             font-size: 14px;
             transition: background-color 0.15s ease, transform 0.15s ease;
         }
-        button:hover:not(:disabled) { background: #2f7cc8; }
+        button:hover:not(:disabled) { background: #1d4ed8; }
         button:active:not(:disabled) { transform: translateY(1px); }
         button:disabled {
             opacity: 0.45;
@@ -168,7 +169,7 @@
         .legend {
             margin-top: 12px;
             font-size: 12px;
-            color: #aab;
+            color: #6b7280;
             text-align: center;
             line-height: 1.8;
         }
@@ -224,7 +225,7 @@
                     超重 ⇔ 加速度向上；失重 ⇔ 加速度向下；<b>与速度方向无关</b>。<br>
                     实重 G = mg 恒定不变，变的只是体重计读数（视重）。<br>
                     a = g 时 F = 0，即完全失重（如自由落体）。<br>
-                    阶段：加速↑<span style="color:#ff9933">(超重)</span>→匀速↑→减速↑<span style="color:#66aaff">(失重)</span>→停靠→加速↓<span style="color:#66aaff">(失重)</span>→匀速↓→减速↓<span style="color:#ff9933">(超重)</span>
+                    阶段：加速↑<span style="color:#ea580c">(超重)</span>→匀速↑→减速↑<span style="color:#2563eb">(失重)</span>→停靠→加速↓<span style="color:#2563eb">(失重)</span>→匀速↓→减速↓<span style="color:#ea580c">(超重)</span>
                 </div>
             </section>
             <section class="data-group" aria-labelledby="dataTitle" aria-live="polite">
@@ -250,10 +251,10 @@
         </div>
         <div class="legend">
             <span>□ 电梯轿厢（内有人与体重计）</span>
-            <span style="color:#ff9933">→ 加速度 a</span>
+            <span style="color:#ea580c">→ 加速度 a</span>
             <span>楼层线（每层 3 m）与左侧高度标尺</span>
-            <span style="color:#33ddcc">-- 虚线：上行高度 H / 图中实重 G</span>
-            <span style="color:#ff5555">● 图中当前点</span>
+            <span style="color:#0d9488">-- 虚线：上行高度 H / 图中实重 G</span>
+            <span style="color:#dc2626">● 图中当前点</span>
         </div>
     </main>
     <script>
@@ -265,7 +266,7 @@
         const PAD = { left: 64, right: 30, top: 44, bottom: 58 };
         const CABIN_W = 96, CABIN_H = 84;
         const A_ARROW_SCALE = 8, A_ARROW_MAX = 80;
-        const COLOR_OVER = '#ff9933', COLOR_NORMAL = '#ffffff', COLOR_UNDER = '#66aaff', COLOR_FREE = '#33ddcc';
+        const COLOR_OVER = '#ea580c', COLOR_NORMAL = '#1f2937', COLOR_UNDER = '#2563eb', COLOR_FREE = '#0d9488';
         const sceneView = { width: BASE_WIDTH, height: BASE_HEIGHT };
         const vtView = { width: 400, height: 180 };
         const ftView = { width: 400, height: 180 };
@@ -402,13 +403,13 @@
         }
 
         function drawGround(geometry) {
-            sctx.strokeStyle = '#7b8ea3';
+            sctx.strokeStyle = '#94a3b8';
             sctx.lineWidth = 2;
             sctx.beginPath();
             sctx.moveTo(8, geometry.originY);
             sctx.lineTo(sceneView.width - 8, geometry.originY);
             sctx.stroke();
-            sctx.strokeStyle = '#3a4a5c';
+            sctx.strokeStyle = '#cbd5e1';
             sctx.lineWidth = 1;
             sctx.beginPath();
             for (let x = 20; x < sceneView.width - 12; x += 26) {
@@ -421,18 +422,18 @@
         function drawRuler(geometry) {
             const yStep = niceStep(geometry.hMax);
             const decimals = tickDecimals(yStep);
-            sctx.strokeStyle = '#7b8ea3';
+            sctx.strokeStyle = '#94a3b8';
             sctx.lineWidth = 2;
             sctx.beginPath();
             sctx.moveTo(geometry.originX, geometry.plotTop);
             sctx.lineTo(geometry.originX, geometry.originY);
             sctx.stroke();
-            sctx.fillStyle = '#8899aa';
+            sctx.fillStyle = '#6b7280';
             sctx.font = '11px system-ui, sans-serif';
             sctx.textAlign = 'right';
             for (let m = 0; m <= geometry.hMax + yStep * 0.001; m += yStep) {
                 const py = yToScreen(geometry, m);
-                sctx.strokeStyle = '#7b8ea3';
+                sctx.strokeStyle = '#94a3b8';
                 sctx.lineWidth = 1;
                 sctx.beginPath();
                 sctx.moveTo(geometry.originX - 5, py);
@@ -442,7 +443,7 @@
             }
             sctx.textAlign = 'left';
             sctx.fillText('y/m', geometry.originX - 40, geometry.plotTop - 10);
-            sctx.fillStyle = '#667788';
+            sctx.fillStyle = '#6b7280';
             sctx.fillText('高度以离地计，a 以竖直向上为正', geometry.originX + 8, geometry.plotTop + 14);
         }
 
@@ -452,13 +453,13 @@
                 const h = k * 3;
                 if (h > geometry.hMax + 1e-9) break;
                 const py = yToScreen(geometry, h);
-                sctx.strokeStyle = 'rgba(123, 142, 163, 0.22)';
+                sctx.strokeStyle = 'rgba(148, 163, 184, 0.45)';
                 sctx.lineWidth = 1;
                 sctx.beginPath();
                 sctx.moveTo(geometry.originX + 2, py);
                 sctx.lineTo(sceneView.width - 8, py);
                 sctx.stroke();
-                sctx.fillStyle = '#667788';
+                sctx.fillStyle = '#6b7280';
                 sctx.textAlign = 'left';
                 sctx.fillText((k + 1) + 'F', sceneView.width - PAD.right + 4, py + 3);
             }
@@ -467,7 +468,7 @@
         function drawTopLine(geometry) {
             const py = yToScreen(geometry, heightOf());
             sctx.save();
-            sctx.strokeStyle = 'rgba(51, 221, 204, 0.55)';
+            sctx.strokeStyle = 'rgba(13, 148, 136, 0.55)';
             sctx.lineWidth = 2;
             sctx.setLineDash([7, 7]);
             sctx.beginPath();
@@ -475,7 +476,7 @@
             sctx.lineTo(sceneView.width - 14, py);
             sctx.stroke();
             sctx.restore();
-            sctx.fillStyle = '#33ddcc';
+            sctx.fillStyle = '#0d9488';
             sctx.font = '12px system-ui, sans-serif';
             sctx.textAlign = 'right';
             sctx.fillText('上行高度 H = ' + heightOf().toFixed(1) + ' m', sceneView.width - 88, py - 10);
@@ -495,29 +496,29 @@
             const x = geometry.cabinX - CABIN_W / 2;
             const y = floorY - CABIN_H;
             // 悬挂导轨与吊索
-            sctx.strokeStyle = '#3a4a5c';
+            sctx.strokeStyle = '#cbd5e1';
             sctx.lineWidth = 2;
             sctx.beginPath();
             sctx.moveTo(geometry.cabinX, geometry.plotTop);
             sctx.lineTo(geometry.cabinX, y);
             sctx.stroke();
             // 轿厢
-            sctx.fillStyle = 'rgba(35, 60, 85, 0.92)';
-            sctx.strokeStyle = '#3388dd';
+            sctx.fillStyle = '#dbeafe';
+            sctx.strokeStyle = '#2563eb';
             sctx.lineWidth = 2;
             roundRect(sctx, x, y, CABIN_W, CABIN_H, 6);
             sctx.fill();
             sctx.stroke();
             // 体重计
-            sctx.fillStyle = '#12263c';
-            sctx.strokeStyle = '#7b8ea3';
+            sctx.fillStyle = '#e2e8f0';
+            sctx.strokeStyle = '#94a3b8';
             sctx.lineWidth = 1;
             roundRect(sctx, geometry.cabinX - 24, floorY - 9, 48, 9, 2);
             sctx.fill();
             sctx.stroke();
             // 简化人形（在加高后的轿厢内垂直居中）
-            sctx.strokeStyle = '#dceeff';
-            sctx.fillStyle = '#dceeff';
+            sctx.strokeStyle = '#1f2937';
+            sctx.fillStyle = '#1f2937';
             sctx.lineWidth = 3;
             sctx.lineCap = 'round';
             sctx.beginPath(); // 头
@@ -574,7 +575,7 @@
             const centerY = cabin.y + CABIN_H / 2;
             sctx.font = 'bold 13px system-ui, sans-serif';
             sctx.textAlign = 'right';
-            sctx.fillStyle = '#ff9933';
+            sctx.fillStyle = '#ea580c';
             const aX = geometry.cabinX - CABIN_W / 2 - 18;
             const aLen = Math.min(Math.abs(aShow) * A_ARROW_SCALE, A_ARROW_MAX);
             const aText = aShow === 0
@@ -582,7 +583,7 @@
                 : 'a = ' + (aShow > 0 ? '+' : '-') + Math.abs(aShow).toFixed(1) + ' m/s²';
             if (aLen >= 2) {
                 const dir = aShow >= 0 ? -1 : 1;
-                drawArrow(aX, centerY, aX, centerY + dir * aLen, '#ff9933');
+                drawArrow(aX, centerY, aX, centerY + dir * aLen, '#ea580c');
             }
             sctx.fillText(aText, aX - 10, readingLabelY(geometry, cabin));
         }
@@ -599,12 +600,12 @@
 
         function drawEndMark(geometry) {
             if (state !== 'ended') return;
-            sctx.strokeStyle = '#66aaff';
+            sctx.strokeStyle = '#2563eb';
             sctx.lineWidth = 2;
             sctx.beginPath();
             sctx.arc(geometry.cabinX, geometry.originY, 12, 0, Math.PI * 2);
             sctx.stroke();
-            sctx.fillStyle = '#dceeff';
+            sctx.fillStyle = '#1f2937';
             sctx.font = '12px system-ui, sans-serif';
             sctx.textAlign = 'center';
             sctx.fillText('已返回地面', geometry.cabinX - 90, geometry.originY - 10);
@@ -645,19 +646,19 @@
             for (let i = iStart; i <= iEnd; i++) {
                 const val = i * yStep;
                 const py = yOfVal(val);
-                ctx.strokeStyle = '#1f2d3d';
+                ctx.strokeStyle = '#e5e7eb';
                 ctx.lineWidth = 1;
                 ctx.beginPath();
                 ctx.moveTo(padL, py);
                 ctx.lineTo(padL + plotW, py);
                 ctx.stroke();
-                ctx.fillStyle = '#8899aa';
+                ctx.fillStyle = '#6b7280';
                 ctx.textAlign = 'right';
                 ctx.fillText(val.toFixed(yDecimals), padL - 6, py + 3);
             }
             if (yMin < 0 && yMax > 0) {
                 const py0 = yOfVal(0);
-                ctx.strokeStyle = '#7b8ea3';
+                ctx.strokeStyle = '#94a3b8';
                 ctx.lineWidth = 1.5;
                 ctx.beginPath();
                 ctx.moveTo(padL, py0);
@@ -667,7 +668,7 @@
             if (opts && opts.refLine !== undefined) {
                 const pyR = yOfVal(opts.refLine);
                 ctx.save();
-                ctx.strokeStyle = opts.refColor || '#33ddcc';
+                ctx.strokeStyle = opts.refColor || '#0d9488';
                 ctx.lineWidth = 1.5;
                 ctx.setLineDash([6, 5]);
                 ctx.beginPath();
@@ -675,7 +676,7 @@
                 ctx.lineTo(padL + plotW, pyR);
                 ctx.stroke();
                 ctx.restore();
-                ctx.fillStyle = opts.refColor || '#33ddcc';
+                ctx.fillStyle = opts.refColor || '#0d9488';
                 ctx.textAlign = 'right';
                 ctx.fillText(opts.refLabel || 'G = mg', padL + plotW - 4, pyR - 5);
             }
@@ -685,17 +686,17 @@
             ctx.textAlign = 'center';
             for (let tt = 0; tt <= tMax + tStep * 0.001; tt += tStep) {
                 const px = xOfTime(tt);
-                ctx.strokeStyle = '#1f2d3d';
+                ctx.strokeStyle = '#e5e7eb';
                 ctx.lineWidth = 1;
                 ctx.beginPath();
                 ctx.moveTo(px, padT);
                 ctx.lineTo(px, padT + plotH);
                 ctx.stroke();
-                ctx.fillStyle = '#8899aa';
+                ctx.fillStyle = '#6b7280';
                 ctx.fillText(tt.toFixed(tDecimals), px, padT + plotH + 16);
             }
 
-            ctx.strokeStyle = '#7b8ea3';
+            ctx.strokeStyle = '#94a3b8';
             ctx.lineWidth = 2;
             ctx.beginPath();
             ctx.moveTo(padL, padT);
@@ -703,13 +704,13 @@
             ctx.lineTo(padL + plotW, padT + plotH);
             ctx.stroke();
 
-            ctx.fillStyle = '#8899aa';
+            ctx.fillStyle = '#6b7280';
             ctx.textAlign = 'left';
             ctx.fillText(yLabel, padL + 6, padT + 12);
             ctx.textAlign = 'right';
             ctx.fillText('t/s', padL + plotW, view.height - 8);
 
-            ctx.strokeStyle = '#3388dd';
+            ctx.strokeStyle = '#2563eb';
             ctx.lineWidth = 2.5;
             ctx.lineJoin = 'round';
             ctx.beginPath();
@@ -727,13 +728,13 @@
             const frac = tMax > 0 ? Math.min(t / tMax, 1) : 0;
             const pxNow = padL + frac * plotW;
             const pyNow = yOfVal(fn(t));
-            ctx.strokeStyle = 'rgba(51, 136, 221, 0.4)';
+            ctx.strokeStyle = 'rgba(37, 99, 235, 0.35)';
             ctx.lineWidth = 1;
             ctx.beginPath();
             ctx.moveTo(pxNow, padT);
             ctx.lineTo(pxNow, padT + plotH);
             ctx.stroke();
-            ctx.fillStyle = '#ff5555';
+            ctx.fillStyle = '#dc2626';
             ctx.beginPath();
             ctx.arc(pxNow, pyNow, 4.5, 0, Math.PI * 2);
             ctx.fill();
@@ -743,7 +744,7 @@
             if (lx > padL + plotW - 48) lx = pxNow - 52;
             if (ly < padT + 10) ly = pyNow + 16;
             ctx.textAlign = 'left';
-            ctx.fillStyle = '#dde6f0';
+            ctx.fillStyle = '#1f2937';
             ctx.fillText(valText, lx, ly);
         }
 
@@ -753,7 +754,7 @@
             drawChart(vtView, vtCtx, (time) => phaseAt(time).v, -vMaxAxis, vMaxAxis, ' m/s', 'v (m/s)', null);
             drawChart(ftView, ftCtx, (time) => phaseAt(time).F, 0, fMax, ' N', 'F (N)', {
                 refLine: gForceOf(),
-                refColor: '#33ddcc',
+                refColor: '#0d9488',
                 refLabel: '实重 G = ' + gForceOf().toFixed(0) + ' N',
             });
         }
