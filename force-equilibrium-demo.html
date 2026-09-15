@@ -198,8 +198,8 @@
                 <div class="group-title" id="parameterTitle">参数设定</div>
                 <div class="param-row">
                     <label for="pTheta">目标夹角 θ</label>
-                    <input id="pTheta" type="range" min="0" max="85" value="60" step="1" aria-label="绳与竖直方向的目标夹角，可用拖拽小球联动">
-                    <div class="val" id="pThetaVal">60°</div>
+                    <input id="pTheta" type="range" min="0" max="60" value="45" step="1" aria-label="绳与竖直方向的目标夹角，可用拖拽小球联动">
+                    <div class="val" id="pThetaVal">45°</div>
                 </div>
                 <div class="param-row">
                     <label for="pMass">质量 m</label>
@@ -213,7 +213,7 @@
                 </div>
                 <div class="fixed-note">
                     平衡条件：<b>ΣFx = 0，ΣFy = 0</b>（共点力合力为零）；"缓慢移动" = 准静态过程，每一时刻均为平衡态。<br>
-                    平衡方程：<b>F = mg·tanθ，T = mg/cosθ</b>（g = 10 m/s² 固定）；θ 增大 → F、T 都增大，<b>T = mg/cosθ ≥ mg 恒成立</b>；θ→90° 时 F、T → ∞（绳越接近水平越难拉）。<br>
+                    平衡方程：<b>F = mg·tanθ，T = mg/cosθ</b>（g = 10 m/s² 固定）；θ 增大 → F、T 都增大，<b>T = mg/cosθ ≥ mg 恒成立</b>；θ→90° 时 F、T → ∞（绳越接近水平越难拉；图示与曲线范围取 0~60°，其中重力箭头长度恒定不变）。<br>
                     三力平衡 ⇒ <b>任意两力的合力与第三力等大反向</b>：G 与 F 的合力 = −T（沿绳延长线）；三力首尾相接构成封闭三角形。<br>
                     正交分解：竖直分量 <b>Ty = T·cosθ = mg</b>（恒"托住"重力），水平分量 <b>Tx = T·sinθ = F</b>。（拓展：相似三角形法 T/L = mg/(L·cosθ)）
                 </div>
@@ -255,7 +255,8 @@
         const BASE_HEIGHT = 520;
         const CHART_ASPECT = 20 / 9;
         const g = 10;                       // 系列惯例：固定值
-        const TH_MAX = 85;                  // 避开 θ→90° 发散
+        const TH_MAX = 60;                  // 保证 G 箭头恒长时 T 箭头不出绳长（θ→90° 发散，见图表与说明）
+        const G_PX = 100;                   // 重力箭头像素长度：G 大小恒定，图示线段长度保持不变
         const O = { x: 330, y: 70 };        // 悬点（画布逻辑坐标）
         const STR = 260;                    // 绳长（px）
         const BALL_R = 13;
@@ -265,7 +266,7 @@
         const C_REF = 'rgba(255,255,255,0.25)';
 
         // ---------- 参数状态 ----------
-        const eq = { theta: 60, mass: 1 };
+        const eq = { theta: 45, mass: 1 };
         let phase = 'idle';             // idle | running | paused | ended
         const scan = { active: false, value: 0 };
         let raf = null, lastTs = null, progress = 0;
@@ -339,12 +340,8 @@
             const F = calcF(m, th), T = calcT(m, th), G = m * g;
             const ball = ballPos(th);
 
-            // 自适应比例系数：F/G/T 矢量与摆几何全部入画，T 箭头不越过 O
-            const k = Math.min(
-                (BASE_WIDTH - 30 - ball.x - 60) / F,
-                (BASE_HEIGHT - 44 - ball.y) / G,
-                0.9 * STR / T,
-            );
+            // 固定比例：重力箭头恒为 G_PX 像素（G 大小不变则图示长度不变），m 仅改变比例尺换算
+            const k = G_PX / G;
             const Fk = F * k, Gk = G * k, Tk = T * k;
             const s = Math.sin(th * RAD), c = Math.cos(th * RAD);
 
@@ -435,7 +432,7 @@
                 sctx.fillStyle = '#dceeff';
                 sctx.font = '11.5px system-ui, sans-serif';
                 // 小夹角时角点贴近 G 矢量端点，标注移至角点右侧避让 G 标注
-                if (th < 25) {
+                if (th < 35) {
                     sctx.textAlign = 'left';
                     sctx.fillText('G+F = −T', corner.x + 14, corner.y + 4);
                 } else {
@@ -603,10 +600,10 @@
         function drawCharts() {
             const m = eq.mass;
             const th = dispTheta();
-            const yMax = Math.ceil(1.05 * m * g / Math.cos(TH_MAX * RAD) / 10) * 10;
+            const yMax = Math.ceil(1.05 * m * g / Math.cos(TH_MAX * RAD) / 5) * 5;
             const gRef = { v: m * g, color: C_G, label: 'G = mg = ' + (m * g).toFixed(1) + ' N' };
             drawCurveChart(views.L, ctxL, {
-                xMin: 0, xMax: TH_MAX, xStep: 15, xUnit: '°', xLabel: 'θ',
+                xMin: 0, xMax: TH_MAX, xStep: 10, xUnit: '°', xLabel: 'θ',
                 yMin: 0, yMax, yLabel: 'N',
                 series: [
                     { f: (x) => calcF(m, x), color: C_F, cursorFmt: (v) => 'F=' + v.toFixed(2) },
@@ -616,7 +613,7 @@
                 cursorX: th,
             });
             drawCurveChart(views.R, ctxR, {
-                xMin: 0, xMax: TH_MAX, xStep: 15, xUnit: '°', xLabel: 'θ',
+                xMin: 0, xMax: TH_MAX, xStep: 10, xUnit: '°', xLabel: 'θ',
                 yMin: 0, yMax, yLabel: 'N',
                 series: [
                     { f: (x) => calcT(m, x) * Math.sin(x * RAD), color: C_F, cursorFmt: (v) => 'Tx=' + v.toFixed(2) },
