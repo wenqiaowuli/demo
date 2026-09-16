@@ -39,14 +39,11 @@
             background-color: #ffffff;
         }
         .control-panel {
-            margin-top: 14px;
+            margin-top: 16px;
             width: 100%;
             display: grid;
-            grid-template-columns: minmax(240px, 1fr) minmax(280px, 1.25fr);
-            gap: 14px;
-        }
-        @media (max-width: 720px) {
-            .control-panel { grid-template-columns: 1fr; }
+            grid-template-columns: 1fr;
+            gap: 0;
         }
         .param-group,
         .data-group {
@@ -55,6 +52,10 @@
             border-radius: 10px;
             padding: 14px 16px;
             box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+        }
+        .data-group {
+            width: 100%;
+            margin-top: 16px;
         }
         .chart-panel {
             background: transparent;
@@ -100,10 +101,10 @@
         .fixed-note b { color: #b45309; font-weight: 600; }
         .data-grid {
             display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
+            grid-template-columns: repeat(5, minmax(0, 1fr));
             gap: 9px;
         }
-        @media (max-width: 560px) {
+        @media (max-width: 800px) {
             .data-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         }
         .data-item {
@@ -145,6 +146,7 @@
         }
         .play-bar {
             margin-top: 12px;
+            width: 100%;
             display: flex;
             align-items: center;
             gap: 10px;
@@ -201,17 +203,6 @@
         <h1>竖直上抛运动演示</h1>
         <div class="canvas-wrap">
             <canvas id="scene" role="img" aria-label="竖直上抛运动演示"></canvas>
-            <div class="play-bar">
-                <button id="btnStart" type="button">开始</button>
-                <button id="btnPause" type="button" disabled>暂停</button>
-                <button id="btnReset" type="button">重置</button>
-                <select id="speed" title="播放速度" aria-label="播放速度倍率">
-                    <option value="0.5" selected>0.5×</option>
-                    <option value="1">1×</option>
-                    <option value="2">2×</option>
-                    <option value="4">4×</option>
-                </select>
-            </div>
         </div>
         <div class="charts-row">
             <section class="chart-panel">
@@ -223,12 +214,28 @@
                 <canvas id="stChart" role="img" aria-label="位移-时间图像，开口向下的抛物线"></canvas>
             </section>
         </div>
-        <section class="formula-card">
-            <div class="group-title">公式与判定</div>
-            <div class="fixed-note">
-                    重力加速度 <b>g = 10 m/s²</b>（固定值），以竖直向上为正方向。<br>
-                    公式：y = v₀t − ½gt²，v = v₀ − gt
-                </div>
+        <div class="play-bar">
+            <button id="btnStart" type="button">开始</button>
+            <button id="btnPause" type="button" disabled>暂停</button>
+            <button id="btnReset" type="button">重置</button>
+            <select id="speed" title="播放速度" aria-label="播放速度倍率">
+                <option value="0.5" selected>0.5×</option>
+                <option value="1">1×</option>
+                <option value="2">2×</option>
+                <option value="4">4×</option>
+            </select>
+        </div>
+        <section class="data-group" id="dataGroup" aria-labelledby="dataTitle" aria-live="polite">
+            <div class="group-title" id="dataTitle">实时数值</div>
+            <div class="data-grid">
+                <div class="data-item"><span>时间 t</span><b id="time">0.00 s</b></div>
+                <div class="data-item"><span>高度 y</span><b id="height">0.00 m</b></div>
+                <div class="data-item"><span>速度 v（向上为正）</span><b id="vel">20.00 m/s</b></div>
+                <div class="data-item"><span>加速度 a</span><b id="acc">-10.00 m/s²</b></div>
+                <div class="data-item"><span>飞行时间 T = 2v₀/g</span><b id="flightTime">4.00 s</b></div>
+                <div class="data-item"><span>落地速度（大小 = v₀）</span><b id="landVel">20.00 m/s</b></div>
+                <div class="data-item span-full"><span>最大高度 H = v₀²/2g（最高点处 v = 0）</span><b id="maxHeight">20.00 m</b></div>
+            </div>
         </section>
         <div class="control-panel">
             <section class="param-group" aria-labelledby="parameterTitle">
@@ -238,20 +245,19 @@
                     <input id="v0" type="range" min="5" max="40" value="20" step="1">
                     <div class="val" id="v0Val">20 m/s</div>
                 </div>
-                                            </section>
-            <section class="data-group" aria-labelledby="dataTitle" aria-live="polite">
-                <div class="group-title" id="dataTitle">实时数值</div>
-                <div class="data-grid">
-                    <div class="data-item"><span>时间 t</span><b id="time">0.00 s</b></div>
-                    <div class="data-item"><span>高度 y</span><b id="height">0.00 m</b></div>
-                    <div class="data-item"><span>速度 v（向上为正）</span><b id="vel">20.00 m/s</b></div>
-                    <div class="data-item"><span>加速度 a</span><b id="acc">-10.00 m/s²</b></div>
-                    <div class="data-item"><span>飞行时间 T = 2v₀/g</span><b id="flightTime">4.00 s</b></div>
-                    <div class="data-item"><span>落地速度（大小 = v₀）</span><b id="landVel">20.00 m/s</b></div>
-                    <div class="data-item span-full"><span>最大高度 H = v₀²/2g（最高点处 v = 0）</span><b id="maxHeight">20.00 m</b></div>
-                </div>
             </section>
         </div>
+        <section class="formula-card">
+            <div class="group-title">推导与判断</div>
+            <div class="fixed-note">
+                重力加速度 <b>g = 10 m/s²</b>（固定值），以竖直向上为正方向。<br>
+                公式：y = v₀t − ½gt²，v = v₀ − gt<br>
+                上升阶段：v > 0，减速上升；最高点：v = 0；下落阶段：v < 0，加速下落。<br>
+                飞行时间 T = 2v₀/g：上升时间与下落时间<b>相等</b>，均为 v₀/g。<br>
+                最大高度 H = v₀²/2g：最高点处速度为零。<br>
+                落地速度：大小等于 v₀，方向向下（v = −v₀）。
+            </div>
+        </section>
                 <div class="legend">
             <span style="color:#dc2626">→ 速度 v（上升向上、下落反向）</span>
             <span style="color:#ea580c">→ 加速度 a = g（恒定向下）</span>
