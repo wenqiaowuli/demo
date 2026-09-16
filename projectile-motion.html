@@ -42,11 +42,8 @@
             margin-top: 16px;
             width: 100%;
             display: grid;
-            grid-template-columns: minmax(240px, 1fr) minmax(280px, 1.25fr);
-            gap: 14px;
-        }
-        @media (max-width: 720px) {
-            .control-panel { grid-template-columns: 1fr; }
+            grid-template-columns: 1fr;
+            gap: 0;
         }
         .param-group,
         .data-group {
@@ -55,6 +52,10 @@
             border-radius: 10px;
             padding: 14px 16px;
             box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+        }
+        .data-group {
+            width: 100%;
+            margin-top: 16px;
         }
         .group-title {
             font-size: 12px;
@@ -94,10 +95,10 @@
         .toggle input { accent-color: #2563eb; }
         .data-grid {
             display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
+            grid-template-columns: repeat(5, minmax(0, 1fr));
             gap: 9px;
         }
-        @media (max-width: 560px) {
+        @media (max-width: 800px) {
             .data-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         }
         .data-item {
@@ -182,13 +183,14 @@
         }
         .legend span { margin: 0 6px; }
     
-	.play-bar {
-	    margin-top: 12px;
-	    display: flex;
-	    align-items: center;
-	    gap: 10px;
-	    flex-wrap: wrap;
-	}
+		.play-bar {
+		    margin-top: 12px;
+		    width: 100%;
+		    display: flex;
+		    align-items: center;
+		    gap: 10px;
+		    flex-wrap: wrap;
+		}
 	.play-bar select {
 	    border: 1px solid #e5e7eb;
 	    border-radius: 8px;
@@ -198,27 +200,17 @@
 	    color: #1f2937;
 	    cursor: pointer;
 	}
-.formula-card {
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    padding: 16px 20px;
-    margin: 14px 0;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-}
-.formula-card .group-title {
-    font-size: 15px;
-    font-weight: 600;
-    color: #1f2937;
-    margin-bottom: 10px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid #e5e7eb;
-}
-.formula-card .fixed-note {
-    font-size: 13px;
-    line-height: 1.7;
-    color: #4b5563;
-}
+	.formula-card {
+	    margin-top: 16px;
+	    width: 100%;
+	    background: #ffffff;
+	    border: 1px solid #e5e7eb;
+	    border-radius: 10px;
+	    padding: 14px 16px;
+	    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+	}
+	.formula-card .group-title { margin-bottom: 8px; }
+	.formula-card .fixed-note { margin-top: 0; }
     </style>
 </head>
 <body>
@@ -226,11 +218,6 @@
         <h1>平抛运动演示</h1>
         <div class="canvas-wrap">
             <canvas id="canvas" role="img" aria-label="平抛运动轨迹演示"></canvas>
-            <div class="play-bar">
-                <button id="btnStart" type="button">开始</button>
-            <button id="btnPause" type="button" disabled>暂停</button>
-            <button id="btnReset" type="button">重置</button>
-            </div>
         </div>
         <div class="charts-row">
             <section class="chart-panel">
@@ -242,10 +229,31 @@
                 <canvas id="stChart" role="img" aria-label="位移-时间图像：水平位移与竖直位移均为正，分别呈直线与抛物线增大"></canvas>
             </section>
         </div>
-        
-        <section class="formula-card">
-            <div class="group-title">公式与判定</div>
-            
+        <div class="play-bar">
+            <button id="btnStart" type="button">开始</button>
+            <button id="btnPause" type="button" disabled>暂停</button>
+            <button id="btnReset" type="button">重置</button>
+            <select id="speed" title="播放速度" aria-label="播放速度倍率">
+                <option value="0.5" selected>0.5×</option>
+                <option value="1">1×</option>
+                <option value="2">2×</option>
+                <option value="4">4×</option>
+            </select>
+        </div>
+        <section class="data-group" id="dataGroup" aria-labelledby="dataTitle" aria-live="polite">
+            <div class="group-title" id="dataTitle">实时数值</div>
+            <div class="data-grid">
+                <div class="data-item"><span>时间 t</span><b id="time">0.00 s</b></div>
+                <div class="data-item"><span>水平位移 x</span><b id="positionX">0.00 m</b></div>
+                <div class="data-item"><span>离地高度</span><b id="positionY">45.00 m</b></div>
+                <div class="data-item"><span>竖直位移 Δy</span><b id="dyDisp">0.00 m</b></div>
+                <div class="data-item"><span>水平速度 vₓ</span><b id="vx">20.00 m/s</b></div>
+                <div class="data-item"><span>竖直速度 vᵧ</span><b id="vy">0.00 m/s</b></div>
+                <div class="data-item"><span>合速度 v</span><b id="vv">20.00 m/s</b></div>
+                <div class="data-item"><span>方向角 θ</span><b id="vt">0.0°</b></div>
+                <div class="data-item"><span>落地时间</span><b id="flightTime">3.00 s</b></div>
+                <div class="data-item"><span>水平射程</span><b id="range">60.00 m</b></div>
+            </div>
         </section>
         <div class="control-panel">
             <section class="param-group" aria-labelledby="parameterTitle">
@@ -264,24 +272,18 @@
                     <input id="showPreview" type="checkbox" checked>
                     显示理论轨迹
                 </label>
-                
-            </section>
-            <section class="data-group" aria-labelledby="dataTitle" aria-live="polite">
-                <div class="group-title" id="dataTitle">实时数值</div>
-                <div class="data-grid">
-                    <div class="data-item"><span>时间 t</span><b id="time">0.00 s</b></div>
-                    <div class="data-item"><span>水平位移 x</span><b id="positionX">0.00 m</b></div>
-                    <div class="data-item"><span>离地高度</span><b id="positionY">45.00 m</b></div>
-                    <div class="data-item"><span>竖直位移 Δy</span><b id="dyDisp">0.00 m</b></div>
-                    <div class="data-item"><span>水平速度 vₓ</span><b id="vx">20.00 m/s</b></div>
-                    <div class="data-item"><span>竖直速度 vᵧ</span><b id="vy">0.00 m/s</b></div>
-                    <div class="data-item"><span>合速度 v</span><b id="vv">20.00 m/s</b></div>
-                    <div class="data-item"><span>方向角 θ</span><b id="vt">0.0°</b></div>
-                    <div class="data-item"><span>落地时间</span><b id="flightTime">3.00 s</b></div>
-                    <div class="data-item"><span>水平射程</span><b id="range">60.00 m</b></div>
-                </div>
             </section>
         </div>
+        <section class="formula-card">
+            <div class="group-title">推导与判断</div>
+            <div class="fixed-note">
+                重力加速度 <b>g = 10 m/s²</b>（固定值）。水平方向匀速直线，竖直方向自由落体。<br>
+                正方向：水平向右为 +x，竖直<b>向下</b>为 +y（vᵧ、Δy 均为正）。<br>
+                公式：vₓ = v₀（恒定），vᵧ = gt，x = v₀t，Δy = ½gt²<br>
+                落地时间 T = √(2h/g)：仅由<b>高度 h 决定</b>，与初速度 v₀ 无关。<br>
+                水平射程 X = v₀T = v₀√(2h/g)：与<b>初速度 v₀ 和高度 h</b> 均有关。
+            </div>
+        </section>
         <div class="legend">
             <span>正方向：水平向右为 +x，竖直向下为 +y（vᵧ、Δy 均为正）</span>
             <span><span style="color:#16a34a">●</span> 水平分速度 vₓ（正，恒定）</span>
@@ -313,6 +315,7 @@
         const btnStart = document.getElementById('btnStart');
         const btnPause = document.getElementById('btnPause');
         const btnReset = document.getElementById('btnReset');
+        const inputSpeed = document.getElementById('speed');
         const vtCanvas = document.getElementById('vtChart');
         const vtCtx = vtCanvas.getContext('2d');
         const stCanvas = document.getElementById('stChart');
@@ -343,6 +346,7 @@
 
         function hMeters() { return Number(inputH.value); }
         function v0Meters() { return Number(inputV0.value); }
+        function speedOf() { return Number(inputSpeed.value); }
         function xOf(time) { return v0Meters() * time; }
         function yOf(time) { return hMeters() - 0.5 * g * time * time; }  // 离地高度（正值，随下落减小）
         function dyOf(time) { return 0.5 * g * time * time; }  // 竖直位移，竖直向下为正
@@ -775,7 +779,7 @@
         function frame(timestamp) {
             if (state !== STATE.RUNNING) return;
             if (lastTs === null) lastTs = timestamp;
-            const dt = Math.min((timestamp - lastTs) / 1000, 0.05);
+            const dt = Math.min((timestamp - lastTs) / 1000, 0.05) * speedOf();
             lastTs = timestamp;
             t = Math.min(t + dt, tEnd());
             const ended = t >= tEnd();
