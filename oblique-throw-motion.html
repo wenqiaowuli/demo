@@ -56,6 +56,10 @@
             padding: 14px 16px;
             box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
         }
+        .data-group {
+            width: 100%;
+            margin-top: 16px;
+        }
         .chart-panel {
             background: transparent;
             border: none;
@@ -77,11 +81,8 @@
             margin-top: 16px;
             width: 100%;
             display: grid;
-            grid-template-columns: minmax(240px, 1fr) minmax(280px, 1.25fr);
-            gap: 14px;
-        }
-        @media (max-width: 720px) {
-            .control-panel { grid-template-columns: 1fr; }
+            grid-template-columns: 1fr;
+            gap: 0;
         }
         .fixed-note {
             margin-top: 8px;
@@ -215,17 +216,6 @@
         <h1>斜抛运动演示</h1>
         <div class="canvas-wrap">
             <canvas id="canvas" role="img" aria-label="斜抛运动轨迹演示"></canvas>
-            <div class="play-bar">
-                <button id="btnStart" type="button">开始</button>
-                <button id="btnPause" type="button" disabled>暂停</button>
-                <button id="btnReset" type="button">重置</button>
-                <select id="speed" title="播放速度" aria-label="播放速度倍率">
-                    <option value="0.5" selected>0.5×</option>
-                    <option value="1">1×</option>
-                    <option value="2">2×</option>
-                    <option value="4">4×</option>
-                </select>
-            </div>
         </div>
         <div class="charts-row">
             <section class="chart-panel">
@@ -237,6 +227,32 @@
                 <canvas id="stChart" role="img" aria-label="水平位移与竖直位移随时间变化图像"></canvas>
             </section>
         </div>
+        <div class="play-bar">
+            <button id="btnStart" type="button">开始</button>
+            <button id="btnPause" type="button" disabled>暂停</button>
+            <button id="btnReset" type="button">重置</button>
+            <select id="speed" title="播放速度" aria-label="播放速度倍率">
+                <option value="0.5" selected>0.5×</option>
+                <option value="1">1×</option>
+                <option value="2">2×</option>
+                <option value="4">4×</option>
+            </select>
+        </div>
+        <section class="data-group" id="dataGroup" aria-labelledby="dataTitle" aria-live="polite">
+            <div class="group-title" id="dataTitle">实时数值</div>
+            <div class="data-grid">
+                <div class="data-item"><span>时间 t</span><b id="time">0.00 s</b></div>
+                <div class="data-item"><span>水平位移 x</span><b id="positionX">0.00 m</b></div>
+                <div class="data-item"><span>竖直位移 y（向上为正）</span><b id="positionY">0.00 m</b></div>
+                <div class="data-item"><span>水平速度 vₓ</span><b id="vx">14.14 m/s</b></div>
+                <div class="data-item"><span>竖直速度 vᵧ（向上为正）</span><b id="vy">14.14 m/s</b></div>
+                <div class="data-item"><span>合速度 v</span><b id="vv">20.00 m/s</b></div>
+                <div class="data-item"><span>方向角 γ</span><b id="gamma">45.0°</b></div>
+                <div class="data-item"><span>飞行时间 T</span><b id="flightTime">2.83 s</b></div>
+                <div class="data-item"><span>水平射程 X</span><b id="range">40.00 m</b></div>
+                <div class="data-item span-full"><span>最大高度 H（最高点处 vᵧ = 0）</span><b id="maxHeight">10.00 m</b></div>
+            </div>
+        </section>
         <div class="control-panel">
             <section class="param-group" aria-labelledby="parameterTitle">
                 <div class="group-title" id="parameterTitle">参数设定</div>
@@ -263,24 +279,9 @@
                     显示最高点标记
                 </label>
                             </section>
-            <section class="data-group" id="dataGroup" aria-labelledby="dataTitle" aria-live="polite">
-                <div class="group-title" id="dataTitle">实时数值</div>
-                <div class="data-grid">
-                    <div class="data-item"><span>时间 t</span><b id="time">0.00 s</b></div>
-                    <div class="data-item"><span>水平位移 x</span><b id="positionX">0.00 m</b></div>
-                    <div class="data-item"><span>竖直位移 y（向上为正）</span><b id="positionY">0.00 m</b></div>
-                    <div class="data-item"><span>水平速度 vₓ</span><b id="vx">14.14 m/s</b></div>
-                    <div class="data-item"><span>竖直速度 vᵧ（向上为正）</span><b id="vy">14.14 m/s</b></div>
-                    <div class="data-item"><span>合速度 v</span><b id="vv">20.00 m/s</b></div>
-                    <div class="data-item"><span>方向角 γ</span><b id="gamma">45.0°</b></div>
-                    <div class="data-item"><span>飞行时间 T</span><b id="flightTime">2.83 s</b></div>
-                    <div class="data-item"><span>水平射程 X</span><b id="range">40.00 m</b></div>
-                    <div class="data-item span-full"><span>最大高度 H（最高点处 vᵧ = 0）</span><b id="maxHeight">10.00 m</b></div>
-                </div>
-            </section>
         </div>
         <section class="formula-card">
-            <div class="group-title">公式与判定</div>
+            <div class="group-title">推导与判断</div>
             <div class="fixed-note">
                     重力加速度 <b>g = 10 m/s²</b>（固定值）。水平方向匀速直线，竖直方向竖直上抛。<br>
                     正方向：水平向右为 +x，竖直<b>向上</b>为 +y（过最高点后 vᵧ、γ 为负）。<br>
