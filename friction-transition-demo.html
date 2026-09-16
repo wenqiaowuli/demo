@@ -240,10 +240,10 @@
             <div class="group-title" id="dataTitle">实时数值</div>
             <div class="data-grid">
                 <div class="data-item"><span>时间 t</span><b id="time">0.00 s</b></div>
-                <div class="data-item"><span>拉力 F</span><b id="pullF">0.00 N</b></div>
-                <div class="data-item"><span>摩擦力 f</span><b id="fricF">0.00 N</b></div>
+                <div class="data-item"><span>拉力 F</span><b id="pullF" style="color:#2563eb">0.00 N</b></div>
+                <div class="data-item"><span>摩擦力 f</span><b id="fricF" style="color:#ea580c">0.00 N</b></div>
                 <div class="data-item"><span>摩擦性质</span><b id="fricType">—</b></div>
-                <div class="data-item"><span>速度 v</span><b id="vel">0.00 m/s</b></div>
+                <div class="data-item"><span>速度 v</span><b id="vel" style="color:#16a34a">0.00 m/s</b></div>
                 <div class="data-item"><span>加速度 a</span><b id="acc">0.00 m/s²</b></div>
                 <div class="data-item"><span>位移 x</span><b id="pos">0.00 m</b></div>
                 <div class="data-item"><span>最大静摩擦力</span><b id="fMaxDisp">17.6 N</b></div>
@@ -538,7 +538,7 @@
                 const vTip = drawArrowH(bx, by - blockS / 2 - 18, 16 + Math.min(v * 8, 100), '#16a34a', 3.5);
                 sctx.fillStyle = '#16a34a';
                 sctx.font = 'bold 12px system-ui, sans-serif';
-                if (vTip) sctx.fillText('v = ' + v.toFixed(2) + ' m/s', vTip.x + 6, vTip.y + 4);
+                if (vTip) sctx.fillText('v = ' + v.toFixed(2) + ' m/s', vTip.x + 8, vTip.y - 14);
                 // 滑动标记
                 sctx.fillStyle = '#6b7280';
                 sctx.font = '11px system-ui, sans-serif';
