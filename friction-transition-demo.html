@@ -6,12 +6,14 @@
     <title>静摩擦与滑动摩擦转化演示｜高中物理</title>
     <meta name="description" content="静摩擦与滑动摩擦转化教学演示：水平拉力 F = kt 线性增大，静摩擦随拉力同步增大至最大静摩擦，起动瞬间突降为滑动摩擦，物块加速滑离。F-t 图呈现重合—突降—分离的台阶特征，v-t 图联动展示。">
     <!--
-    文件描述：静摩擦与滑动摩擦转化演示
-    物理模型：水平拉力 F = k·t 线性缓慢增大。静止阶段静摩擦 f = F（0 ≤ f ≤ μs·mg）；
-              F 达到最大静摩擦 μs·mg（临界时刻 t* = μs·mg/k）时突降为滑动摩擦 μmg，
-              此后 a = (F − μmg)/m。滑出 +20 m 边界结束。g = 10 m/s² 固定。
-    页面布局：画布 → F-t / v-t 双图 → 播放控制 → 实时数值（5 列）→ 参数设定 → 推导与判断 → 图例
+    文件描述：静摩擦与滑动摩擦转化演示（v1.2 按教材处理）
+    物理模型：水平拉力 F = k·t 线性缓慢增大。静止阶段静摩擦 f = F（被动性，上限为最大静摩擦力）；
+              F 达到最大静摩擦力（临界时刻 t* = fmax/k）时突降为滑动摩擦 μmg（教材：最大静摩擦力略大于
+              滑动摩擦力，超出比例 s 可调，s=0 对应"粗略计算取相等"的近似），此后 a = (F − μmg)/m。
+              滑出 +20 m 边界结束。g = 10 m/s² 固定。摩擦因数仅使用教材正式定义的动摩擦因数 μ。
+    页面布局：画布 → F-t / v-t 双图 → 播放控制 → 实时数值（5 列）→ 参数设定 → 推导与判断（动态） → 图例
               （参照水平直线运动演示页）。
+    颜色约定：拉力 F 蓝、摩擦力 f 橙（重合段虚线叠画）、速度 v 绿，图例/图表/场景统一。
     -->
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -90,7 +92,7 @@
             font-size: 13px;
             color: #1f2937;
             white-space: nowrap;
-            min-width: 100px;
+            min-width: 120px;
         }
         .param-row input[type=range] { flex: 1; }
         .param-row .val {
@@ -244,8 +246,8 @@
                 <div class="data-item"><span>速度 v</span><b id="vel">0.00 m/s</b></div>
                 <div class="data-item"><span>加速度 a</span><b id="acc">0.00 m/s²</b></div>
                 <div class="data-item"><span>位移 x</span><b id="pos">0.00 m</b></div>
-                <div class="data-item"><span>最大静摩擦 μ<sub>s</sub>mg</span><b id="fMaxDisp">20.0 N</b></div>
-                <div class="data-item"><span>滑动摩擦 μmg</span><b id="fKDisp">16.0 N</b></div>
+                <div class="data-item"><span>最大静摩擦力</span><b id="fMaxDisp">17.6 N</b></div>
+                <div class="data-item"><span>滑动摩擦力 μmg</span><b id="fKDisp">16.0 N</b></div>
                 <div class="data-item"><span>运动状态</span><b id="motion">待开始</b></div>
             </div>
         </section>
@@ -258,14 +260,14 @@
                     <div class="val" id="mVal">4.0 kg</div>
                 </div>
                 <div class="param-row">
-                    <label for="muS">静摩擦因数 μ<sub>s</sub></label>
-                    <input id="muS" type="range" min="0.2" max="1" value="0.5" step="0.05">
-                    <div class="val" id="muSVal">0.50</div>
-                </div>
-                <div class="param-row">
                     <label for="mu">动摩擦因数 μ</label>
                     <input id="mu" type="range" min="0.05" max="1" value="0.4" step="0.05">
                     <div class="val" id="muVal">0.40</div>
+                </div>
+                <div class="param-row">
+                    <label for="surge">最大静摩擦超出比例</label>
+                    <input id="surge" type="range" min="0" max="30" value="10" step="1">
+                    <div class="val" id="surgeVal">10 %</div>
                 </div>
                 <div class="param-row">
                     <label for="rate">拉力增长率 k</label>
@@ -275,19 +277,14 @@
             </section>
         </div>
         <section class="formula-card">
-            <div class="group-title">推导与判断</div>
-            <div class="fixed-note">
-                静摩擦力的"被动性"：<b>f = F</b>，随外力同步变化，范围 <b>0 ≤ f ≤ f<sub>max</sub> = μ<sub>s</sub>mg</b>。<br>
-                临界判断：<b>F = f<sub>max</sub></b>（t<sup>*</sup> = μ<sub>s</sub>mg/k）时物块即将滑动，此时摩擦力达到最大。<br>
-                突变判断：起动瞬间 f 由 μ<sub>s</sub>mg <b>突降</b>为 μmg（μ<sub>s</sub> &gt; μ），加速度跳变为 a = (μ<sub>s</sub> − μ)g，产生"冲刺"效果。<br>
-                滑动后：<b>a = (F − μmg)/m</b>，拉力继续增大则加速度增大，v-t 图为开口向上的曲线。<br>
-                近似说明：通常 μ<sub>s</sub> 略大于 μ，粗略计算时可取 μ<sub>s</sub> ≈ μ（此时突变量为零）。
-            </div>
+            <div class="group-title">推导与判断（随参数实时更新）</div>
+            <div class="fixed-note" id="formulaBox"></div>
         </section>
                 <div class="legend">
             <span style="color:#2563eb">—— 拉力 F = k·t</span>
-            <span style="color:#ea580c">—— 摩擦力 f（突降台阶）</span>
-            <span style="color:#6b7280">– – 最大静摩擦 μ<sub>s</sub>mg</span>
+            <span style="color:#ea580c">– – 摩擦力 f（重合段虚线，滑动段实线）</span>
+            <span style="color:#16a34a">—— 速度 v（v-t 图）</span>
+            <span style="color:#6b7280">– – 最大静摩擦力 f<sub>max</sub></span>
             <span>竖虚线：临界时刻 t<sup>*</sup></span>
             <span>⌨ 空格 = 播放/暂停　R = 重置</span>
         </div>
@@ -301,7 +298,7 @@
         const sceneView = { width: BASE_WIDTH, height: BASE_HEIGHT };
         const ftView = { width: 400, height: 180 };
         const vtView = { width: 400, height: 180 };
-        const COLOR_F = '#2563eb', COLOR_FRIC = '#ea580c', COLOR_REF = '#94a3b8';
+        const COLOR_F = '#2563eb', COLOR_FRIC = '#ea580c', COLOR_V = '#16a34a', COLOR_REF = '#94a3b8';
 
         const sceneCanvas = document.getElementById('scene');
         const sctx = sceneCanvas.getContext('2d');
@@ -310,13 +307,13 @@
         const vtCanvas = document.getElementById('vtChart');
         const vtCtx = vtCanvas.getContext('2d');
         const inputM = document.getElementById('mass');
-        const inputMuS = document.getElementById('muS');
         const inputMu = document.getElementById('mu');
+        const inputSurge = document.getElementById('surge');
         const inputK = document.getElementById('rate');
         const inputSpeed = document.getElementById('speed');
         const mVal = document.getElementById('mVal');
-        const muSVal = document.getElementById('muSVal');
         const muVal = document.getElementById('muVal');
+        const surgeVal = document.getElementById('surgeVal');
         const kVal = document.getElementById('kVal');
         const elTime = document.getElementById('time');
         const elPull = document.getElementById('pullF');
@@ -338,12 +335,12 @@
         let raf = null;
 
         function mOf() { return Number(inputM.value); }
-        function muSOf() { return Number(inputMuS.value); }
         function muOf() { return Number(inputMu.value); }
+        function surgeOf() { return Number(inputSurge.value); }
         function kOf() { return Number(inputK.value); }
         function speedOf() { return Number(inputSpeed.value); }
-        function fMaxOf() { return muSOf() * mOf() * g; }
         function fKOf() { return muOf() * mOf() * g; }
+        function fMaxOf() { return fKOf() * (1 + surgeOf() / 100); }
         function tStarOf() { return fMaxOf() / kOf(); }
         function FOf(time) { return kOf() * time; }
 
@@ -517,15 +514,15 @@
             // 拉力箭头（右）与摩擦力箭头（左）
             const F = FOf(t), f = fOf(t), v = vOf(t);
             const fLen = 16 + Math.min(f * 5, 100);
-            const tipF = drawArrowH(bx + blockS / 2, by, 16 + Math.min(F * 5, 120), '#dc2626');
+            const tipF = drawArrowH(bx + blockS / 2, by, 16 + Math.min(F * 5, 120), '#2563eb');
             const tipfric = drawArrowH(bx - blockS / 2, by, -fLen, '#ea580c');
             sctx.font = 'bold 12px system-ui, sans-serif';
             sctx.textAlign = 'center';
             if (tipF) {
-                sctx.fillStyle = '#dc2626';
+                sctx.fillStyle = '#2563eb';
                 sctx.fillText('F = ' + F.toFixed(1) + ' N', tipF.x + 4, by - 14);
             } else {
-                sctx.fillStyle = '#dc2626';
+                sctx.fillStyle = '#2563eb';
                 sctx.fillText('F = 0', bx + blockS / 2 + 34, by - 14);
             }
             if (tipfric) {
@@ -538,8 +535,8 @@
 
             // 速度箭头（物块上方）
             if (v > 0.05) {
-                const vTip = drawArrowH(bx, by - blockS / 2 - 18, 16 + Math.min(v * 8, 100), '#2563eb', 3.5);
-                sctx.fillStyle = '#2563eb';
+                const vTip = drawArrowH(bx, by - blockS / 2 - 18, 16 + Math.min(v * 8, 100), '#16a34a', 3.5);
+                sctx.fillStyle = '#16a34a';
                 sctx.font = 'bold 12px system-ui, sans-serif';
                 if (vTip) sctx.fillText('v = ' + v.toFixed(2) + ' m/s', vTip.x + 6, vTip.y + 4);
                 // 滑动标记
@@ -640,7 +637,7 @@
             const tEnd = exitTimeOf();
             const yMax = niceCeil(Math.max(FOf(tEnd), fMaxOf()) * 1.08);
             const frame = drawChartFrame(ftView, ftCtx, tEnd, yMax, 'F、f (N)', [
-                { v: fMaxOf(), color: '#9ca3af', label: 'μs·mg' },
+                { v: fMaxOf(), color: '#9ca3af', label: 'fmax' },
             ]);
             const cur = Math.min(t, tEnd);
 
@@ -671,19 +668,28 @@
             ftCtx.lineTo(frame.xOfTime(cur), frame.yOfVal(FOf(cur)));
             ftCtx.stroke();
 
-            // 摩擦力 f：重合段 → 突降台阶 → 水平段
-            ftCtx.strokeStyle = COLOR_FRIC;
-            ftCtx.lineWidth = 3;
-            ftCtx.beginPath();
-            ftCtx.moveTo(frame.xOfTime(0), frame.yOfVal(0));
-            if (cur <= tStar) {
-                ftCtx.lineTo(frame.xOfTime(cur), frame.yOfVal(FOf(cur)));
-            } else {
-                ftCtx.lineTo(frame.xOfTime(tStar), frame.yOfVal(fMaxOf()));
+            // 摩擦力 f：重合段（橙虚线叠在 F 上，两色可见）→ 突降台阶 → 水平段（实线）
+            if (cur > 1e-9) {
+                const fEnd = Math.min(cur, tStar);
+                ftCtx.save();
+                ftCtx.strokeStyle = COLOR_FRIC;
+                ftCtx.lineWidth = 2.5;
+                ftCtx.setLineDash([7, 5]);
+                ftCtx.beginPath();
+                ftCtx.moveTo(frame.xOfTime(0), frame.yOfVal(0));
+                ftCtx.lineTo(frame.xOfTime(fEnd), frame.yOfVal(FOf(fEnd)));
+                ftCtx.stroke();
+                ftCtx.restore();
+            }
+            if (cur > tStar) {
+                ftCtx.strokeStyle = COLOR_FRIC;
+                ftCtx.lineWidth = 3;
+                ftCtx.beginPath();
+                ftCtx.moveTo(frame.xOfTime(tStar), frame.yOfVal(fMaxOf()));
                 ftCtx.lineTo(frame.xOfTime(tStar), frame.yOfVal(fKOf()));
                 ftCtx.lineTo(frame.xOfTime(cur), frame.yOfVal(fKOf()));
+                ftCtx.stroke();
             }
-            ftCtx.stroke();
 
             // 台阶 Δf 标注
             if (t > tStar + 0.05 && fMaxOf() - fKOf() > 1e-9) {
@@ -725,7 +731,7 @@
                 vtCtx.restore();
             }
 
-            vtCtx.strokeStyle = COLOR_F;
+            vtCtx.strokeStyle = COLOR_V;
             vtCtx.lineWidth = 2.5;
             vtCtx.lineJoin = 'round';
             vtCtx.beginPath();
@@ -739,7 +745,7 @@
             }
             vtCtx.stroke();
 
-            vtCtx.fillStyle = COLOR_F;
+            vtCtx.fillStyle = COLOR_V;
             vtCtx.beginPath();
             vtCtx.arc(frame.xOfTime(cur), frame.yOfVal(vOf(cur)), 4, 0, Math.PI * 2);
             vtCtx.fill();
@@ -799,9 +805,24 @@
 
         function updateParameterLabels() {
             mVal.textContent = mOf().toFixed(1) + ' kg';
-            muSVal.textContent = muSOf().toFixed(2);
             muVal.textContent = muOf().toFixed(2);
+            surgeVal.textContent = surgeOf().toFixed(0) + ' %';
             kVal.textContent = kOf().toFixed(0) + ' N/s';
+            buildFormula();
+        }
+
+        // 推导与判断（随参数实时更新）
+        function buildFormula() {
+            const fK = fKOf(), fMax = fMaxOf(), k = kOf(), m = mOf();
+            const tStar = fMax / k;
+            const dF = fMax - fK;
+            document.getElementById('formulaBox').innerHTML =
+                '受力：滑动摩擦力 f<sub>滑</sub> = μmg = <b>' + fK.toFixed(1) + ' N</b>；最大静摩擦力略大于滑动摩擦力，f<sub>max</sub> = f<sub>滑</sub>×(1 + ' +
+                surgeOf().toFixed(0) + '%) = <b>' + fMax.toFixed(1) + ' N</b>。<br>' +
+                '临界时刻：拉力增至 f<sub>max</sub> 时物块即将滑动，t<sup>*</sup> = f<sub>max</sub>/k = <b>' + tStar.toFixed(2) + ' s</b>。<br>' +
+                '突变：起动瞬间摩擦力由 f<sub>max</sub> 突降为 f<sub>滑</sub>，Δf = <b>' + dF.toFixed(1) + ' N</b>，加速度跳变 Δf/m = <b>' + (dF / m).toFixed(2) + ' m/s²</b>。<br>' +
+                '判断：F &lt; f<sub>max</sub> 时物块静止，f = F 随拉力同步增大；F &gt; f<sub>max</sub> 后 a = (F − f<sub>滑</sub>)/m 随拉力增大，物块加速滑离。<br>' +
+                '近似：粗略计算时可认为最大静摩擦力 ≈ 滑动摩擦力——把超出比例调到 0%，台阶即消失。';
         }
 
         function setupCanvas(canvas, view, aspect) {
@@ -823,8 +844,8 @@
 
         function setParamLocks(disabled) {
             inputM.disabled = disabled;
-            inputMuS.disabled = disabled;
             inputMu.disabled = disabled;
+            inputSurge.disabled = disabled;
             inputK.disabled = disabled;
         }
 
@@ -911,14 +932,11 @@
             updateParameterLabels();
             if (state === 'idle' || state === 'ended') reset();
         });
-        inputMuS.addEventListener('input', () => {
-            // 联动钳制：μ 不超过 μs
-            if (muOf() > muSOf()) inputMu.value = muSOf();
+        inputMu.addEventListener('input', () => {
             updateParameterLabels();
             if (state === 'idle' || state === 'ended') reset();
         });
-        inputMu.addEventListener('input', () => {
-            if (muOf() > muSOf()) inputMu.value = muSOf();
+        inputSurge.addEventListener('input', () => {
             updateParameterLabels();
             if (state === 'idle' || state === 'ended') reset();
         });
