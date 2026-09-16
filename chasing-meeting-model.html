@@ -3,172 +3,414 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>追及相遇模型演示｜高中物理直线运动</title>
+<title>追及相遇模型演示｜高中物理</title>
+<meta name="description" content="追及相遇模型教学演示：匀速追匀速、匀速追匀变速、匀变速追匀速三类场景，可调初速度、加速度、初始距离与出发时间差，动画与 v-t、x-t 图实时联动，判别式 Δ 与速度相等极值判据随参数实时推导与判断。">
+<!--
+文件描述：追及相遇模型演示（参照平抛运动演示页布局改版）
+页面布局：画布 → 图表 → 播放控制（含时间轴拖动） → 实时数值 → 参数设定 → 推导与判断 → 图例。
+推导与判断随参数实时更新：位置表达式、速度相等极值判据、联立方程判别式 Δ 求解与能否追上的判定。
+-->
 <style>
-:root{--cA:#2563eb;--cB:#f97316;--ink:#1f2937;--mut:#6b7280;--line:#e5e7eb}
-*{box-sizing:border-box}
-body{margin:0;font-family:system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:#eef2f6;color:var(--ink)}
-.wrap{max-width:1080px;margin:0 auto;padding:16px 16px 40px;display:flex;flex-direction:column;gap:14px}
-header h1{margin:0;font-size:22px}
-header p{margin:4px 0 0;color:var(--mut);font-size:13px}
-.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;box-shadow:0 1px 2px rgba(15,23,42,.05)}
-.card h3{margin:0 0 8px;font-size:14px;display:flex;align-items:center;gap:8px;font-weight:600}
-.dot{width:10px;height:10px;border-radius:50%;display:inline-block;flex:none}
-.legend{margin-left:auto;display:flex;gap:14px;font-size:12px;color:var(--mut);font-weight:400}
-.legend i{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin-right:4px}
-canvas{width:100%;display:block}
-#animCanvas{height:210px}
-.chartCanvas{height:240px}
-.charts{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:10px}
-button{border:1px solid var(--line);background:#f8fafc;border-radius:8px;padding:6px 12px;font-size:13px;cursor:pointer;color:var(--ink)}
-button:hover{background:#eef2f7}
-button:disabled{opacity:.45;cursor:not-allowed}
-#btnPlay{background:var(--cA);border-color:var(--cA);color:#fff;min-width:78px}
-#btnPlay:hover{background:#1d4ed8}
-#btnPauseResume{background:var(--cA);border-color:var(--cA);color:#fff;min-width:78px}
-#btnPauseResume:hover{background:#1d4ed8}
-select,input[type=number]{border:1px solid var(--line);border-radius:8px;padding:5px 8px;font-size:13px;background:#fff;color:var(--ink)}
-input[type=number]{width:74px;padding:4px 6px}
-input[type=range]{flex:1;min-width:140px;accent-color:var(--cA)}
-.timeLabel{font-variant-numeric:tabular-nums;color:var(--mut);font-size:13px;min-width:110px;text-align:right}
-.bottom{display:grid;grid-template-columns:430px 1fr;gap:14px;align-items:start}
-@media(max-width:880px){.charts,.bottom{grid-template-columns:1fr}}
-.ctl{display:grid;grid-template-columns:112px 1fr 74px;align-items:center;gap:8px;margin:7px 0;font-size:13px}
-.ctl label{color:var(--mut)}
-.radios{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:13px;margin:4px 0 2px}
-.radios label{cursor:pointer}
-.checks{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:10px;font-size:13px;border-top:1px dashed var(--line);padding-top:10px}
-.checks label{cursor:pointer;display:flex;align-items:center;gap:4px}
-table.data{width:100%;border-collapse:collapse;font-size:13px}
-table.data td{padding:5px 6px;border-bottom:1px solid var(--line)}
-table.data tr:last-child td{border-bottom:none}
-table.data td:first-child{color:var(--mut);width:52%}
-table.data td:last-child{text-align:right;font-variant-numeric:tabular-nums}
-.state-hot{background:#fef3c7 !important;font-weight:700;border-radius:4px}
-.result{margin-top:10px;padding:9px 12px;border-radius:8px;font-size:13px;line-height:1.7}
-.result.ok{background:#ecfdf5;border-left:4px solid #10b981}
-.result.no{background:#fef2f2;border-left:4px solid #ef4444}
-.formula{font-size:14px;line-height:2.05}
-.formula .tag{display:inline-block;width:100px;color:var(--mut);font-size:12px;vertical-align:top}
-.fx{font-family:Georgia,"Times New Roman",serif;font-style:italic}
-.fA{color:var(--cA)}.fB{color:var(--cB)}
-.fno{color:#dc2626}
-.fnote{color:var(--mut);font-size:12px;font-style:normal;font-family:inherit}
-sub{font-size:10px}
-sup{font-size:10px}
+:root { --cA:#2563eb; --cB:#f97316; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background-color: #eef2f6;
+  color: #1f2937;
+  font-family: system-ui, sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px 12px 32px;
+}
+main {
+  width: 100%;
+  max-width: 880px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+h1 {
+  font-size: 22px;
+  margin-bottom: 12px;
+  text-align: center;
+}
+.canvas-wrap { width: 100%; }
+canvas#animCanvas {
+  display: block;
+  width: 100%;
+  aspect-ratio: 880 / 520;
+  border: 2px solid #2563eb;
+  border-radius: 10px;
+  background-color: #ffffff;
+}
+.charts-row {
+  margin-top: 16px;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+@media (max-width: 720px) {
+  .charts-row { grid-template-columns: 1fr; }
+}
+.param-group,
+.data-group {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 14px 16px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+}
+.data-group {
+  width: 100%;
+  margin-top: 16px;
+}
+.chart-panel {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+}
+.chart-panel .group-title {
+  padding: 0 2px;
+}
+.group-title {
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 10px;
+  letter-spacing: 0.5px;
+}
+.chart-panel canvas {
+  display: block;
+  width: 100%;
+  aspect-ratio: 20 / 9;
+  background: #ffffff;
+  border: 2px solid #2563eb;
+  border-radius: 10px;
+}
+.play-bar {
+  margin-top: 12px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.play-bar select {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 13px;
+  background: #fff;
+  color: #1f2937;
+  cursor: pointer;
+}
+.play-bar input[type=range] { flex: 1; min-width: 160px; accent-color: #2563eb; }
+.timeLabel {
+  font-variant-numeric: tabular-nums;
+  color: #6b7280;
+  font-size: 13px;
+  min-width: 110px;
+  text-align: right;
+}
+.control-panel {
+  margin-top: 16px;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+}
+.fixed-note {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #6b7280;
+  line-height: 1.6;
+}
+.fixed-note b { color: #b45309; font-weight: 600; }
+input[type=range]:disabled { opacity: 0.45; cursor: not-allowed; }
+.param-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 10px;
+}
+.param-row label {
+  font-size: 13px;
+  color: #1f2937;
+  white-space: nowrap;
+  min-width: 150px;
+}
+.param-row input[type=range] { flex: 1; accent-color: #2563eb; }
+.param-row input[type=number] {
+  width: 74px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 5px 6px;
+  font-size: 13px;
+  background: #fff;
+  color: #1f2937;
+}
+.param-row select {
+  flex: 1;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 13px;
+  background: #fff;
+  color: #1f2937;
+  cursor: pointer;
+}
+.radios {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  font-size: 13px;
+  margin: 0 0 10px;
+}
+.radios label {
+  cursor: pointer;
+  color: #1f2937;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.radios input { accent-color: #2563eb; }
+.toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 22px;
+  border-top: 1px dashed #e5e7eb;
+  padding-top: 10px;
+  margin-top: 4px;
+}
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #1f2937;
+  cursor: pointer;
+}
+.toggle input { accent-color: #2563eb; }
+.data-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 9px;
+}
+@media (max-width: 800px) {
+  .data-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+.data-item {
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+.data-item span {
+  display: block;
+  font-size: 11px;
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+.data-item b {
+  display: block;
+  font-size: 14px;
+  color: #1f2937;
+  font-variant-numeric: tabular-nums;
+}
+.data-item .cA { color: var(--cA); }
+.data-item .cB { color: var(--cB); }
+.data-item b.state-hot {
+  background: #fef3c7;
+  font-weight: 700;
+  border-radius: 4px;
+  padding: 1px 6px;
+  margin: -1px -6px;
+}
+.formula-card {
+  margin-top: 16px;
+  width: 100%;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 14px 16px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+}
+.formula-card .group-title { margin-bottom: 8px; }
+.formula-card .fixed-note { margin-top: 0; }
+button {
+  background: #2563eb;
+  border: none;
+  color: white;
+  padding: 9px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.15s ease, transform 0.15s ease;
+}
+button:hover:not(:disabled) { background: #1d4ed8; }
+button:active:not(:disabled) { transform: translateY(1px); }
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.formula { font-size: 13.5px; line-height: 2.0; }
+.formula .tag { display: inline-block; width: 100px; color: #6b7280; font-size: 12px; vertical-align: top; }
+.fx { font-family: Georgia, "Times New Roman", serif; font-style: italic; }
+.fA { color: var(--cA); }
+.fB { color: var(--cB); }
+.fno { color: #dc2626; }
+.fnote { color: #6b7280; font-size: 12px; font-style: normal; font-family: inherit; }
+sub { font-size: 10px; }
+sup { font-size: 10px; }
+.result { margin-top: 10px; padding: 9px 12px; border-radius: 8px; font-size: 13px; line-height: 1.7; }
+.result.ok { background: #ecfdf5; border-left: 4px solid #10b981; }
+.result.no { background: #fef2f2; border-left: 4px solid #ef4444; }
+.legend {
+  margin-top: 12px;
+  font-size: 12px;
+  color: #6b7280;
+  text-align: center;
+  line-height: 1.8;
+}
+.legend span { margin: 0 6px; }
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <h1>追及相遇模型演示｜高中物理直线运动</h1>
-    <p>匀速追匀速 · 匀速追匀变速 · 匀变速追匀速 —— 动画、v-t / x-t 图、判别式 Δ 与速度相等极值判据实时联动</p>
-  </header>
+<main>
+<h1>追及相遇模型演示</h1>
+<div class="canvas-wrap">
+  <canvas id="animCanvas" role="img" aria-label="追及相遇动画：物体 A 与物体 B 在同一直线上运动，可显示相遇点与实时距离"></canvas>
+</div>
 
-  <section class="card">
-    <h3>运动动画
-      <span class="legend">
-        <span><i style="background:var(--cA)"></i>物体 A</span>
-        <span><i style="background:var(--cB)"></i>物体 B</span>
-      </span>
-    </h3>
-    <canvas id="animCanvas"></canvas>
-    <div class="bar">
-      <button id="btnPlay">▶ 开始</button>
-      <button id="btnPauseResume" disabled>暂停</button>
-      <button id="btnReset">重置</button>
-      <select id="speedSel" title="播放速度">
-        <option value="0.5">0.5×</option>
-        <option value="1" selected>1×</option>
-        <option value="2">2×</option>
-        <option value="4">4×</option>
+<div class="charts-row">
+  <section class="chart-panel">
+    <div class="group-title">速度-时间图 (v-t)</div>
+    <canvas id="vtCanvas" role="img" aria-label="A、B 速度随时间变化图像，含速度相等与追及相遇时刻标注，阴影为位移差"></canvas>
+  </section>
+  <section class="chart-panel">
+    <div class="group-title">位置-时间图 (x-t)</div>
+    <canvas id="xtCanvas" role="img" aria-label="A、B 位置随时间变化图像，两线交点即相遇"></canvas>
+  </section>
+</div>
+
+<div class="play-bar">
+  <button id="btnPlay" type="button">开始</button>
+  <button id="btnPauseResume" type="button" disabled>暂停</button>
+  <button id="btnReset" type="button">重置</button>
+  <select id="speedSel" title="播放速度" aria-label="播放速度倍率">
+    <option value="0.5">0.5×</option>
+    <option value="1" selected>1×</option>
+    <option value="2">2×</option>
+    <option value="4">4×</option>
+  </select>
+  <input type="range" id="timeSlider" min="0" max="15" step="0.01" value="0" title="时间轴（可拖动回看）" aria-label="时间进度">
+  <span class="timeLabel" id="timeLabel">0.00 s</span>
+</div>
+
+<section class="data-group" aria-labelledby="dataTitle" aria-live="polite">
+  <div class="group-title" id="dataTitle">实时数值</div>
+  <div class="data-grid">
+    <div class="data-item"><span>当前时间 t</span><b id="dT">—</b></div>
+    <div class="data-item"><span>A 的位置 x<sub>A</sub></span><b id="dXA" class="cA">—</b></div>
+    <div class="data-item"><span>B 的位置 x<sub>B</sub></span><b id="dXB" class="cB">—</b></div>
+    <div class="data-item"><span>A 的速度 v<sub>A</sub></span><b id="dVA" class="cA">—</b></div>
+    <div class="data-item"><span>B 的速度 v<sub>B</sub></span><b id="dVB" class="cB">—</b></div>
+    <div class="data-item"><span>相对距离 |x<sub>B</sub> − x<sub>A</sub>|</span><b id="dGap">—</b></div>
+    <div class="data-item"><span>相对速度 v<sub>A</sub> − v<sub>B</sub></span><b id="dVrel">—</b></div>
+    <div class="data-item"><span>速度相等时刻 t<sup>*</sup></span><b id="dTstar">—</b></div>
+    <div class="data-item"><span>间距极值预测</span><b id="dExt">—</b></div>
+    <div class="data-item"><span>当前状态</span><b id="dState">—</b></div>
+  </div>
+</section>
+
+<div class="control-panel">
+  <section class="param-group" aria-labelledby="parameterTitle">
+    <div class="group-title" id="parameterTitle">参数设定</div>
+    <div class="param-row">
+      <label for="presetSel">场景预设</label>
+      <select id="presetSel">
+        <optgroup label="一、匀速追匀速">
+          <option value="p1">快车追慢车（能追上）</option>
+          <option value="p2">慢车追快车（追不上）</option>
+          <option value="p3">同速追及（间距恒定·临界）</option>
+          <option value="p4">晚出发的追及（A 晚 2 s）</option>
+          <option value="p5">相向而行（相遇）</option>
+          <option value="p6">背向而行（远离）</option>
+        </optgroup>
+        <optgroup label="二、匀速追匀变速">
+          <option value="p7">匀速追刹车（停前追上）</option>
+          <option value="p8">匀速追刹车（停后追上）</option>
+          <option value="p9">匀速追起步加速（两次相遇）</option>
+          <option value="p10">匀速追起步加速（追不上）</option>
+        </optgroup>
+        <optgroup label="三、匀变速追匀速">
+          <option value="p11">刹车追匀速（临界·刚好追上）</option>
+          <option value="p12">起步加速追匀速（经典追及）</option>
+          <option value="p13">刹车追匀速（追不上·最近距离）</option>
+        </optgroup>
+        <option value="custom" disabled hidden>— 自定义 —</option>
       </select>
-      <input type="range" id="timeSlider" min="0" max="15" step="0.01" value="0">
-      <span class="timeLabel" id="timeLabel">0.00 s</span>
     </div>
-  </section>
-
-  <section class="charts">
-    <div class="card">
-      <h3><span class="dot" style="background:#8b5cf6"></span>v-t 图（速度 — 时间）</h3>
-      <canvas id="vtCanvas" class="chartCanvas"></canvas>
+    <div class="radios">
+      <label><input type="radio" name="mode" value="same" checked> 同向（都向右）</label>
+      <label><input type="radio" name="mode" value="toward"> 相向（A→右，B→左）</label>
+      <label><input type="radio" name="mode" value="apart"> 背向（A→左，B→右）</label>
     </div>
-    <div class="card">
-      <h3><span class="dot" style="background:#0ea5e9"></span>x-t 图（位置 — 时间）</h3>
-      <canvas id="xtCanvas" class="chartCanvas"></canvas>
+    <div class="param-row">
+      <label for="d">初始距离 d (m)</label>
+      <input type="range" id="d" min="0" max="80" step="1" value="20">
+      <input type="number" id="dN" min="0" max="80" step="1" value="20">
     </div>
-  </section>
-
-  <section class="card">
-    <h3><span class="dot" style="background:#10b981"></span>公式与判定（随参数实时更新）</h3>
-    <div class="formula" id="formulaBox"></div>
-    <div class="result ok" id="resultBox"></div>
-  </section>
-
-  <section class="bottom">
-    <div class="card">
-      <h3><span class="dot" style="background:#64748b"></span>参数控制</h3>
-      <div class="ctl"><label>场景预设</label>
-        <select id="presetSel" style="grid-column:2/4">
-          <optgroup label="一、匀速追匀速">
-            <option value="p1">快车追慢车（能追上）</option>
-            <option value="p2">慢车追快车（追不上）</option>
-            <option value="p3">同速追及（间距恒定·临界）</option>
-            <option value="p4">晚出发的追及（A 晚 2 s）</option>
-            <option value="p5">相向而行（相遇）</option>
-            <option value="p6">背向而行（远离）</option>
-          </optgroup>
-          <optgroup label="二、匀速追匀变速">
-            <option value="p7">匀速追刹车（停前追上）</option>
-            <option value="p8">匀速追刹车（停后追上）</option>
-            <option value="p9">匀速追起步加速（两次相遇）</option>
-            <option value="p10">匀速追起步加速（追不上）</option>
-          </optgroup>
-          <optgroup label="三、匀变速追匀速">
-            <option value="p11">刹车追匀速（临界·刚好追上）</option>
-            <option value="p12">起步加速追匀速（经典追及）</option>
-            <option value="p13">刹车追匀速（追不上·最近距离）</option>
-          </optgroup>
-          <option value="custom" disabled hidden>— 自定义 —</option>
-        </select>
-      </div>
-      <div class="radios">
-        <label><input type="radio" name="mode" value="same" checked> 同向（都向右）</label>
-        <label><input type="radio" name="mode" value="toward"> 相向（A→右，B→左）</label>
-        <label><input type="radio" name="mode" value="apart"> 背向（A→左，B→右）</label>
-      </div>
-      <div class="ctl"><label>初始距离 d (m)</label><input type="range" id="d" min="0" max="80" step="1" value="20"><input type="number" id="dN" min="0" max="80" step="1" value="20"></div>
-      <div class="ctl"><label>A 初速度 (m/s)</label><input type="range" id="vA" min="0" max="25" step="0.5" value="10"><input type="number" id="vAn" min="0" max="25" step="0.5" value="10"></div>
-      <div class="ctl"><label>B 初速度 (m/s)</label><input type="range" id="vB" min="0" max="25" step="0.5" value="6"><input type="number" id="vBn" min="0" max="25" step="0.5" value="6"></div>
-      <div class="ctl"><label>A 加速度 (m/s²)</label><input type="range" id="aA" min="-6" max="6" step="0.5" value="0"><input type="number" id="aAn" min="-6" max="6" step="0.5" value="0"></div>
-      <div class="ctl"><label>B 加速度 (m/s²)</label><input type="range" id="aB" min="-6" max="6" step="0.5" value="0"><input type="number" id="aBn" min="-6" max="6" step="0.5" value="0"></div>
-      <div class="ctl"><label>出发时间差 Δt (s)<br><span style="font-size:11px">A 比 B 晚出发</span></label><input type="range" id="dt" min="0" max="5" step="0.5" value="0"><input type="number" id="dtN" min="0" max="5" step="0.5" value="0"></div>
-      <div class="checks">
-        <label><input type="checkbox" id="ckBrake" checked> 刹车减速到 0 即停下（不倒车）</label>
-        <label><input type="checkbox" id="ckDist" checked> 实时距离标注</label>
-        <label><input type="checkbox" id="ckKey" checked> 显示关键点</label>
-        <label><input type="checkbox" id="ckArea" checked> v-t 面积差提示</label>
-      </div>
+    <div class="param-row">
+      <label for="vA">A 初速度 (m/s)</label>
+      <input type="range" id="vA" min="0" max="25" step="0.5" value="10">
+      <input type="number" id="vAn" min="0" max="25" step="0.5" value="10">
     </div>
-
-    <div class="card">
-      <h3><span class="dot" style="background:#eab308"></span>实时数据</h3>
-      <table class="data">
-        <tr><td>当前时间 t</td><td id="dT">—</td></tr>
-        <tr><td>A 的位置 x<sub>A</sub></td><td id="dXA" style="color:var(--cA)">—</td></tr>
-        <tr><td>B 的位置 x<sub>B</sub></td><td id="dXB" style="color:var(--cB)">—</td></tr>
-        <tr><td>A 的速度 v<sub>A</sub>（带方向）</td><td id="dVA" style="color:var(--cA)">—</td></tr>
-        <tr><td>B 的速度 v<sub>B</sub>（带方向）</td><td id="dVB" style="color:var(--cB)">—</td></tr>
-        <tr><td>相对距离 |x<sub>B</sub> − x<sub>A</sub>|</td><td id="dGap">—</td></tr>
-        <tr><td>相对速度 v<sub>A</sub> − v<sub>B</sub></td><td id="dVrel">—</td></tr>
-        <tr><td>速度相等时刻 t<sup>*</sup></td><td id="dTstar">—</td></tr>
-        <tr><td>间距极值预测</td><td id="dExt">—</td></tr>
-        <tr><td>当前状态</td><td id="dState">—</td></tr>
-      </table>
+    <div class="param-row">
+      <label for="vB">B 初速度 (m/s)</label>
+      <input type="range" id="vB" min="0" max="25" step="0.5" value="6">
+      <input type="number" id="vBn" min="0" max="25" step="0.5" value="6">
+    </div>
+    <div class="param-row">
+      <label for="aA">A 加速度 (m/s²)</label>
+      <input type="range" id="aA" min="-6" max="6" step="0.5" value="0">
+      <input type="number" id="aAn" min="-6" max="6" step="0.5" value="0">
+    </div>
+    <div class="param-row">
+      <label for="aB">B 加速度 (m/s²)</label>
+      <input type="range" id="aB" min="-6" max="6" step="0.5" value="0">
+      <input type="number" id="aBn" min="-6" max="6" step="0.5" value="0">
+    </div>
+    <div class="param-row">
+      <label for="dt">A 晚出发 Δt (s)</label>
+      <input type="range" id="dt" min="0" max="5" step="0.5" value="0">
+      <input type="number" id="dtN" min="0" max="5" step="0.5" value="0">
+    </div>
+    <div class="toggles">
+      <label class="toggle"><input type="checkbox" id="ckBrake" checked> 刹车减速到 0 即停下（不倒车）</label>
+      <label class="toggle"><input type="checkbox" id="ckDist" checked> 实时距离标注</label>
+      <label class="toggle"><input type="checkbox" id="ckKey" checked> 显示关键点</label>
+      <label class="toggle"><input type="checkbox" id="ckArea" checked> v-t 面积差提示</label>
     </div>
   </section>
 </div>
+
+<section class="formula-card">
+  <div class="group-title">推导与判断（随参数实时更新）</div>
+  <div class="formula" id="formulaBox"></div>
+  <div class="result ok" id="resultBox"></div>
+</section>
+
+<div class="legend">
+  <span>● 物体 A（蓝）／ 物体 B（橙）</span>
+  <span>曲线与圆点：v-t、x-t 中 A、B 同色对应</span>
+  <span>竖虚线：追及 / 相遇 / 速度相等时刻</span>
+  <span>x-t 图两线交点即相遇</span>
+  <span>⌨ 空格 = 播放/暂停　R = 重置</span>
+</div>
+</main>
 
 <script>
 "use strict";
@@ -338,15 +580,15 @@ function boot(){
       btnPauseResume.disabled = false; btnPauseResume.textContent = '暂停';
       btnReset.disabled = true;
     } else if (ended){
-      btnPlay.disabled = false; btnPlay.textContent = '⟲ 重新开始';
+      btnPlay.disabled = false; btnPlay.textContent = '重新开始';
       btnPauseResume.disabled = true; btnPauseResume.textContent = '暂停';
       btnReset.disabled = false;
     } else if (t > EPS){
-      btnPlay.disabled = false; btnPlay.textContent = '⟲ 重新开始';
-      btnPauseResume.disabled = false; btnPauseResume.textContent = '▶ 继续';
+      btnPlay.disabled = false; btnPlay.textContent = '重新开始';
+      btnPauseResume.disabled = false; btnPauseResume.textContent = '继续';
       btnReset.disabled = false;
     } else {
-      btnPlay.disabled = false; btnPlay.textContent = '▶ 开始';
+      btnPlay.disabled = false; btnPlay.textContent = '开始';
       btnPauseResume.disabled = true; btnPauseResume.textContent = '暂停';
       btnReset.disabled = false;
     }
@@ -410,7 +652,7 @@ function boot(){
     const {ctx, W, H} = prep(el('animCanvas'));
     const [wlo, whi] = worldRange();
     const mL = 24, mR = 24;
-    const y0 = H - 52;
+    const y0 = Math.round(H * 2 / 3);
     const X = x => mL + (x - wlo) / (whi - wlo) * (W - mL - mR);
     ctx.font = '11px system-ui, sans-serif';
 
@@ -455,7 +697,7 @@ function boot(){
     const sa = st(OA, t), sb = st(OB, t);
     const cx = X(sa.x), dx = X(sb.x);
     const cy = y0 - 14;
-    const R = 12;
+    const R = 14;
     const sep = Math.abs(dx - cx);
     const overlap = sep < R + 2;
 
@@ -903,6 +1145,10 @@ function boot(){
     });
   }
   window.addEventListener('resize', () => { resizeAll(); render(); });
+  if (typeof ResizeObserver !== 'undefined') {
+    const ro = new ResizeObserver(() => { resizeAll(); render(); });
+    ['animCanvas', 'vtCanvas', 'xtCanvas'].forEach(id => ro.observe(el(id)));
+  }
 
   loadPreset('p1');
   resizeAll();
