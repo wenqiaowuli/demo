@@ -263,12 +263,6 @@
                 <button id="btnStart" type="button">开始</button>
             <button id="btnPause" type="button" disabled>暂停</button>
             <button id="btnReset" type="button" disabled>重置</button>
-            <select id="speed" title="播放速度" aria-label="播放速度倍率">
-                <option value="0.5" selected>0.5×</option>
-                <option value="1">1×</option>
-                <option value="2">2×</option>
-                <option value="4">4×</option>
-            </select>
             </div>
         </div>
         <div class="charts-row">
@@ -316,6 +310,11 @@
                     <input id="vB" type="range" min="-5" max="5" value="-2" step="0.1">
                     <div class="val" id="vBVal">-2.0 m/s</div>
                 </div>
+                <div class="param-row">
+                    <label for="ts">动画速度</label>
+                    <input id="ts" type="range" min="5" max="30" value="10" step="1">
+                    <div class="val" id="tsVal">1.0×</div>
+                </div>
             </section>
             <section class="data-group" id="dataPanel" aria-labelledby="dataTitle" aria-live="polite">
                 <div class="group-title" id="dataTitle">实时数据显示</div>
@@ -357,11 +356,12 @@
         const elVA   = document.getElementById('vA');
         const elMB   = document.getElementById('mB');
         const elVB   = document.getElementById('vB');
-        const inputSpeed = document.getElementById('speed');
+        const elTs   = document.getElementById('ts');
         const elMAVal = document.getElementById('mAVal');
         const elVAVal = document.getElementById('vAVal');
         const elMBVal = document.getElementById('mBVal');
         const elVBVal = document.getElementById('vBVal');
+        const elTsVal = document.getElementById('tsVal');
         const elDVA   = document.getElementById('dVA');
         const elDVB   = document.getElementById('dVB');
         const elDPA   = document.getElementById('dPA');
@@ -408,7 +408,6 @@
             mB: 3, v0B: -2,
         };
         let timeScale = 1;
-        function speedOf() { return Number(inputSpeed.value); }
 
         // ========== 预仿真（碰撞时刻解析求解 + 匀速序列采样） ==========
         function simulate() {
@@ -1052,7 +1051,7 @@
         }
 
         // ========== 控制状态 ==========
-        const paramInputs = [elMA, elVA, elMB, elVB, ...radios];
+        const paramInputs = [elMA, elVA, elMB, elVB, elTs, ...radios];
         function setParamsDisabled(d) {
             paramInputs.forEach(el => { el.disabled = d; });
         }
@@ -1063,11 +1062,12 @@
             P.v0A = parseFloat(elVA.value);
             P.mB = parseFloat(elMB.value);
             P.v0B = parseFloat(elVB.value);
-            timeScale = speedOf();
+            timeScale = parseFloat(elTs.value) / 10;
             elMAVal.textContent = P.mA.toFixed(1) + ' kg';
             elVAVal.textContent = P.v0A.toFixed(1) + ' m/s';
             elMBVal.textContent = P.mB.toFixed(1) + ' kg';
             elVBVal.textContent = P.v0B.toFixed(1) + ' m/s';
+            elTsVal.textContent = timeScale.toFixed(1) + '×';
         }
 
         function redrawPreview() {
@@ -1316,8 +1316,9 @@
             redrawPreview();
         });
 
-        inputSpeed.addEventListener('change', () => {
-            timeScale = speedOf();
+        elTs.addEventListener('input', () => {
+            timeScale = parseFloat(elTs.value) / 10;
+            elTsVal.textContent = timeScale.toFixed(1) + '×';
         });
 
         radios.forEach(r => {
