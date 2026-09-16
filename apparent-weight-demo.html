@@ -295,7 +295,7 @@
         const BASE_HEIGHT = 520;
         const CHART_ASPECT = 20 / 9;
         const PAD = { left: 64, right: 30, top: 44, bottom: 58 };
-        const CABIN_W = 96, CABIN_H = 84;
+        const CABIN_W = 86, CABIN_H = 101;
         const A_ARROW_SCALE = 8, A_ARROW_MAX = 80;
         const COLOR_OVER = '#ea580c', COLOR_NORMAL = '#1f2937', COLOR_UNDER = '#2563eb', COLOR_FREE = '#0d9488';
         const sceneView = { width: BASE_WIDTH, height: BASE_HEIGHT };
@@ -418,7 +418,8 @@
         }
 
         function sceneGeometry() {
-            const hMax = axisMax(Math.max(heightOf(), 1) * 1.05);
+            // 余量需容下整个轿厢高度，防止轿厢顶部超出画布
+            const hMax = axisMax(Math.max(heightOf(), 1) * 1.2);
             const originX = PAD.left;
             const originY = sceneView.height - PAD.bottom;
             const plotTop = PAD.top;
@@ -546,29 +547,30 @@
             roundRect(sctx, geometry.cabinX - 24, floorY - 9, 48, 9, 2);
             sctx.fill();
             sctx.stroke();
-            // 简化人形（在加高后的轿厢内垂直居中）
+            // 简化人形（立于体重计上，大小固定，不随轿厢尺寸变化）
+            const baseY = floorY - 9;
             sctx.strokeStyle = '#1f2937';
             sctx.fillStyle = '#1f2937';
             sctx.lineWidth = 3;
             sctx.lineCap = 'round';
             sctx.beginPath(); // 头
-            sctx.arc(geometry.cabinX, y + 22, 6.5, 0, Math.PI * 2);
+            sctx.arc(geometry.cabinX, baseY - 53, 6.5, 0, Math.PI * 2);
             sctx.fill();
             sctx.beginPath(); // 躯干
-            sctx.moveTo(geometry.cabinX, y + 31);
-            sctx.lineTo(geometry.cabinX, y + 56);
+            sctx.moveTo(geometry.cabinX, baseY - 44);
+            sctx.lineTo(geometry.cabinX, baseY - 19);
             sctx.stroke();
             sctx.beginPath(); // 胳膊
-            sctx.moveTo(geometry.cabinX, y + 37);
-            sctx.lineTo(geometry.cabinX - 9, y + 46);
-            sctx.moveTo(geometry.cabinX, y + 37);
-            sctx.lineTo(geometry.cabinX + 9, y + 46);
+            sctx.moveTo(geometry.cabinX, baseY - 38);
+            sctx.lineTo(geometry.cabinX - 9, baseY - 29);
+            sctx.moveTo(geometry.cabinX, baseY - 38);
+            sctx.lineTo(geometry.cabinX + 9, baseY - 29);
             sctx.stroke();
             sctx.beginPath(); // 腿
-            sctx.moveTo(geometry.cabinX, y + 56);
-            sctx.lineTo(geometry.cabinX - 8, floorY - 9);
-            sctx.moveTo(geometry.cabinX, y + 56);
-            sctx.lineTo(geometry.cabinX + 8, floorY - 9);
+            sctx.moveTo(geometry.cabinX, baseY - 19);
+            sctx.lineTo(geometry.cabinX - 8, baseY);
+            sctx.moveTo(geometry.cabinX, baseY - 19);
+            sctx.lineTo(geometry.cabinX + 8, baseY);
             sctx.stroke();
             sctx.lineCap = 'butt';
             return { x, y };
