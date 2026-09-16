@@ -421,17 +421,24 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
   }
 
   // 场景几何（主画布）
+  // 比例尺固定：按带长上限 40 m 适配画布宽度。调整带长时起始端（左端/右端出发）
+  // 固定不动，另一端伸缩，物块在画面上的位置保持不变。
   function geom() {
     const w = cv.clientWidth || cv.width || 880;
     const h = cv.clientHeight || cv.height || 520;
-    const xL = 44, xR = w - 44;
+    const mX = 44;                // 左右留白
+    const L_MAX = 40;             // 带长滑条上限
     const R = 18;                 // 滚筒半径
     const yC = Math.round(h * 0.675);  // 滚筒中心线（居中偏下）
     const band = R + 4;           // 带环路径半径（带包在滚筒外侧）
     const ground = Math.round(h * 0.94);  // 地面线
+    const pix = (w - 2 * mX) / L_MAX;  // 固定比例尺 px/m
+    const beltLenPx = state.L * pix;
+    const xL = state.startSide === 'right' ? (w - mX) - beltLenPx : mX;  // 带左端（右端出发时随带长左移）
+    const xR = xL + beltLenPx;                                           // 带右端
     return {
       w, h, xL, xR, yC, R, band, ground,
-      pix: (xR - xL) / state.L,
+      pix,
       topY: yC - band - 4         // 上承载带外缘 = 物块底部
     };
   }
