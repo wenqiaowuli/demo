@@ -558,6 +558,12 @@
             sctx.moveTo(geometry.cabinX, y + 31);
             sctx.lineTo(geometry.cabinX, y + 56);
             sctx.stroke();
+            sctx.beginPath(); // 胳膊
+            sctx.moveTo(geometry.cabinX, y + 37);
+            sctx.lineTo(geometry.cabinX - 9, y + 46);
+            sctx.moveTo(geometry.cabinX, y + 37);
+            sctx.lineTo(geometry.cabinX + 9, y + 46);
+            sctx.stroke();
             sctx.beginPath(); // 腿
             sctx.moveTo(geometry.cabinX, y + 56);
             sctx.lineTo(geometry.cabinX - 8, floorY - 9);
