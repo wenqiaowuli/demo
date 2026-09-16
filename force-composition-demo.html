@@ -61,14 +61,11 @@
             touch-action: none;
         }
         .control-panel {
-            margin-top: 14px;
+            margin-top: 16px;
             width: 100%;
             display: grid;
-            grid-template-columns: minmax(240px, 1fr) minmax(280px, 1.25fr);
-            gap: 14px;
-        }
-        @media (max-width: 720px) {
-            .control-panel { grid-template-columns: 1fr; }
+            grid-template-columns: 1fr;
+            gap: 0;
         }
         .param-group,
         .data-group {
@@ -77,6 +74,14 @@
             border-radius: 10px;
             box-shadow: 0 1px 2px rgba(15,23,42,.05);
             padding: 14px 16px;
+        }
+        .data-group {
+            width: 100%;
+            margin-top: 16px;
+        }
+        input[type=range]:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
         }
         .chart-panel {
             background: transparent;
@@ -147,7 +152,7 @@
             color: #ffffff;
         }
         .fixed-note {
-            margin-top: 4px;
+            margin-top: 8px;
             font-size: 12px;
             color: #6b7280;
             line-height: 1.6;
@@ -155,10 +160,10 @@
         .fixed-note b { color: #b45309; font-weight: 600; }
         .data-grid {
             display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
+            grid-template-columns: repeat(5, minmax(0, 1fr));
             gap: 9px;
         }
-        @media (max-width: 560px) {
+        @media (max-width: 800px) {
             .data-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         }
         .data-item {
@@ -200,6 +205,7 @@
         }
         .play-bar {
             margin-top: 12px;
+            width: 100%;
             display: flex;
             align-items: center;
             gap: 10px;
@@ -260,17 +266,6 @@
         </div>
         <div class="canvas-wrap">
             <canvas id="scene" role="img" aria-label="力的合成与分解矢量实验台"></canvas>
-            <div class="play-bar">
-                <button id="btnStart" type="button">▶ 自动演示</button>
-                <button id="btnPauseResume" type="button" disabled>暂停</button>
-                <button id="btnReset" type="button">重置</button>
-                <select id="pSpeed" title="播放速度" aria-label="播放速度倍率">
-                    <option value="0.5">0.5×</option>
-                    <option value="1" selected>1×</option>
-                    <option value="2">2×</option>
-                    <option value="4">4×</option>
-                </select>
-            </div>
         </div>
         <div class="charts-row">
             <section class="chart-panel">
@@ -282,14 +277,41 @@
                 <canvas id="chartR" role="img" aria-label="合力正交分量随夹角变化的曲线"></canvas>
             </section>
         </div>
-        <section class="formula-card">
-            <div class="group-title">公式与判定</div>
-            <div class="fixed-note">
-                    合成：平行四边形定则 <b>F = √(F₁²+F₂²+2F₁F₂cosθ)</b>；两分力固定时<b>夹角越大合力越小</b>，范围 |F₁−F₂| ≤ F ≤ F₁+F₂。<br>
-                    特殊情形：同向 θ=0°→F=F₁+F₂；反向 θ=180°→F=|F₁−F₂|；垂直 θ=90°→F=√(F₁²+F₂²)；等大且 θ=120°→F=F₁=F₂。<br>
-                    分解是合成的<b>逆运算</b>：正交分解 Fx=Fcosα、Fy=Fsinα；<b>分解不唯一</b>，附加条件后唯一，分力可任意大。<br>
-                    <b>合力与分力是等效替代关系，不能同时参与受力分析</b>。
-                </div>
+        <div class="play-bar">
+            <button id="btnStart" type="button">▶ 自动演示</button>
+            <button id="btnPauseResume" type="button" disabled>暂停</button>
+            <button id="btnReset" type="button">重置</button>
+            <select id="pSpeed" title="播放速度" aria-label="播放速度倍率">
+                <option value="0.5">0.5×</option>
+                <option value="1" selected>1×</option>
+                <option value="2">2×</option>
+                <option value="4">4×</option>
+            </select>
+        </div>
+        <section class="data-group" aria-labelledby="dataTitle" aria-live="polite">
+            <div class="group-title" id="dataTitle">实时数值</div>
+            <div class="data-grid" id="composeData">
+                <div class="data-item"><span>分力 F₁</span><b id="dF1">4.0 N</b></div>
+                <div class="data-item"><span>分力 F₂</span><b id="dF2">3.0 N</b></div>
+                <div class="data-item"><span>夹角 θ</span><b id="dTheta">60°</b></div>
+                <div class="data-item"><span>合力 F</span><b id="dF">6.08 N</b></div>
+                <div class="data-item"><span>合力方向角 φ（对 F₁）</span><b id="dPhi">25.3°</b></div>
+                <div class="data-item"><span>正交分量 Fy</span><b id="dFy">2.60 N</b></div>
+                <div class="data-item"><span>正交分量 Fx</span><b id="dFx">5.50 N</b></div>
+                <div class="data-item"><span>合力范围 [F₁−F₂, F₁+F₂]</span><b id="dRange">[1.0, 7.0] N</b></div>
+                <div class="data-item span-full"><span>情形分类</span><b id="dClass">锐角夹角</b></div>
+            </div>
+            <div class="data-grid" id="resolveData" style="display:none;">
+                <div class="data-item"><span>合力 F</span><b id="dRF">6.0 N</b></div>
+                <div class="data-item"><span>方向角 α</span><b id="dRAlpha">30°</b></div>
+                <div class="data-item"><span>分解方式</span><b id="dRMethod">正交分解</b></div>
+                <div class="data-item"><span>分力 F₁′</span><b id="dF1p">—</b></div>
+                <div class="data-item"><span>分力 F₂′</span><b id="dF2p">—</b></div>
+                <div class="data-item"><span>方向角 φ₁ / φ₂</span><b id="dPhis">0° / 70°</b></div>
+                <div class="data-item"><span>正交分量 Fx</span><b id="dRFx">5.20 N</b></div>
+                <div class="data-item"><span>正交分量 Fy</span><b id="dRFy">3.00 N</b></div>
+                <div class="data-item span-full"><span>解的特征</span><b id="dFeature">唯一解（正交分解）</b></div>
+            </div>
         </section>
         <div class="control-panel">
             <section class="param-group" aria-labelledby="parameterTitle">
@@ -341,33 +363,20 @@
                         <div class="val" id="pPhi2Val">70°</div>
                     </div>
                 </div>
-                                            </section>
-            <section class="data-group" aria-labelledby="dataTitle" aria-live="polite">
-                <div class="group-title" id="dataTitle">实时数值</div>
-                <div class="data-grid" id="composeData">
-                    <div class="data-item"><span>分力 F₁</span><b id="dF1">4.0 N</b></div>
-                    <div class="data-item"><span>分力 F₂</span><b id="dF2">3.0 N</b></div>
-                    <div class="data-item"><span>夹角 θ</span><b id="dTheta">60°</b></div>
-                    <div class="data-item"><span>合力 F</span><b id="dF">6.08 N</b></div>
-                    <div class="data-item"><span>合力方向角 φ（对 F₁）</span><b id="dPhi">25.3°</b></div>
-                    <div class="data-item"><span>正交分量 Fy</span><b id="dFy">2.60 N</b></div>
-                    <div class="data-item"><span>正交分量 Fx</span><b id="dFx">5.50 N</b></div>
-                    <div class="data-item"><span>合力范围 [F₁−F₂, F₁+F₂]</span><b id="dRange">[1.0, 7.0] N</b></div>
-                    <div class="data-item span-full"><span>情形分类</span><b id="dClass">锐角夹角</b></div>
-                </div>
-                <div class="data-grid" id="resolveData" style="display:none;">
-                    <div class="data-item"><span>合力 F</span><b id="dRF">6.0 N</b></div>
-                    <div class="data-item"><span>方向角 α</span><b id="dRAlpha">30°</b></div>
-                    <div class="data-item"><span>分解方式</span><b id="dRMethod">正交分解</b></div>
-                    <div class="data-item"><span>分力 F₁′</span><b id="dF1p">—</b></div>
-                    <div class="data-item"><span>分力 F₂′</span><b id="dF2p">—</b></div>
-                    <div class="data-item"><span>方向角 φ₁ / φ₂</span><b id="dPhis">0° / 70°</b></div>
-                    <div class="data-item"><span>正交分量 Fx</span><b id="dRFx">5.20 N</b></div>
-                    <div class="data-item"><span>正交分量 Fy</span><b id="dRFy">3.00 N</b></div>
-                    <div class="data-item span-full"><span>解的特征</span><b id="dFeature">唯一解（正交分解）</b></div>
-                </div>
             </section>
         </div>
+        <section class="formula-card">
+            <div class="group-title">推导与判断</div>
+            <div class="fixed-note">
+                力的合成遵循<b>平行四边形定则</b>：以两分力为邻边作平行四边形，合力为两分力之间所夹的对角线。<br>
+                合成公式：<b>F = √(F₁²+F₂²+2F₁F₂cosθ)</b>（θ 为两分力之间的夹角）。<br>
+                判断：两分力固定时，<b>夹角 θ 越大合力越小</b>；合力范围 <b>|F₁−F₂| ≤ F ≤ F₁+F₂</b>。<br>
+                特殊情形：同向 θ=0° → F=F₁+F₂（最大）；反向 θ=180° → F=|F₁−F₂|（最小）；垂直 θ=90° → F=√(F₁²+F₂²)；等大且 θ=120° → F=F₁=F₂。<br>
+                分解是合成的<b>逆运算</b>：正交分解 Fx = Fcosα、Fy = Fsinα；按两已知方向分解时，由平行四边形（三角形）作图求分力。<br>
+                判断：<b>分解不唯一</b>——同一合力有无穷多组分解，附加条件（如限定两分力方向）后解唯一，且分力可以大于合力。<br>
+                判断：<b>合力与分力是等效替代关系，不能同时参与受力分析</b>。
+            </div>
+        </section>
                 <div class="legend">
             <span style="color:#d97706">—— F₁ / F₁′ / Fx（黄）</span>
             <span style="color:#0d9488">—— F₂ / F₂′ / Fy（青）</span>

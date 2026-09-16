@@ -40,14 +40,11 @@
             touch-action: none;
         }
         .control-panel {
-            margin-top: 14px;
+            margin-top: 16px;
             width: 100%;
             display: grid;
-            grid-template-columns: minmax(240px, 1fr) minmax(280px, 1.25fr);
-            gap: 14px;
-        }
-        @media (max-width: 720px) {
-            .control-panel { grid-template-columns: 1fr; }
+            grid-template-columns: 1fr;
+            gap: 0;
         }
         .param-group,
         .data-group {
@@ -56,6 +53,14 @@
             border-radius: 10px;
             box-shadow: 0 1px 2px rgba(15,23,42,.05);
             padding: 14px 16px;
+        }
+        .data-group {
+            width: 100%;
+            margin-top: 16px;
+        }
+        input[type=range]:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
         }
         .chart-panel {
             background: transparent;
@@ -94,7 +99,7 @@
         }
         .param-row input[type=range]:disabled + .val { opacity: 0.5; }
         .fixed-note {
-            margin-top: 4px;
+            margin-top: 8px;
             font-size: 12px;
             color: #6b7280;
             line-height: 1.6;
@@ -102,10 +107,10 @@
         .fixed-note b { color: #b45309; font-weight: 600; }
         .data-grid {
             display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
+            grid-template-columns: repeat(5, minmax(0, 1fr));
             gap: 9px;
         }
-        @media (max-width: 560px) {
+        @media (max-width: 800px) {
             .data-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         }
         .data-item {
@@ -147,6 +152,7 @@
         }
         .play-bar {
             margin-top: 12px;
+            width: 100%;
             display: flex;
             align-items: center;
             gap: 10px;
@@ -203,17 +209,6 @@
         <h1>共点力平衡演示</h1>
         <div class="canvas-wrap">
             <canvas id="scene" role="img" aria-label="共点力平衡演示：轻绳悬球在水平拉力作用下缓慢移动"></canvas>
-            <div class="play-bar">
-                <button id="btnStart" type="button">▶ 自动演示</button>
-                <button id="btnPauseResume" type="button" disabled>暂停</button>
-                <button id="btnReset" type="button">重置</button>
-                <select id="pSpeed" title="播放速度" aria-label="播放速度倍率">
-                    <option value="0.5">0.5×</option>
-                    <option value="1" selected>1×</option>
-                    <option value="2">2×</option>
-                    <option value="4">4×</option>
-                </select>
-            </div>
         </div>
         <div class="charts-row">
             <section class="chart-panel">
@@ -225,14 +220,30 @@
                 <canvas id="chartR" role="img" aria-label="绳张力正交分量随夹角变化的曲线，Ty 恒等于重力"></canvas>
             </section>
         </div>
-        <section class="formula-card">
-            <div class="group-title">公式与判定</div>
-            <div class="fixed-note">
-                    平衡条件：<b>ΣFx = 0，ΣFy = 0</b>（共点力合力为零）；"缓慢移动" = 准静态过程，每一时刻均为平衡态。<br>
-                    平衡方程：<b>F = mg·tanθ，T = mg/cosθ</b>（g = 10 m/s² 固定）；θ 增大 → F、T 都增大，<b>T = mg/cosθ ≥ mg 恒成立</b>；θ→90° 时 F、T → ∞（绳越接近水平越难拉；图示与曲线范围取 0~60°，其中重力箭头长度恒定不变）。<br>
-                    三力平衡 ⇒ <b>任意两力的合力与第三力等大反向</b>：G 与 F 的合力 = −T（沿绳延长线）；三力首尾相接构成封闭三角形。<br>
-                    正交分解：竖直分量 <b>Ty = T·cosθ = mg</b>（恒"托住"重力），水平分量 <b>Tx = T·sinθ = F</b>。（拓展：相似三角形法 T/L = mg/(L·cosθ)）
-                </div>
+        <div class="play-bar">
+            <button id="btnStart" type="button">▶ 自动演示</button>
+            <button id="btnPauseResume" type="button" disabled>暂停</button>
+            <button id="btnReset" type="button">重置</button>
+            <select id="pSpeed" title="播放速度" aria-label="播放速度倍率">
+                <option value="0.5">0.5×</option>
+                <option value="1" selected>1×</option>
+                <option value="2">2×</option>
+                <option value="4">4×</option>
+            </select>
+        </div>
+        <section class="data-group" aria-labelledby="dataTitle" aria-live="polite">
+            <div class="group-title" id="dataTitle">实时数值</div>
+            <div class="data-grid">
+                <div class="data-item"><span>夹角 θ（对竖直）</span><b id="dTheta">60°</b></div>
+                <div class="data-item"><span>质量 m</span><b id="dMass">1.0 kg</b></div>
+                <div class="data-item"><span>重力 G = mg</span><b id="dG">10.0 N</b></div>
+                <div class="data-item"><span>水平拉力 F</span><b id="dF">17.32 N</b></div>
+                <div class="data-item"><span>绳张力 T</span><b id="dT">20.00 N</b></div>
+                <div class="data-item"><span>T 水平分量 Tx</span><b id="dTx">17.32 N</b></div>
+                <div class="data-item"><span>T 竖直分量 Ty</span><b id="dTy">10.00 N</b></div>
+                <div class="data-item"><span>T / G</span><b id="dRatio">2.00 × G</b></div>
+                <div class="data-item span-full"><span>平衡状态</span><b id="dState">准静态平衡：ΣFx=0，ΣFy=0</b></div>
+            </div>
         </section>
         <div class="control-panel">
             <section class="param-group" aria-labelledby="parameterTitle">
@@ -247,22 +258,20 @@
                     <input id="pMass" type="range" min="0.5" max="5" value="1" step="0.5" aria-label="小球质量，影响重力、拉力与张力的数值">
                     <div class="val" id="pMassVal">1.0 kg</div>
                 </div>
-                                            </section>
-            <section class="data-group" aria-labelledby="dataTitle" aria-live="polite">
-                <div class="group-title" id="dataTitle">实时数值</div>
-                <div class="data-grid">
-                    <div class="data-item"><span>夹角 θ（对竖直）</span><b id="dTheta">60°</b></div>
-                    <div class="data-item"><span>质量 m</span><b id="dMass">1.0 kg</b></div>
-                    <div class="data-item"><span>重力 G = mg</span><b id="dG">10.0 N</b></div>
-                    <div class="data-item"><span>水平拉力 F</span><b id="dF">17.32 N</b></div>
-                    <div class="data-item"><span>绳张力 T</span><b id="dT">20.00 N</b></div>
-                    <div class="data-item"><span>T 水平分量 Tx</span><b id="dTx">17.32 N</b></div>
-                    <div class="data-item"><span>T 竖直分量 Ty</span><b id="dTy">10.00 N</b></div>
-                    <div class="data-item"><span>T / G</span><b id="dRatio">2.00 × G</b></div>
-                    <div class="data-item span-full"><span>平衡状态</span><b id="dState">准静态平衡：ΣFx=0，ΣFy=0</b></div>
-                </div>
             </section>
         </div>
+        <section class="formula-card">
+            <div class="group-title">推导与判断</div>
+            <div class="fixed-note">
+                平衡条件：共点力作用下物体平衡 ⇔ <b>合力为零</b>；正交分解后 <b>ΣFx = 0，ΣFy = 0</b>。<br>
+                "缓慢移动" = 准静态过程，小球在每一时刻都可视为处于平衡态。<br>
+                竖直方向平衡：T 的竖直分量"托住"重力，<b>T·cosθ = mg</b> → <b>T = mg/cosθ</b>。<br>
+                水平方向平衡：F 与 T 的水平分量平衡，<b>F = T·sinθ = mg·tanθ</b>（g = 10 m/s² 固定）。<br>
+                判断：θ 增大 → F、T 都增大；<b>T = mg/cosθ ≥ mg 恒成立</b>；θ→90° 时 F、T → ∞（绳越接近水平越难拉）。<br>
+                三力平衡 ⇒ <b>任意两力的合力与第三力等大反向</b>：G 与 F 的合力 = −T（沿绳延长线），三力首尾相接构成封闭三角形。<br>
+                拓展：相似三角形法 T/L = mg/(L·cosθ)，结果与正交分解一致。
+            </div>
+        </section>
                 <div class="legend">
             <span style="color:#d97706">—— T 绳张力（黄）</span>
             <span style="color:#ea580c">—— F 水平拉力（橙）</span>
