@@ -78,13 +78,32 @@ canvas#cv {
   border: 2px solid #2563eb;
   border-radius: 10px;
 }
-.actions {
-  margin-top: 16px;
+.play-bar {
+  margin-top: 10px;
   display: flex;
+  align-items: center;
   gap: 10px;
   flex-wrap: wrap;
-  justify-content: center;
 }
+.play-bar select {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 13px;
+  background: #fff;
+  color: #1f2937;
+  cursor: pointer;
+}
+.formula-card {
+  width: 100%;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 14px 16px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+}
+.formula-card .group-title { margin-bottom: 8px; }
+.formula-card .fixed-note { margin-top: 0; }
 .control-panel {
   width: 100%;
   display: grid;
@@ -223,6 +242,17 @@ footer {
   <div class="canvas-wrap">
     <canvas id="cv" width="880" height="520" role="img"
       aria-label="弹簧悬挂A球与绳子悬挂B球对比演示：剪断后B球自由落体，A球因弹簧振荡延迟下落"></canvas>
+    <div class="play-bar">
+        <button id="startBtn">▶ 开始</button>
+        <button id="pauseBtn" disabled>⏸ 暂停</button>
+        <button id="resetBtn">⟲ 重置</button>
+        <select id="speed" title="播放速度" aria-label="播放速度倍率">
+            <option value="0.25">0.25×</option>
+            <option value="0.5" selected>0.5×</option>
+            <option value="1">1×</option>
+            <option value="2">2×</option>
+        </select>
+    </div>
   </div>
 
   <div class="charts-row">
@@ -236,6 +266,15 @@ footer {
     </section>
   </div>
 
+  <section class="formula-card">
+      <div class="group-title">公式与判定</div>
+      <div class="fixed-note">
+        <b>物理要点</b>：左侧 A 球由<b>细绳 + 弹簧</b>串联悬挂，剪断的是<b>弹簧上方的细绳</b>。剪断瞬间弹簧<b>形变不能突变</b>，弹力仍 = kx₀ = mg，A 球此刻加速度为 0；<br>
+        随后弹簧随球整体下落，在共落参考系中做<b>阻尼简谐振荡</b>，使球下坠延迟。<br>
+        右侧 B 球由不可伸长绳悬挂，剪断瞬间<b>张力立即消失</b>，B 球立即自由落体。因此 <b>B 球先落地</b>。<br>
+        重力加速度 <b>g = 10 m/s²</b>（固定值）。
+      </div>
+  </section>
   <div class="control-panel">
     <section class="card param-group">
       <div class="group-title">参数设定</div>
@@ -259,18 +298,7 @@ footer {
         <input id="damp" type="range" min="0.02" max="0.5" value="0.12" step="0.02">
         <span class="val" id="cVal">0.12</span>
       </div>
-      <div class="param-row">
-        <label>播放速度</label>
-        <input id="speed" type="range" min="0.25" max="2" value="0.6" step="0.05">
-        <span class="val" id="spVal">0.60×</span>
-      </div>
-      <div class="fixed-note">
-        <b>物理要点</b>：左侧 A 球由<b>细绳 + 弹簧</b>串联悬挂，剪断的是<b>弹簧上方的细绳</b>。剪断瞬间弹簧<b>形变不能突变</b>，弹力仍 = kx₀ = mg，A 球此刻加速度为 0；<br>
-        随后弹簧随球整体下落，在共落参考系中做<b>阻尼简谐振荡</b>，使球下坠延迟。<br>
-        右侧 B 球由不可伸长绳悬挂，剪断瞬间<b>张力立即消失</b>，B 球立即自由落体。因此 <b>B 球先落地</b>。<br>
-        重力加速度 <b>g = 10 m/s²</b>（固定值）。
-      </div>
-    </section>
+                </section>
 
     <section class="card data-group" id="hudRow" aria-live="polite">
       <div class="group-title">实时数值</div>
@@ -288,13 +316,7 @@ footer {
     </section>
   </div>
 
-  <div class="actions">
-    <button id="startBtn">▶ 开始</button>
-    <button id="pauseBtn" disabled>⏸ 暂停</button>
-    <button id="resetBtn">⟲ 重置</button>
-  </div>
-
-  <div class="legend">
+    <div class="legend">
     <span class="lg-a">A 球 (弹簧悬挂)</span>
     <span class="lg-b">B 球 (绳子悬挂)</span>
     <span class="lg-spring">弹簧 (k·x)</span>
@@ -330,7 +352,7 @@ footer {
   const elH = $('height'), elK = $('stiff'), elM = $('mass'),
         elC = $('damp'), elSp = $('speed');
   const hVal = $('hVal'), kVal = $('kVal'), mVal = $('mVal'),
-        cVal = $('cVal'), spVal = $('spVal');
+        cVal = $('cVal');
   const startBtn = $('startBtn'), pauseBtn = $('pauseBtn'), resetBtn = $('resetBtn');
   const hudRow = $('hudRow');
   const tNum = $('tNum'), aV = $('aV'), bV = $('bV'),
@@ -343,7 +365,7 @@ footer {
   const GROUND_Y = 486;
   const BALL_R = 16;
 
-  let params = { h: 7, k: 25, m: 1, zeta: 0.12, g: 10, speed: 0.6 };
+  let params = { h: 7, k: 25, m: 1, zeta: 0.12, g: 10, speed: 0.5 };
   let sysA = { y: 0, vy: 0, ay: 0, stretch: 0, stretchV: 0, landTime: null, landed: false };
   let sysB = { y: 0, vy: 0, ay: 0, landTime: null, landed: false };
   let time = 0, running = false, paused = false;
@@ -723,7 +745,6 @@ footer {
     kVal.textContent = params.k + ' N/m';
     mVal.textContent = params.m.toFixed(1) + ' kg';
     cVal.textContent = params.zeta.toFixed(2);
-    spVal.textContent = params.speed.toFixed(2) + '×';
   }
 
   function onParamChange() {

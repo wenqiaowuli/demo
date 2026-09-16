@@ -143,13 +143,33 @@
             border: 2px solid #2563eb;
             border-radius: 10px;
         }
-        .actions {
-            margin-top: 16px;
+        .play-bar {
+            margin-top: 12px;
             display: flex;
+            align-items: center;
             gap: 10px;
             flex-wrap: wrap;
-            justify-content: center;
         }
+        .play-bar select {
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 6px 10px;
+            font-size: 13px;
+            background: #fff;
+            color: #1f2937;
+            cursor: pointer;
+        }
+        .formula-card {
+            margin-top: 16px;
+            width: 100%;
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 14px 16px;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+        }
+        .formula-card .group-title { margin-bottom: 8px; }
+        .formula-card .fixed-note { margin-top: 0; }
         button {
             background: #2563eb;
             border: none;
@@ -181,6 +201,17 @@
         <h1>超重和失重演示</h1>
         <div class="canvas-wrap">
             <canvas id="scene" role="img" aria-label="超重和失重演示：电梯内的人站在体重计上"></canvas>
+            <div class="play-bar">
+                <button id="btnStart" type="button">开始</button>
+                <button id="btnPauseResume" type="button" disabled>暂停</button>
+                <button id="btnReset" type="button">重置</button>
+                <select id="speed" title="播放速度" aria-label="播放速度倍率">
+                    <option value="0.5">0.5×</option>
+                    <option value="1" selected>1×</option>
+                    <option value="2">2×</option>
+                    <option value="4">4×</option>
+                </select>
+            </div>
         </div>
         <div class="charts-row">
             <section class="chart-panel">
@@ -192,6 +223,16 @@
                 <canvas id="ftChart" role="img" aria-label="体重计视重-时间图像，带实重 G=mg 参考虚线"></canvas>
             </section>
         </div>
+        <section class="formula-card">
+            <div class="group-title">公式与判定</div>
+            <div class="fixed-note">
+                    视重公式：<b>F = m(g + a)</b>，a 竖直向上为正，<b>g = 10 m/s²</b>（固定）。<br>
+                    超重 ⇔ 加速度向上；失重 ⇔ 加速度向下；<b>与速度方向无关</b>。<br>
+                    实重 G = mg 恒定不变，变的只是体重计读数（视重）。<br>
+                    a = g 时 F = 0，即完全失重（如自由落体）。<br>
+                    阶段：加速↑<span style="color:#ea580c">(超重)</span>→匀速↑→减速↑<span style="color:#2563eb">(失重)</span>→停靠→加速↓<span style="color:#2563eb">(失重)</span>→匀速↓→减速↓<span style="color:#ea580c">(超重)</span>
+                </div>
+        </section>
         <div class="control-panel">
             <section class="param-group" aria-labelledby="parameterTitle">
                 <div class="group-title" id="parameterTitle">参数设定</div>
@@ -215,19 +256,7 @@
                     <input id="mass" type="range" min="40" max="100" value="60" step="1" aria-label="人的质量，影响实重与视重">
                     <div class="val" id="massVal">60 kg</div>
                 </div>
-                <div class="param-row">
-                    <label for="speed">播放速度</label>
-                    <input id="speed" type="range" min="0.1" max="2" value="1" step="0.1" aria-label="播放速度倍率">
-                    <div class="val" id="speedVal">1.0×</div>
-                </div>
-                <div class="fixed-note">
-                    视重公式：<b>F = m(g + a)</b>，a 竖直向上为正，<b>g = 10 m/s²</b>（固定）。<br>
-                    超重 ⇔ 加速度向上；失重 ⇔ 加速度向下；<b>与速度方向无关</b>。<br>
-                    实重 G = mg 恒定不变，变的只是体重计读数（视重）。<br>
-                    a = g 时 F = 0，即完全失重（如自由落体）。<br>
-                    阶段：加速↑<span style="color:#ea580c">(超重)</span>→匀速↑→减速↑<span style="color:#2563eb">(失重)</span>→停靠→加速↓<span style="color:#2563eb">(失重)</span>→匀速↓→减速↓<span style="color:#ea580c">(超重)</span>
-                </div>
-            </section>
+                                            </section>
             <section class="data-group" aria-labelledby="dataTitle" aria-live="polite">
                 <div class="group-title" id="dataTitle">实时数值</div>
                 <div class="data-grid">
@@ -244,12 +273,7 @@
                 </div>
             </section>
         </div>
-        <div class="actions">
-            <button id="btnStart" type="button">开始</button>
-            <button id="btnPauseResume" type="button" disabled>暂停</button>
-            <button id="btnReset" type="button">重置</button>
-        </div>
-        <div class="legend">
+                <div class="legend">
             <span>□ 电梯轿厢（内有人与体重计）</span>
             <span style="color:#ea580c">→ 加速度 a</span>
             <span>楼层线（每层 3 m）与左侧高度标尺</span>
@@ -286,7 +310,6 @@
         const vmaxVal = document.getElementById('vmaxVal');
         const tconstVal = document.getElementById('tconstVal');
         const massVal = document.getElementById('massVal');
-        const speedVal = document.getElementById('speedVal');
         const elTime = document.getElementById('time');
         const elVel = document.getElementById('vel');
         const elAccNow = document.getElementById('accNow');
@@ -909,7 +932,6 @@
             vmaxVal.textContent = Number(inputVmax.value).toFixed(1) + ' m/s';
             tconstVal.textContent = Number(inputTconst.value).toFixed(1) + ' s';
             massVal.textContent = inputMass.value + ' kg';
-            speedVal.textContent = Number(inputSpeed.value).toFixed(1) + '×';
         }
 
         btnStart.addEventListener('click', start);

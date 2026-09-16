@@ -157,13 +157,33 @@
             color: #1f2937;
             font-variant-numeric: tabular-nums;
         }
-        .actions {
-            margin-top: 16px;
+        .play-bar {
+            margin-top: 12px;
             display: flex;
+            align-items: center;
             gap: 10px;
             flex-wrap: wrap;
-            justify-content: center;
         }
+        .play-bar select {
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 6px 10px;
+            font-size: 13px;
+            background: #fff;
+            color: #1f2937;
+            cursor: pointer;
+        }
+        .formula-card {
+            margin-top: 16px;
+            width: 100%;
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 14px 16px;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+        }
+        .formula-card .group-title { margin-bottom: 8px; }
+        .formula-card .fixed-note { margin-top: 0; }
         button {
             background: #2563eb;
             border: none;
@@ -195,6 +215,17 @@
         <h1>斜抛运动演示</h1>
         <div class="canvas-wrap">
             <canvas id="canvas" role="img" aria-label="斜抛运动轨迹演示"></canvas>
+            <div class="play-bar">
+                <button id="btnStart" type="button">开始</button>
+                <button id="btnPause" type="button" disabled>暂停</button>
+                <button id="btnReset" type="button">重置</button>
+                <select id="speed" title="播放速度" aria-label="播放速度倍率">
+                    <option value="0.5" selected>0.5×</option>
+                    <option value="1">1×</option>
+                    <option value="2">2×</option>
+                    <option value="4">4×</option>
+                </select>
+            </div>
         </div>
         <div class="charts-row">
             <section class="chart-panel">
@@ -206,6 +237,15 @@
                 <canvas id="stChart" role="img" aria-label="水平位移与竖直位移随时间变化图像"></canvas>
             </section>
         </div>
+        <section class="formula-card">
+            <div class="group-title">公式与判定</div>
+            <div class="fixed-note">
+                    重力加速度 <b>g = 10 m/s²</b>（固定值）。水平方向匀速直线，竖直方向竖直上抛。<br>
+                    正方向：水平向右为 +x，竖直<b>向上</b>为 +y（过最高点后 vᵧ、γ 为负）。<br>
+                    公式：vₓ = v₀cosθ，vᵧ = v₀sinθ − gt，x = vₓt，y = v₀y t − ½gt²<br>
+                    射程 X = v₀²sin2θ/g：<b>θ 与 90°−θ 射程相同</b>（如 30° 与 60°），<b>θ = 45° 时射程最大</b>。
+                </div>
+        </section>
         <div class="control-panel">
             <section class="param-group" aria-labelledby="parameterTitle">
                 <div class="group-title" id="parameterTitle">参数设定</div>
@@ -219,12 +259,7 @@
                     <input id="angle" type="range" min="1" max="89" value="45" step="1">
                     <div class="val" id="angleVal">45°</div>
                 </div>
-                <div class="param-row">
-                    <label for="speed">播放速度</label>
-                    <input id="speed" type="range" min="0.1" max="4" value="0.5" step="0.1">
-                    <div class="val" id="speedVal">0.5×</div>
-                </div>
-                <label class="toggle" for="showPreview">
+                                <label class="toggle" for="showPreview">
                     <input id="showPreview" type="checkbox" checked>
                     显示理论轨迹
                 </label>
@@ -236,13 +271,7 @@
                     <input id="showApex" type="checkbox" checked>
                     显示最高点标记
                 </label>
-                <div class="fixed-note">
-                    重力加速度 <b>g = 10 m/s²</b>（固定值）。水平方向匀速直线，竖直方向竖直上抛。<br>
-                    正方向：水平向右为 +x，竖直<b>向上</b>为 +y（过最高点后 vᵧ、γ 为负）。<br>
-                    公式：vₓ = v₀cosθ，vᵧ = v₀sinθ − gt，x = vₓt，y = v₀y t − ½gt²<br>
-                    射程 X = v₀²sin2θ/g：<b>θ 与 90°−θ 射程相同</b>（如 30° 与 60°），<b>θ = 45° 时射程最大</b>。
-                </div>
-            </section>
+                            </section>
             <section class="data-group" id="dataGroup" aria-labelledby="dataTitle" aria-live="polite">
                 <div class="group-title" id="dataTitle">实时数值</div>
                 <div class="data-grid">
@@ -259,12 +288,7 @@
                 </div>
             </section>
         </div>
-        <div class="actions">
-            <button id="btnStart" type="button">开始</button>
-            <button id="btnPause" type="button" disabled>暂停</button>
-            <button id="btnReset" type="button">重置</button>
-        </div>
-        <div class="legend">
+                <div class="legend">
             <span>🟢 水平分速度 vₓ / 水平位移 x</span>
             <span>🟠 竖直分速度 vᵧ / 竖直位移 y</span>
             <span>🔵 合速度</span>
@@ -298,7 +322,6 @@
         const elMaxHeight = document.getElementById('maxHeight');
         const dataGroup = document.getElementById('dataGroup');
         const inputSpeed = document.getElementById('speed');
-        const speedVal = document.getElementById('speedVal');
         const btnStart = document.getElementById('btnStart');
         const btnPause = document.getElementById('btnPause');
         const btnReset = document.getElementById('btnReset');
@@ -894,7 +917,6 @@
         function updateParameterLabels() {
             v0Val.textContent = inputV0.value + ' m/s';
             angleVal.textContent = inputAngle.value + '°';
-            speedVal.textContent = Number(inputSpeed.value).toFixed(1) + '×';
         }
 
         function togglePlay() {

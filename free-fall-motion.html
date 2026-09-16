@@ -143,13 +143,33 @@
             border: 2px solid #2563eb;
             border-radius: 10px;
         }
-        .actions {
-            margin-top: 16px;
+        .play-bar {
+            margin-top: 12px;
             display: flex;
+            align-items: center;
             gap: 10px;
             flex-wrap: wrap;
-            justify-content: center;
         }
+        .play-bar select {
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 6px 10px;
+            font-size: 13px;
+            background: #fff;
+            color: #1f2937;
+            cursor: pointer;
+        }
+        .formula-card {
+            margin-top: 16px;
+            width: 100%;
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 14px 16px;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+        }
+        .formula-card .group-title { margin-bottom: 8px; }
+        .formula-card .fixed-note { margin-top: 0; }
         button {
             background: #2563eb;
             border: none;
@@ -181,6 +201,17 @@
         <h1>自由落体运动演示</h1>
         <div class="canvas-wrap">
             <canvas id="scene" role="img" aria-label="自由落体运动演示"></canvas>
+            <div class="play-bar">
+                <button id="btnStart" type="button">开始</button>
+                <button id="btnPauseResume" type="button" disabled>暂停</button>
+                <button id="btnReset" type="button">重置</button>
+                <select id="speed" title="播放速度" aria-label="播放速度倍率">
+                    <option value="0.5" selected>0.5×</option>
+                    <option value="1">1×</option>
+                    <option value="2">2×</option>
+                    <option value="4">4×</option>
+                </select>
+            </div>
         </div>
         <div class="charts-row">
             <section class="chart-panel">
@@ -192,6 +223,15 @@
                 <canvas id="stChart" role="img" aria-label="位移-时间图像，开口向上的抛物线"></canvas>
             </section>
         </div>
+        <section class="formula-card">
+            <div class="group-title">公式与判定</div>
+            <div class="fixed-note">
+                    自由落体：v₀ = 0，只受重力，<b>g = 10 m/s²</b>（固定值），以竖直向下为正方向。<br>
+                    公式：v = g·t，s = ½g·t²；t落 = √(2h/g)，v落 = √(2gh)。<br>
+                    下落快慢与质量无关：质量只改变球的体积与重力 G = mg。<br>
+                    试试把 m 从 0.1 调到 10 再跑一次，v-t / s-t 曲线完全不变。
+                </div>
+        </section>
         <div class="control-panel">
             <section class="param-group" aria-labelledby="parameterTitle">
                 <div class="group-title" id="parameterTitle">参数设定</div>
@@ -205,18 +245,7 @@
                     <input id="mass" type="range" min="0.1" max="10" value="1" step="0.1" aria-label="小球质量，单位千克，仅改变球的大小与重力，不影响下落快慢">
                     <div class="val" id="massVal">1.0 kg</div>
                 </div>
-                <div class="param-row">
-                    <label for="speed">播放速度</label>
-                    <input id="speed" type="range" min="0.1" max="2" value="0.5" step="0.1" aria-label="播放速度倍率">
-                    <div class="val" id="speedVal">0.5×</div>
-                </div>
-                <div class="fixed-note">
-                    自由落体：v₀ = 0，只受重力，<b>g = 10 m/s²</b>（固定值），以竖直向下为正方向。<br>
-                    公式：v = g·t，s = ½g·t²；t落 = √(2h/g)，v落 = √(2gh)。<br>
-                    下落快慢与质量无关：质量只改变球的体积与重力 G = mg。<br>
-                    试试把 m 从 0.1 调到 10 再跑一次，v-t / s-t 曲线完全不变。
-                </div>
-            </section>
+                                            </section>
             <section class="data-group" aria-labelledby="dataTitle" aria-live="polite">
                 <div class="group-title" id="dataTitle">实时数值</div>
                 <div class="data-grid">
@@ -232,12 +261,7 @@
                 </div>
             </section>
         </div>
-        <div class="actions">
-            <button id="btnStart" type="button">开始</button>
-            <button id="btnPauseResume" type="button" disabled>暂停</button>
-            <button id="btnReset" type="button">重置</button>
-        </div>
-        <div class="legend">
+                <div class="legend">
             <span>⚪ 小球（大小随质量 m 变化）</span>
             <span style="color:#dc2626">↓ 速度 v（随时间增大）</span>
             <span style="color:#ea580c">↓ 加速度 a = g（恒定）</span>
@@ -273,7 +297,6 @@
         const inputSpeed = document.getElementById('speed');
         const heightVal = document.getElementById('heightVal');
         const massVal = document.getElementById('massVal');
-        const speedVal = document.getElementById('speedVal');
         const elTime = document.getElementById('time');
         const elDisp = document.getElementById('disp');
         const elVel = document.getElementById('vel');
@@ -772,7 +795,6 @@
         function updateParameterLabels() {
             heightVal.textContent = inputHeight.value + ' m';
             massVal.textContent = Number(inputMass.value).toFixed(1) + ' kg';
-            speedVal.textContent = Number(inputSpeed.value).toFixed(1) + '×';
         }
 
         btnStart.addEventListener('click', start);

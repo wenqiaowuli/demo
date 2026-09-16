@@ -92,13 +92,32 @@ canvas#cv {
   border: 2px solid #2563eb;
   border-radius: 10px;
 }
-.actions {
-  margin-top: 16px;
+.play-bar {
+  margin-top: 10px;
   display: flex;
+  align-items: center;
   gap: 10px;
   flex-wrap: wrap;
-  justify-content: center;
 }
+.play-bar select {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 13px;
+  background: #fff;
+  color: #1f2937;
+  cursor: pointer;
+}
+.formula-card {
+  width: 100%;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 14px 16px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+}
+.formula-card .group-title { margin-bottom: 8px; }
+.formula-card .fixed-note { margin-top: 0; }
 .control-panel {
   width: 100%;
   display: grid;
@@ -255,6 +274,18 @@ footer {
 <div class="main">
   <div class="canvas-wrap">
     <canvas id="cv" width="880" height="520" role="img" aria-label="水平传送带上物块运动演示：物块默认放在带左端，两端滚筒随带速旋转，物块受摩擦力加速或减速直至与带共速"></canvas>
+    <div class="play-bar">
+        <button id="bStart">▶ 开始</button>
+        <button id="bPause" disabled>⏸ 暂停</button>
+        <button id="bReset">⟲ 重置</button>
+        <select id="speed" title="播放速度" aria-label="播放速度倍率">
+            <option value="0.25">0.25×</option>
+            <option value="0.5">0.5×</option>
+            <option value="1" selected>1×</option>
+            <option value="2">2×</option>
+            <option value="4">4×</option>
+        </select>
+    </div>
   </div>
 
   <div class="charts-row">
@@ -268,6 +299,18 @@ footer {
     </section>
   </div>
 
+  <section class="formula-card">
+      <div class="group-title">公式与判定</div>
+      <div class="fixed-note">
+        <b>公式</b>（地面参考系，向右为正）<br>
+        滑动：<em>f = μmg</em> · <em>a = μg</em>（方向与相对速度相反）<br>
+        相对位移：<em>s相对 = (v₀ − v带)² / (2μg)</em><br>
+        摩擦生热：<em>Q = μmg · s相对</em><br>
+        共速后：<em>v = v带</em>，<em>a = 0</em>，匀速 · s相对 停止增长<br>
+        正方向：物块位移向右为正；传送带位移 v带 > 0 向右<br>
+        参数：μ（动摩擦因数）· m = 1 kg（物块质量）· v₀（初速度）· v带（传送带速度）· L（带长）；g = 10 m/s²（固定值）
+      </div>
+  </section>
   <div class="control-panel">
     <section class="card param-group">
       <div class="group-title">参数设定</div>
@@ -302,21 +345,7 @@ footer {
         <input id="len" type="range" min="5" max="40" step="1" value="24">
         <span class="val" id="lenVal">24 m</span>
       </div>
-      <div class="param-row">
-        <label>播放速度</label>
-        <input id="speed" type="range" min="0.25" max="4" step="0.25" value="1">
-        <span class="val" id="speedVal">1×</span>
-      </div>
-      <div class="fixed-note">
-        <b>公式</b>（地面参考系，向右为正）<br>
-        滑动：<em>f = μmg</em> · <em>a = μg</em>（方向与相对速度相反）<br>
-        相对位移：<em>s相对 = (v₀ − v带)² / (2μg)</em><br>
-        摩擦生热：<em>Q = μmg · s相对</em><br>
-        共速后：<em>v = v带</em>，<em>a = 0</em>，匀速 · s相对 停止增长<br>
-        正方向：物块位移向右为正；传送带位移 v带 > 0 向右<br>
-        参数：μ（动摩擦因数）· m = 1 kg（物块质量）· v₀（初速度）· v带（传送带速度）· L（带长）；g = 10 m/s²（固定值）
-      </div>
-    </section>
+                </section>
 
     <section class="card data-group" id="hudRow" aria-live="polite">
       <div class="group-title">实时数值</div>
@@ -334,13 +363,7 @@ footer {
     </section>
   </div>
 
-  <div class="actions">
-    <button id="bStart">▶ 开始</button>
-    <button id="bPause" disabled>⏸ 暂停</button>
-    <button id="bReset">⟲ 重置</button>
-  </div>
-
-  <div class="legend">
+    <div class="legend">
     <span class="lg-v">物块速度 v / 位移</span>
     <span class="lg-vbelt">传送带速度 v带 / 位移</span>
     <span class="lg-f">摩擦力 f（动摩擦）</span>
@@ -382,7 +405,7 @@ footer {
   const vbSizeEl = $('vbSize'), vbSizeVal = $('vbSizeVal');
   const vbv = $('vbv');
   const lenEl = $('len'), lenVal = $('lenVal');
-  const speedEl = $('speed'), speedVal = $('speedVal');
+  const speedEl = $('speed');
   const vNum  = $('vNum'), vrel = $('vrel'), fNum = $('fNum'), aNum = $('aNum'), tNum = $('tNum');
   const sNum  = $('sNum'), qNum = $('qNum');
   const dirText = $('dirText'), vbv2 = $('vbv2');
@@ -1089,7 +1112,6 @@ footer {
     vbv.textContent   = (state.vBelt >= 0 ? '+' : '') + state.vBelt.toFixed(1) + ' m/s';
     vbSizeVal.textContent = (state.vbSize >= 0 ? '+' : '') + state.vbSize.toFixed(1) + ' m/s';
     lenVal.textContent  = state.L + ' m';
-    speedVal.textContent = String(+state.speed.toFixed(2)) + '×';
     const dirLabel = state.vBelt > 0.01 ? '→ 向右' : (state.vBelt < -0.01 ? '← 向左' : '· 静止');
     dirText.textContent = dirLabel;
   }

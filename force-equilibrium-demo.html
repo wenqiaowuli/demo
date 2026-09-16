@@ -145,13 +145,33 @@
             border: 2px solid #2563eb;
             border-radius: 10px;
         }
-        .actions {
-            margin-top: 16px;
+        .play-bar {
+            margin-top: 12px;
             display: flex;
+            align-items: center;
             gap: 10px;
             flex-wrap: wrap;
-            justify-content: center;
         }
+        .play-bar select {
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 6px 10px;
+            font-size: 13px;
+            background: #fff;
+            color: #1f2937;
+            cursor: pointer;
+        }
+        .formula-card {
+            margin-top: 16px;
+            width: 100%;
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 14px 16px;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+        }
+        .formula-card .group-title { margin-bottom: 8px; }
+        .formula-card .fixed-note { margin-top: 0; }
         button {
             background: #2563eb;
             border: none;
@@ -183,6 +203,17 @@
         <h1>共点力平衡演示</h1>
         <div class="canvas-wrap">
             <canvas id="scene" role="img" aria-label="共点力平衡演示：轻绳悬球在水平拉力作用下缓慢移动"></canvas>
+            <div class="play-bar">
+                <button id="btnStart" type="button">▶ 自动演示</button>
+                <button id="btnPauseResume" type="button" disabled>暂停</button>
+                <button id="btnReset" type="button">重置</button>
+                <select id="pSpeed" title="播放速度" aria-label="播放速度倍率">
+                    <option value="0.5">0.5×</option>
+                    <option value="1" selected>1×</option>
+                    <option value="2">2×</option>
+                    <option value="4">4×</option>
+                </select>
+            </div>
         </div>
         <div class="charts-row">
             <section class="chart-panel">
@@ -194,6 +225,15 @@
                 <canvas id="chartR" role="img" aria-label="绳张力正交分量随夹角变化的曲线，Ty 恒等于重力"></canvas>
             </section>
         </div>
+        <section class="formula-card">
+            <div class="group-title">公式与判定</div>
+            <div class="fixed-note">
+                    平衡条件：<b>ΣFx = 0，ΣFy = 0</b>（共点力合力为零）；"缓慢移动" = 准静态过程，每一时刻均为平衡态。<br>
+                    平衡方程：<b>F = mg·tanθ，T = mg/cosθ</b>（g = 10 m/s² 固定）；θ 增大 → F、T 都增大，<b>T = mg/cosθ ≥ mg 恒成立</b>；θ→90° 时 F、T → ∞（绳越接近水平越难拉；图示与曲线范围取 0~60°，其中重力箭头长度恒定不变）。<br>
+                    三力平衡 ⇒ <b>任意两力的合力与第三力等大反向</b>：G 与 F 的合力 = −T（沿绳延长线）；三力首尾相接构成封闭三角形。<br>
+                    正交分解：竖直分量 <b>Ty = T·cosθ = mg</b>（恒"托住"重力），水平分量 <b>Tx = T·sinθ = F</b>。（拓展：相似三角形法 T/L = mg/(L·cosθ)）
+                </div>
+        </section>
         <div class="control-panel">
             <section class="param-group" aria-labelledby="parameterTitle">
                 <div class="group-title" id="parameterTitle">参数设定</div>
@@ -207,18 +247,7 @@
                     <input id="pMass" type="range" min="0.5" max="5" value="1" step="0.5" aria-label="小球质量，影响重力、拉力与张力的数值">
                     <div class="val" id="pMassVal">1.0 kg</div>
                 </div>
-                <div class="param-row">
-                    <label for="pSpeed">播放速度</label>
-                    <input id="pSpeed" type="range" min="0.1" max="2" value="1" step="0.1" aria-label="自动演示播放速度倍率">
-                    <div class="val" id="pSpeedVal">1.0×</div>
-                </div>
-                <div class="fixed-note">
-                    平衡条件：<b>ΣFx = 0，ΣFy = 0</b>（共点力合力为零）；"缓慢移动" = 准静态过程，每一时刻均为平衡态。<br>
-                    平衡方程：<b>F = mg·tanθ，T = mg/cosθ</b>（g = 10 m/s² 固定）；θ 增大 → F、T 都增大，<b>T = mg/cosθ ≥ mg 恒成立</b>；θ→90° 时 F、T → ∞（绳越接近水平越难拉；图示与曲线范围取 0~60°，其中重力箭头长度恒定不变）。<br>
-                    三力平衡 ⇒ <b>任意两力的合力与第三力等大反向</b>：G 与 F 的合力 = −T（沿绳延长线）；三力首尾相接构成封闭三角形。<br>
-                    正交分解：竖直分量 <b>Ty = T·cosθ = mg</b>（恒"托住"重力），水平分量 <b>Tx = T·sinθ = F</b>。（拓展：相似三角形法 T/L = mg/(L·cosθ)）
-                </div>
-            </section>
+                                            </section>
             <section class="data-group" aria-labelledby="dataTitle" aria-live="polite">
                 <div class="group-title" id="dataTitle">实时数值</div>
                 <div class="data-grid">
@@ -234,12 +263,7 @@
                 </div>
             </section>
         </div>
-        <div class="actions">
-            <button id="btnStart" type="button">▶ 自动演示</button>
-            <button id="btnPauseResume" type="button" disabled>暂停</button>
-            <button id="btnReset" type="button">重置</button>
-        </div>
-        <div class="legend">
+                <div class="legend">
             <span style="color:#d97706">—— T 绳张力（黄）</span>
             <span style="color:#ea580c">—— F 水平拉力（橙）</span>
             <span style="color:#2563eb">—— G 重力（蓝）</span>
@@ -755,7 +779,6 @@
         function updateParamLabels() {
             $('pThetaVal').textContent = inTheta.value + '°';
             $('pMassVal').textContent = Number(inMass.value).toFixed(1) + ' kg';
-            $('pSpeedVal').textContent = Number(inSpeed.value).toFixed(1) + '×';
         }
         function syncSliders() {
             inTheta.value = eq.target;

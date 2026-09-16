@@ -143,13 +143,33 @@
             border: 2px solid #2563eb;
             border-radius: 10px;
         }
-        .actions {
-            margin-top: 16px;
+        .play-bar {
+            margin-top: 12px;
             display: flex;
+            align-items: center;
             gap: 10px;
             flex-wrap: wrap;
-            justify-content: center;
         }
+        .play-bar select {
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 6px 10px;
+            font-size: 13px;
+            background: #fff;
+            color: #1f2937;
+            cursor: pointer;
+        }
+        .formula-card {
+            margin-top: 16px;
+            width: 100%;
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 14px 16px;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+        }
+        .formula-card .group-title { margin-bottom: 8px; }
+        .formula-card .fixed-note { margin-top: 0; }
         button {
             background: #2563eb;
             border: none;
@@ -181,6 +201,17 @@
         <h1>水平直线运动演示</h1>
         <div class="canvas-wrap">
             <canvas id="scene" role="img" aria-label="水平直线运动演示"></canvas>
+            <div class="play-bar">
+                <button id="btnStart" type="button">开始</button>
+                <button id="btnPauseResume" type="button" disabled>暂停</button>
+                <button id="btnReset" type="button">重置</button>
+                <select id="speed" title="播放速度" aria-label="播放速度倍率">
+                    <option value="0.5" selected>0.5×</option>
+                    <option value="1">1×</option>
+                    <option value="2">2×</option>
+                    <option value="4">4×</option>
+                </select>
+            </div>
         </div>
         <div class="charts-row">
             <section class="chart-panel">
@@ -192,6 +223,15 @@
                 <canvas id="stChart" role="img" aria-label="位移-时间图像，s = v₀t + ½at²"></canvas>
             </section>
         </div>
+        <section class="formula-card">
+            <div class="group-title">公式与判定</div>
+            <div class="fixed-note">
+                    匀变速公式：<b>v = v₀ + at</b> ，<b>s = v₀t + ½at²</b><br>
+                    正方向约定：<b>向右为正</b>；a 与 v 同向 → 加速，反向 → 减速<br>
+                    速度为零时刻：t₀ = −v₀/a（a ≠ 0 且 a 与 v₀ 反向时）<br>
+                    转向点位移：s₀ = −v₀²/(2a)，大小 |s₀| = v₀²/(2|a|)
+                </div>
+        </section>
         <div class="control-panel">
             <section class="param-group" aria-labelledby="parameterTitle">
                 <div class="group-title" id="parameterTitle">参数设定</div>
@@ -205,18 +245,7 @@
                     <input id="v0" type="range" min="-10" max="10" value="5" step="0.5">
                     <div class="val" id="v0Val">+5.0 m/s</div>
                 </div>
-                <div class="param-row">
-                    <label for="speed">播放速度</label>
-                    <input id="speed" type="range" min="0.1" max="2" value="0.5" step="0.1">
-                    <div class="val" id="speedVal">0.5×</div>
-                </div>
-                <div class="fixed-note">
-                    匀变速公式：<b>v = v₀ + at</b> ，<b>s = v₀t + ½at²</b><br>
-                    正方向约定：<b>向右为正</b>；a 与 v 同向 → 加速，反向 → 减速<br>
-                    速度为零时刻：t₀ = −v₀/a（a ≠ 0 且 a 与 v₀ 反向时）<br>
-                    转向点位移：s₀ = −v₀²/(2a)，大小 |s₀| = v₀²/(2|a|)
-                </div>
-            </section>
+                                            </section>
             <section class="data-group" aria-labelledby="dataTitle" aria-live="polite">
                 <div class="group-title" id="dataTitle">实时数值</div>
                 <div class="data-grid">
@@ -230,12 +259,7 @@
                 </div>
             </section>
         </div>
-        <div class="actions">
-            <button id="btnStart" type="button">开始</button>
-            <button id="btnPauseResume" type="button" disabled>暂停</button>
-            <button id="btnReset" type="button">重置</button>
-        </div>
-        <div class="legend">
+                <div class="legend">
             <span>⚪ 小球（从原点出发）</span>
             <span style="color:#dc2626">→ 速度 v</span>
             <span style="color:#ea580c">→ 加速度 a</span>
@@ -264,7 +288,6 @@
         const inputSpeed = document.getElementById('speed');
         const v0Val = document.getElementById('v0Val');
         const aVal = document.getElementById('aVal');
-        const speedVal = document.getElementById('speedVal');
         const elTime = document.getElementById('time');
         const elPos = document.getElementById('pos');
         const elVel = document.getElementById('vel');
@@ -762,7 +785,6 @@
         function updateParameterLabels() {
             v0Val.textContent = (v0Of() >= 0 ? '+' : '') + v0Of().toFixed(1) + ' m/s';
             aVal.textContent = (aOf() >= 0 ? '+' : '') + aOf().toFixed(1) + ' m/s²';
-            speedVal.textContent = Number(inputSpeed.value).toFixed(1) + '×';
         }
 
         btnStart.addEventListener('click', start);

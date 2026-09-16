@@ -96,13 +96,32 @@ canvas#cv {
   border: 2px solid #2563eb;
   border-radius: 10px;
 }
-.actions {
-  margin-top: 16px;
+.play-bar {
+  margin-top: 10px;
   display: flex;
+  align-items: center;
   gap: 10px;
   flex-wrap: wrap;
-  justify-content: center;
 }
+.play-bar select {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 13px;
+  background: #fff;
+  color: #1f2937;
+  cursor: pointer;
+}
+.formula-card {
+  width: 100%;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 14px 16px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+}
+.formula-card .group-title { margin-bottom: 8px; }
+.formula-card .fixed-note { margin-top: 0; }
 .control-panel {
   width: 100%;
   display: grid;
@@ -255,6 +274,18 @@ footer {
   <div class="canvas-wrap">
     <canvas id="cv" width="880" height="520" role="img"
       aria-label="倾斜传送带上物块运动演示：倾角可调，传送带沿斜面向上或向下运行，物块受重力、支持力与摩擦力作用，先相对滑动后可能共速"></canvas>
+    <div class="play-bar">
+        <button id="bStart">▶ 开始</button>
+        <button id="bPause" disabled>⏸ 暂停</button>
+        <button id="bReset">⟲ 重置</button>
+        <select id="speed" title="播放速度" aria-label="播放速度倍率">
+            <option value="0.25">0.25×</option>
+            <option value="0.5">0.5×</option>
+            <option value="1" selected>1×</option>
+            <option value="2">2×</option>
+            <option value="4">4×</option>
+        </select>
+    </div>
   </div>
 
   <div class="charts-row">
@@ -268,6 +299,18 @@ footer {
     </section>
   </div>
 
+  <section class="formula-card">
+      <div class="group-title">公式与判定</div>
+      <div class="fixed-note">
+        <b>公式</b>（地面参考系，沿斜面向上为正）<br>
+        滑动：<em>f = μmg·cosθ</em> · <em>a = −g·sinθ ∓ μg·cosθ</em>（与相对滑动方向相反）<br>
+        共速条件：<em>μ ≥ tanθ ↔ 静摩擦可维持共速（f静 = mg·sinθ）</em><br>
+        带向上·轻放：<em>μ&gt;tanθ 先 a=μg·cosθ−g·sinθ，共速后匀速；μ≤tanθ 无法上带</em><br>
+        带向下·轻放：<em>先 a=g·sinθ+μg·cosθ；共速后 μ≥tanθ 匀速，μ&lt;tanθ 以 a=g·sinθ−μg·cosθ 继续加速</em><br>
+        正方向：沿斜面向上为正；v带、v₀ 正负表示方向<br>
+        参数：μ（动摩擦因数）· m = 1 kg（物块质量）· θ（倾角）· v带（带速）· v₀（初速度）· L（带长）；g = 10 m/s²（固定值）
+      </div>
+  </section>
   <div class="control-panel">
     <section class="card param-group">
       <div class="group-title">参数设定</div>
@@ -296,12 +339,7 @@ footer {
         <input id="len" type="range" min="4" max="20" step="1" value="10">
         <span class="val" id="lenVal">10 m</span>
       </div>
-      <div class="param-row">
-        <label>播放速度</label>
-        <input id="speed" type="range" min="0.25" max="4" step="0.25" value="1">
-        <span class="val" id="speedVal">1×</span>
-      </div>
-      <div class="param-row">
+            <div class="param-row">
         <label>初始位置</label>
         <span class="btn-group" style="flex:0 0 auto; display:flex; gap:6px; margin-top:0;">
           <button id="posBottom" class="alt" title="物块从底端出发（距底端 1 m）">⬒ 底端</button>
@@ -309,16 +347,7 @@ footer {
           <button id="posTop" class="alt" title="物块从顶端出发（距顶端 1 m）">⬒ 顶端</button>
         </span>
       </div>
-      <div class="fixed-note">
-        <b>公式</b>（地面参考系，沿斜面向上为正）<br>
-        滑动：<em>f = μmg·cosθ</em> · <em>a = −g·sinθ ∓ μg·cosθ</em>（与相对滑动方向相反）<br>
-        共速条件：<em>μ ≥ tanθ ↔ 静摩擦可维持共速（f静 = mg·sinθ）</em><br>
-        带向上·轻放：<em>μ&gt;tanθ 先 a=μg·cosθ−g·sinθ，共速后匀速；μ≤tanθ 无法上带</em><br>
-        带向下·轻放：<em>先 a=g·sinθ+μg·cosθ；共速后 μ≥tanθ 匀速，μ&lt;tanθ 以 a=g·sinθ−μg·cosθ 继续加速</em><br>
-        正方向：沿斜面向上为正；v带、v₀ 正负表示方向<br>
-        参数：μ（动摩擦因数）· m = 1 kg（物块质量）· θ（倾角）· v带（带速）· v₀（初速度）· L（带长）；g = 10 m/s²（固定值）
-      </div>
-    </section>
+          </section>
 
     <section class="card data-group" id="hudRow" aria-live="polite">
       <div class="group-title">实时数值</div>
@@ -337,13 +366,7 @@ footer {
     </section>
   </div>
 
-  <div class="actions">
-    <button id="bStart">▶ 开始</button>
-    <button id="bPause" disabled>⏸ 暂停</button>
-    <button id="bReset">⟲ 重置</button>
-  </div>
-
-  <div class="legend">
+    <div class="legend">
     <span class="lg-v">物块速度 v / 位移</span>
     <span class="lg-vbelt">传送带速度 v带</span>
     <span class="lg-f">滑动摩擦 f</span>
@@ -391,7 +414,7 @@ footer {
   const thEl = $('theta'), v0El = $('v0'), vbEl = $('vb'), muEl = $('mu'),
         lenEl = $('len'), speedEl = $('speed');
   const thVal = $('thVal'), v0v = $('v0v'), vbv = $('vbv'), muv = $('muv'),
-        lenVal = $('lenVal'), speedVal = $('speedVal');
+        lenVal = $('lenVal');
   const posBottom = $('posBottom'), posMid = $('posMid'), posTop = $('posTop');
   const bStart = $('bStart'), bPause = $('bPause'), bReset = $('bReset');
   const hudRow = $('hudRow');
@@ -1084,7 +1107,6 @@ footer {
     vbv.textContent = (state.vBelt >= 0 ? '+' : '−') + Math.abs(state.vBelt).toFixed(1) + ' m/s';
     muv.textContent = state.mu.toFixed(2);
     lenVal.textContent = state.L + ' m';
-    speedVal.textContent = String(+state.speed.toFixed(2)) + '×';
   }
   function reset() {
     readControls();

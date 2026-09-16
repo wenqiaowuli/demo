@@ -198,13 +198,33 @@
             border: 2px solid #2563eb;
             border-radius: 10px;
         }
-        .actions {
-            margin-top: 16px;
+        .play-bar {
+            margin-top: 12px;
             display: flex;
+            align-items: center;
             gap: 10px;
             flex-wrap: wrap;
-            justify-content: center;
         }
+        .play-bar select {
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 6px 10px;
+            font-size: 13px;
+            background: #fff;
+            color: #1f2937;
+            cursor: pointer;
+        }
+        .formula-card {
+            margin-top: 16px;
+            width: 100%;
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 14px 16px;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+        }
+        .formula-card .group-title { margin-bottom: 8px; }
+        .formula-card .fixed-note { margin-top: 0; }
         button {
             background: #2563eb;
             border: none;
@@ -240,6 +260,17 @@
         </div>
         <div class="canvas-wrap">
             <canvas id="scene" role="img" aria-label="力的合成与分解矢量实验台"></canvas>
+            <div class="play-bar">
+                <button id="btnStart" type="button">▶ 自动演示</button>
+                <button id="btnPauseResume" type="button" disabled>暂停</button>
+                <button id="btnReset" type="button">重置</button>
+                <select id="pSpeed" title="播放速度" aria-label="播放速度倍率">
+                    <option value="0.5">0.5×</option>
+                    <option value="1" selected>1×</option>
+                    <option value="2">2×</option>
+                    <option value="4">4×</option>
+                </select>
+            </div>
         </div>
         <div class="charts-row">
             <section class="chart-panel">
@@ -251,6 +282,15 @@
                 <canvas id="chartR" role="img" aria-label="合力正交分量随夹角变化的曲线"></canvas>
             </section>
         </div>
+        <section class="formula-card">
+            <div class="group-title">公式与判定</div>
+            <div class="fixed-note">
+                    合成：平行四边形定则 <b>F = √(F₁²+F₂²+2F₁F₂cosθ)</b>；两分力固定时<b>夹角越大合力越小</b>，范围 |F₁−F₂| ≤ F ≤ F₁+F₂。<br>
+                    特殊情形：同向 θ=0°→F=F₁+F₂；反向 θ=180°→F=|F₁−F₂|；垂直 θ=90°→F=√(F₁²+F₂²)；等大且 θ=120°→F=F₁=F₂。<br>
+                    分解是合成的<b>逆运算</b>：正交分解 Fx=Fcosα、Fy=Fsinα；<b>分解不唯一</b>，附加条件后唯一，分力可任意大。<br>
+                    <b>合力与分力是等效替代关系，不能同时参与受力分析</b>。
+                </div>
+        </section>
         <div class="control-panel">
             <section class="param-group" aria-labelledby="parameterTitle">
                 <div class="group-title" id="parameterTitle">参数设定</div>
@@ -301,18 +341,7 @@
                         <div class="val" id="pPhi2Val">70°</div>
                     </div>
                 </div>
-                <div class="param-row" style="margin-top:2px;">
-                    <label for="pSpeed">播放速度</label>
-                    <input id="pSpeed" type="range" min="0.1" max="2" value="1" step="0.1" aria-label="自动演示播放速度倍率">
-                    <div class="val" id="pSpeedVal">1.0×</div>
-                </div>
-                <div class="fixed-note">
-                    合成：平行四边形定则 <b>F = √(F₁²+F₂²+2F₁F₂cosθ)</b>；两分力固定时<b>夹角越大合力越小</b>，范围 |F₁−F₂| ≤ F ≤ F₁+F₂。<br>
-                    特殊情形：同向 θ=0°→F=F₁+F₂；反向 θ=180°→F=|F₁−F₂|；垂直 θ=90°→F=√(F₁²+F₂²)；等大且 θ=120°→F=F₁=F₂。<br>
-                    分解是合成的<b>逆运算</b>：正交分解 Fx=Fcosα、Fy=Fsinα；<b>分解不唯一</b>，附加条件后唯一，分力可任意大。<br>
-                    <b>合力与分力是等效替代关系，不能同时参与受力分析</b>。
-                </div>
-            </section>
+                                            </section>
             <section class="data-group" aria-labelledby="dataTitle" aria-live="polite">
                 <div class="group-title" id="dataTitle">实时数值</div>
                 <div class="data-grid" id="composeData">
@@ -339,12 +368,7 @@
                 </div>
             </section>
         </div>
-        <div class="actions">
-            <button id="btnStart" type="button">▶ 自动演示</button>
-            <button id="btnPauseResume" type="button" disabled>暂停</button>
-            <button id="btnReset" type="button">重置</button>
-        </div>
-        <div class="legend">
+                <div class="legend">
             <span style="color:#d97706">—— F₁ / F₁′ / Fx（黄）</span>
             <span style="color:#0d9488">—— F₂ / F₂′ / Fy（青）</span>
             <span style="color:#dc2626">—— 合力 F（红）</span>
@@ -1261,7 +1285,6 @@
             $('pAlphaVal').textContent = inAlpha.value + '°';
             $('pPhi1Val').textContent = inPhi1.value + '°';
             $('pPhi2Val').textContent = inPhi2.value + '°';
-            $('pSpeedVal').textContent = Number(inSpeed.value).toFixed(1) + '×';
         }
         function syncSliders() {
             inF1.value = compose.F1; inF2.value = compose.F2; inTheta.value = compose.theta;
