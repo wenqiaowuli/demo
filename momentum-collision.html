@@ -174,13 +174,7 @@
             color: #1f2937;
             font-variant-numeric: tabular-nums;
         }
-        .actions {
-            margin-top: 16px;
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
+        
         button {
             background: #2563eb;
             border: none;
@@ -220,6 +214,62 @@
             font-family: 'Times New Roman', serif;
             letter-spacing: 0.5px;
         }
+    
+.play-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background: #f8fafc;
+    border-top: 1px solid #e2e8f0;
+    border-radius: 0 0 8px 8px;
+}
+.play-bar button {
+    padding: 8px 16px;
+    font-size: 14px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    background: #ffffff;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.play-bar button:hover:not(:disabled) {
+    background: #f3f4f6;
+    border-color: #9ca3af;
+}
+.play-bar button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+.play-bar select {
+    padding: 6px 10px;
+    font-size: 13px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    background: #ffffff;
+    cursor: pointer;
+}
+.formula-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin: 14px 0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+.formula-card .group-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #e5e7eb;
+}
+.formula-card .fixed-note {
+    font-size: 13px;
+    line-height: 1.7;
+    color: #4b5563;
+}
     </style>
 </head>
 <body>
@@ -227,6 +277,11 @@
         <h1>动量守恒演示</h1>
         <div class="canvas-wrap">
             <canvas id="scene" role="img" aria-label="动量守恒演示：两球一维碰撞，展示碰前碰后的速度、动量与总动量"></canvas>
+            <div class="play-bar">
+                <button id="btnStart" type="button">开始</button>
+            <button id="btnPause" type="button" disabled>暂停</button>
+            <button id="btnReset" type="button" disabled>重置</button>
+            </div>
         </div>
         <div class="charts-row">
             <section class="chart-panel">
@@ -238,6 +293,11 @@
                 <canvas id="ptChart" role="img" aria-label="两球动量与总动量的动量-时间图像，总动量为水平直线"></canvas>
             </section>
         </div>
+        
+        <section class="formula-card">
+            <div class="group-title">公式与判定</div>
+            
+        </section>
         <div class="control-panel">
             <section class="param-group" aria-labelledby="parameterTitle">
                 <div class="group-title" id="parameterTitle">参数设定</div>
@@ -288,11 +348,7 @@
                 </div>
             </section>
         </div>
-        <div class="actions">
-            <button id="btnStart" type="button">开始</button>
-            <button id="btnPause" type="button" disabled>暂停</button>
-            <button id="btnReset" type="button" disabled>重置</button>
-        </div>
+        
         <div class="status" id="status"></div>
         <div class="legend">
             <span style="color:#2563eb">■ 球A</span>
@@ -300,7 +356,7 @@
             <span style="color:#d97706">→ v（速度箭头）</span>
             <span style="color:#ea580c">▬ Σp 总动量</span>
             <span>虚线：碰撞时刻（v-t 与 p-t 同步）</span>
-            <span class="formula">m₁v₁ + m₂v₂ = m₁v₁′ + m₂v₂′（系统所受合外力为零时，总动量守恒）</span>
+            
         </div>
     </main>
 

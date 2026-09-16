@@ -152,13 +152,7 @@
             border: 2px solid #2563eb;
             border-radius: 10px;
         }
-        .actions {
-            margin-top: 16px;
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
+        
         button {
             background: #2563eb;
             border: none;
@@ -187,6 +181,62 @@
             line-height: 1.8;
         }
         .legend span { margin: 0 6px; }
+    
+.play-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background: #f8fafc;
+    border-top: 1px solid #e2e8f0;
+    border-radius: 0 0 8px 8px;
+}
+.play-bar button {
+    padding: 8px 16px;
+    font-size: 14px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    background: #ffffff;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.play-bar button:hover:not(:disabled) {
+    background: #f3f4f6;
+    border-color: #9ca3af;
+}
+.play-bar button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+.play-bar select {
+    padding: 6px 10px;
+    font-size: 13px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    background: #ffffff;
+    cursor: pointer;
+}
+.formula-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin: 14px 0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+.formula-card .group-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #e5e7eb;
+}
+.formula-card .fixed-note {
+    font-size: 13px;
+    line-height: 1.7;
+    color: #4b5563;
+}
     </style>
 </head>
 <body>
@@ -194,6 +244,11 @@
         <h1>平抛运动演示</h1>
         <div class="canvas-wrap">
             <canvas id="canvas" role="img" aria-label="平抛运动轨迹演示"></canvas>
+            <div class="play-bar">
+                <button id="btnStart" type="button">开始</button>
+            <button id="btnPause" type="button" disabled>暂停</button>
+            <button id="btnReset" type="button">重置</button>
+            </div>
         </div>
         <div class="charts-row">
             <section class="chart-panel">
@@ -205,6 +260,11 @@
                 <canvas id="stChart" role="img" aria-label="位移-时间图像：水平位移与竖直位移均为正，分别呈直线与抛物线增大"></canvas>
             </section>
         </div>
+        
+        <section class="formula-card">
+            <div class="group-title">公式与判定</div>
+            
+        </section>
         <div class="control-panel">
             <section class="param-group" aria-labelledby="parameterTitle">
                 <div class="group-title" id="parameterTitle">参数设定</div>
@@ -222,11 +282,7 @@
                     <input id="showPreview" type="checkbox" checked>
                     显示理论轨迹
                 </label>
-                <div class="fixed-note">
-                    重力加速度 <b>g = 10 m/s²</b>（固定值）。水平方向匀速直线，竖直方向自由落体。<br>
-                    正方向：水平向右为 +x，竖直<b>向下</b>为 +y（故 vᵧ、Δy 为正）。离地高度 = h − Δy。<br>
-                    公式：vₓ = v₀，vᵧ = gt，x = v₀t，Δy = ½gt²
-                </div>
+                
             </section>
             <section class="data-group" aria-labelledby="dataTitle" aria-live="polite">
                 <div class="group-title" id="dataTitle">实时数值</div>
@@ -243,11 +299,6 @@
                     <div class="data-item"><span>水平射程</span><b id="range">60.00 m</b></div>
                 </div>
             </section>
-        </div>
-        <div class="actions">
-            <button id="btnStart" type="button">开始</button>
-            <button id="btnPause" type="button" disabled>暂停</button>
-            <button id="btnReset" type="button">重置</button>
         </div>
         <div class="legend">
             <span>正方向：水平向右为 +x，竖直向下为 +y（vᵧ、Δy 均为正）</span>
