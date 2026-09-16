@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>弹簧 vs 绳子 · 哪个球先落地？</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background-color: #eef2f6;
+  color: #1f2937;
+  font-family: system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 14px 10px 24px;
+  min-height: 100vh;
+}
+h1 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: #1f2937;
+}
+.subtitle {
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 12px;
+}
+.main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 880px;
+  width: 100%;
+  gap: 14px;
+}
+.canvas-wrap {
+  position: relative;
+  width: 100%;
+}
+canvas { display: block; width: 100%; }
+canvas#cv {
+  aspect-ratio: 880 / 520;
+  border: 2px solid #2563eb;
+  border-radius: 10px;
+  background: #ffffff;
+}
+.charts-row {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+@media (max-width: 720px) {
+  .charts-row { grid-template-columns: 1fr; }
+}
+.chart-panel {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+}
+.chart-panel .group-title {
+  padding: 0 2px;
+}
+.chart-title {
+  font-size: 11px;
+  color: #6b7280;
+  margin-bottom: 8px;
+  letter-spacing: 0.4px;
+}
+.chart-panel canvas {
+  display: block;
+  width: 100%;
+  aspect-ratio: 20 / 9;
+  background: #ffffff;
+  border: 2px solid #2563eb;
+  border-radius: 10px;
+}
+.play-bar {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.play-bar select {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 13px;
+  background: #fff;
+  color: #1f2937;
+  cursor: pointer;
+}
+.formula-card {
+  width: 100%;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 14px 16px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+}
+.formula-card .group-title { margin-bottom: 8px; }
+.formula-card .fixed-note { margin-top: 0; }
+.control-panel {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) minmax(280px, 1.25fr);
+  gap: 14px;
+}
+@media (max-width: 720px) {
+  .control-panel { grid-template-columns: 1fr; }
+}
+.param-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 6px;
+}
+.param-row label { flex: 0 0 130px; color: #1f2937; }
+.param-row input[type=range] { flex: 1; accent-color: #2563eb; }
+.param-row .val {
+  flex: 0 0 70px;
+  text-align: right;
+  color: #1f2937;
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+}
+.fixed-note {
+  font-size: 11px;
+  color: #6b7280;
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px solid #e5e7eb;
+  line-height: 1.6;
+}
+.fixed-note b { color: #b45309; }
+.data-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+@media (max-width: 560px) {
+  .data-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+.data-item {
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 6px 8px;
+  text-align: center;
+}
+.data-item span {
+  display: block;
+  font-size: 10px;
+  color: #6b7280;
+  margin-bottom: 2px;
+}
+.data-item b {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2937;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.data-item .accent { color: #d97706; }
+.data-item .green { color: #16a34a; }
+.data-item .cyan { color: #0891b2; }
+.data-item .blue { color: #0284c7; }
+.data-item .red { color: #dc2626; }
+.card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  box-shadow: 0 1px 2px rgba(15,23,42,.05);
+  padding: 10px 14px;
+  flex: 1;
+  min-width: 200px;
+}
+.group-title {
+  font-size: 11px;
+  color: #6b7280;
+  margin-bottom: 8px;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+input[type=range]:disabled { opacity: 0.45; cursor: not-allowed; }
+button {
+  background: #2563eb;
+  border: none;
+  color: #fff;
+  padding: 9px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-family: inherit;
+  transition: background-color 0.15s ease, transform 0.15s ease;
+}
+button:hover:not(:disabled) { background: #1d4ed8; }
+button:active:not(:disabled) { transform: translateY(1px); }
+button.alt { background: #475569; }
+button.alt:hover { background: #64748b; }
+button:disabled { opacity: 0.45; cursor: not-allowed; }
+.legend {
+  display: flex;
+  gap: 14px;
+  font-size: 11px;
+  color: #6b7280;
+  margin-top: 4px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.legend span::before {
+  content: "";
+  display: inline-block;
+  width: 10px;
+  height: 3px;
+  margin-right: 4px;
+  vertical-align: middle;
+  border-radius: 2px;
+}
+.lg-a::before { background: #0284c7; }
+.lg-b::before { background: #dc2626; }
+.lg-spring::before { background: #0ea5e9; }
+footer {
+  margin-top: 18px;
+  font-size: 11px;
+  color: #6b7280;
+  text-align: center;
+}
+</style>
+</head>
+<body>
+<h1>弹簧 vs 绳子 · 哪个球先落地？</h1>
+<div class="subtitle">弹性约束 vs 不可伸长约束 · 剪断瞬间弹力不能突变 vs 张力立即消失</div>
+
+<div class="main">
+  <div class="canvas-wrap">
+    <canvas id="cv" width="880" height="520" role="img"
+      aria-label="弹簧悬挂A球与绳子悬挂B球对比演示：剪断后B球自由落体，A球因弹簧振荡延迟下落"></canvas>
+    <div class="play-bar">
+        <button id="startBtn">▶ 开始</button>
+        <button id="pauseBtn" disabled>⏸ 暂停</button>
+        <button id="resetBtn">⟲ 重置</button>
+        <select id="speed" title="播放速度" aria-label="播放速度倍率">
+            <option value="0.25">0.25×</option>
+            <option value="0.5" selected>0.5×</option>
+            <option value="1">1×</option>
+            <option value="2">2×</option>
+        </select>
+    </div>
+  </div>
+
+  <div class="charts-row">
+    <section class="chart-panel">
+      <div class="chart-title">速度-时间图 (v-t) · 蓝:A球 / 红:B球 / 阴影:速度差</div>
+      <canvas id="vtCv" width="440" height="198" role="img" aria-label="A球与B球速度随时间变化图像"></canvas>
+    </section>
+    <section class="chart-panel">
+      <div class="chart-title">位移-时间图 (s-t) · 蓝:A球 / 红:B球 / 阴影:位移差</div>
+      <canvas id="stCv" width="440" height="198" role="img" aria-label="A球与B球位移随时间变化图像"></canvas>
+    </section>
+  </div>
+
+  <section class="formula-card">
+      <div class="group-title">公式与判定</div>
+      <div class="fixed-note">
+        <b>物理要点</b>：左侧 A 球由<b>细绳 + 弹簧</b>串联悬挂，剪断的是<b>弹簧上方的细绳</b>。剪断瞬间弹簧<b>形变不能突变</b>，弹力仍 = kx₀ = mg，A 球此刻加速度为 0；<br>
+        随后弹簧随球整体下落，在共落参考系中做<b>阻尼简谐振荡</b>，使球下坠延迟。<br>
+        右侧 B 球由不可伸长绳悬挂，剪断瞬间<b>张力立即消失</b>，B 球立即自由落体。因此 <b>B 球先落地</b>。<br>
+        重力加速度 <b>g = 10 m/s²</b>（固定值）。
+      </div>
+  </section>
+  <div class="control-panel">
+    <section class="card param-group">
+      <div class="group-title">参数设定</div>
+      <div class="param-row">
+        <label>下落高度 h</label>
+        <input id="height" type="range" min="2" max="8" value="7" step="0.5">
+        <span class="val" id="hVal">7.0 m</span>
+      </div>
+      <div class="param-row">
+        <label>弹簧刚度 k</label>
+        <input id="stiff" type="range" min="20" max="200" value="25" step="5">
+        <span class="val" id="kVal">25 N/m</span>
+      </div>
+      <div class="param-row">
+        <label>质量 m</label>
+        <input id="mass" type="range" min="0.5" max="2" step="0.1" value="1">
+        <span class="val" id="mVal">1.0 kg</span>
+      </div>
+      <div class="param-row">
+        <label>弹簧阻尼比 ζ</label>
+        <input id="damp" type="range" min="0.02" max="0.5" value="0.12" step="0.02">
+        <span class="val" id="cVal">0.12</span>
+      </div>
+                </section>
+
+    <section class="card data-group" id="hudRow" aria-live="polite">
+      <div class="group-title">实时数值</div>
+      <div class="data-grid">
+        <div class="data-item"><span>时间 t</span><b id="tNum">0.00 s</b></div>
+        <div class="data-item"><span>A球速度 v</span><b class="blue" id="aV">0.00 m/s</b></div>
+        <div class="data-item"><span>B球速度 v</span><b class="red" id="bV">0.00 m/s</b></div>
+        <div class="data-item"><span>A球加速度 a</span><b class="blue" id="aA">0.00 m/s²</b></div>
+        <div class="data-item"><span>B球加速度 a</span><b class="red" id="bA">0.00 m/s²</b></div>
+        <div class="data-item"><span>弹簧形变 Δx</span><b class="cyan" id="aX">0.000 m</b></div>
+        <div class="data-item"><span>A球位移</span><b class="blue" id="aS">0.00 m</b></div>
+        <div class="data-item"><span>B球位移</span><b class="red" id="bS">0.00 m</b></div>
+        <div class="data-item"><span>位移差 Δs</span><b class="accent" id="dsNum">0.00 m</b></div>
+      </div>
+    </section>
+  </div>
+
+    <div class="legend">
+    <span class="lg-a">A 球 (弹簧悬挂)</span>
+    <span class="lg-b">B 球 (绳子悬挂)</span>
+    <span class="lg-spring">弹簧 (k·x)</span>
+    <span>⌨ 空格 = 播放/暂停　R = 重置</span>
+  </div>
+</div>
+
+<footer>弹簧 vs 绳子 · 弹性约束与不可伸长约束对比演示 · 高中物理</footer>
+
+<script>
+(() => {
+  'use strict';
+
+  const cv = document.getElementById('cv');
+  const ctx = cv.getContext('2d');
+  const vtCv = document.getElementById('vtCv');
+  const vtCtx = vtCv.getContext('2d');
+  const stCv = document.getElementById('stCv');
+  const stCtx = stCv.getContext('2d');
+
+  function fit(c) {
+    const dpr = window.devicePixelRatio || 1;
+    const rect = c.getBoundingClientRect();
+    if (rect.width < 10 || rect.height < 10) return;
+    c.width = Math.floor(rect.width * dpr);
+    c.height = Math.floor(rect.height * dpr);
+    c.getContext('2d').setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  function fitAll() { [cv, vtCv, stCv].forEach(fit); drawAll(); }
+  window.addEventListener('resize', fitAll);
+
+  const $ = id => document.getElementById(id);
+  const elH = $('height'), elK = $('stiff'), elM = $('mass'),
+        elC = $('damp'), elSp = $('speed');
+  const hVal = $('hVal'), kVal = $('kVal'), mVal = $('mVal'),
+        cVal = $('cVal');
+  const startBtn = $('startBtn'), pauseBtn = $('pauseBtn'), resetBtn = $('resetBtn');
+  const hudRow = $('hudRow');
+  const tNum = $('tNum'), aV = $('aV'), bV = $('bV'),
+        aA = $('aA'), bA = $('bA'), aX = $('aX'),
+        aS = $('aS'), bS = $('bS'), dsNum = $('dsNum');
+
+  const MASS = 1;
+  const SPRING_NATURAL_M = 1.0;
+  const PIVOT_Y = 56;
+  const GROUND_Y = 486;
+  const BALL_R = 16;
+
+  let params = { h: 7, k: 25, m: 1, zeta: 0.12, g: 10, speed: 0.5 };
+  let sysA = { y: 0, vy: 0, ay: 0, stretch: 0, stretchV: 0, landTime: null, landed: false };
+  let sysB = { y: 0, vy: 0, ay: 0, landTime: null, landed: false };
+  let time = 0, running = false, paused = false;
+  let phase = 'idle';
+  let cutFlash = 0, cutStartTime = 0;
+  let trace = [];
+
+  function getSceneWidth() { return cv.clientWidth || 880; }
+
+  function ballAx() { return getSceneWidth() * 0.33; }
+  function ballBx() { return getSceneWidth() * 0.67; }
+  function groundPx() { return GROUND_Y; }
+  function ballPxY(h) { return GROUND_Y - h * pixPerM(); }
+  function pixPerM() { return (GROUND_Y - PIVOT_Y - 40) / params.h; }
+
+  function computeEquilibriumA() { return params.m * params.g / params.k; }
+  function computeDamping() { return 2 * params.zeta * Math.sqrt(params.k * params.m); }
+
+  function reset() {
+    running = false; paused = false; phase = 'idle'; time = 0;
+    cutFlash = 0; cutStartTime = 0; trace = [];
+    var x0 = computeEquilibriumA();
+    sysA.stretch = x0; sysA.stretchV = 0;
+    sysA.y = params.h; sysA.vy = 0; sysA.ay = 0;
+    sysA.landTime = null; sysA.landed = false;
+    sysB.y = params.h; sysB.vy = 0; sysB.ay = 0;
+    sysB.landTime = null; sysB.landed = false;
+    startBtn.disabled = false; startBtn.textContent = '▶ 开始';
+    pauseBtn.disabled = true; pauseBtn.textContent = '⏸ 暂停';
+    setSliders(false);
+    drawAll();
+  }
+
+  function step(dt) {
+    if (!running || paused) return;
+    time += dt;
+
+    if (sysB.y > 0) {
+      sysB.vy += params.g * dt;
+      sysB.y -= sysB.vy * dt;
+      sysB.ay = params.g;
+      if (sysB.y <= 0) {
+        sysB.y = 0; sysB.vy = 0; sysB.ay = 0;
+        if (sysB.landTime === null) { sysB.landTime = time; sysB.landed = true; }
+      }
+    }
+
+    if (sysA.y > 0) {
+      var x0 = computeEquilibriumA();
+      var cD = computeDamping();
+      var axS = -(params.k / params.m) * sysA.stretch - (cD / params.m) * sysA.stretchV;
+      sysA.stretchV += axS * dt;
+      sysA.stretch += sysA.stretchV * dt;
+      var tFall = time - cutStartTime;
+      var yFree = params.h - 0.5 * params.g * tFall * tFall;
+      var yA = yFree + (x0 - sysA.stretch);
+      sysA.y = Math.max(0, yA);
+      sysA.vy = Math.max(0, params.g * tFall - sysA.stretchV);
+      sysA.ay = params.g + axS;
+      if (yA <= 0) {
+        sysA.y = 0; sysA.vy = 0; sysA.ay = 0;
+        if (sysA.landTime === null) { sysA.landTime = time; sysA.landed = true; }
+      }
+    }
+
+    trace.push([time, sysA.vy, sysB.vy, sysA.y, sysB.y]);
+    if (trace.length > 4000) trace.splice(0, trace.length - 3600);
+
+    if (cutFlash > 0) cutFlash = Math.max(0, cutFlash - dt * 2);
+
+    if (sysA.landed && sysB.landed) {
+      phase = 'done';
+      running = false;
+      startBtn.disabled = true;
+      startBtn.textContent = '✓ 完成';
+      pauseBtn.disabled = true;
+      setSliders(false);
+    }
+  }
+
+  function drawAll() {
+    clear();
+    drawScene();
+    drawVT();
+    drawST();
+    updateHud();
+  }
+
+  function clear() {
+    const w = cv.clientWidth || 880;
+    const h = cv.clientHeight || 520;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, w, h);
+    ctx.strokeStyle = 'rgba(31,41,55,0.06)';
+    ctx.lineWidth = 1;
+    for (let x = 0; x < w; x += 24) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+    }
+    for (let y = 0; y < h; y += 24) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+    }
+  }
+
+  function drawScene() {
+    const w = cv.clientWidth || 880;
+    const h = cv.clientHeight || 520;
+    const pix = (GROUND_Y - PIVOT_Y - 40) / params.h;
+    const axA = w * 0.33, axB = w * 0.67;
+    const gY = GROUND_Y;
+
+    ctx.strokeStyle = '#cbd5e1';
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(40, gY); ctx.lineTo(w - 40, gY); ctx.stroke();
+    ctx.strokeStyle = '#e5e7eb';
+    ctx.lineWidth = 1;
+    for (let x = 44; x < w - 40; x += 14) {
+      ctx.beginPath(); ctx.moveTo(x, gY); ctx.lineTo(x - 8, gY + 10); ctx.stroke();
+    }
+
+    ctx.strokeStyle = '#475569';
+    ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(axA - 36, PIVOT_Y); ctx.lineTo(axA + 36, PIVOT_Y); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(axB - 36, PIVOT_Y); ctx.lineTo(axB + 36, PIVOT_Y); ctx.stroke();
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(axA - 26, PIVOT_Y); ctx.lineTo(axA, PIVOT_Y - 16); ctx.lineTo(axA + 26, PIVOT_Y); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(axB - 26, PIVOT_Y); ctx.lineTo(axB, PIVOT_Y - 16); ctx.lineTo(axB + 26, PIVOT_Y); ctx.stroke();
+
+    [axA, axB].forEach(ax => {
+      ctx.fillStyle = '#475569';
+      ctx.beginPath(); ctx.arc(ax, PIVOT_Y, 4, 0, Math.PI * 2); ctx.fill();
+    });
+
+    var ballAy = gY - sysA.y * pix;
+    var ballBy = gY - sysB.y * pix;
+
+    var springLenPx = (SPRING_NATURAL_M + sysA.stretch) * pix;
+    var springTop = Math.max(ballAy - springLenPx, PIVOT_Y + 16);
+
+    ctx.strokeStyle = '#94a3b8';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.moveTo(axA, PIVOT_Y); ctx.lineTo(axA, springTop); ctx.stroke();
+
+    var N = Math.max(8, Math.round((ballAy - springTop) / 6));
+    var coilH = 6;
+    ctx.strokeStyle = '#0ea5e9';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(axA, springTop);
+    var margin = 8;
+    var startY = springTop + margin;
+    var endY = ballAy - 8;
+    ctx.lineTo(axA, startY);
+    for (var i = 0; i < N; i++) {
+      var t0 = i / N, t1 = (i + 1) / N;
+      var y0 = startY + (endY - startY) * t0;
+      var y1 = startY + (endY - startY) * t1;
+      ctx.lineTo(axA + (i % 2 === 0 ? coilH : -coilH), (y0 + y1) / 2);
+      ctx.lineTo(axA, y1);
+    }
+    ctx.lineTo(axA, ballAy - 8);
+    ctx.stroke();
+
+    ctx.strokeStyle = '#94a3b8';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.moveTo(axB, PIVOT_Y); ctx.lineTo(axB, ballBy - BALL_R); ctx.stroke();
+
+    if (sysA.landed) {
+      ctx.fillStyle = '#16a34a';
+    } else {
+      ctx.fillStyle = '#0284c7';
+    }
+    ctx.beginPath(); ctx.arc(axA, ballAy, BALL_R, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 13px system-ui';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('A', axA, ballAy);
+
+    if (sysB.landed) {
+      ctx.fillStyle = '#16a34a';
+    } else {
+      ctx.fillStyle = '#dc2626';
+    }
+    ctx.beginPath(); ctx.arc(axB, ballBy, BALL_R, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 13px system-ui';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('B', axB, ballBy);
+
+    if (phase === 'idle') {
+      ctx.strokeStyle = 'rgba(100,116,139,0.5)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([5, 5]);
+      ctx.beginPath(); ctx.moveTo(60, ballAy); ctx.lineTo(w - 60, ballAy); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#6b7280';
+      ctx.font = '10px system-ui';
+      ctx.textAlign = 'left';
+      ctx.fillText('两球等高 h=' + params.h.toFixed(1) + 'm', 64, ballAy - 8);
+    }
+
+    if (cutFlash > 0) {
+      ctx.save();
+      ctx.globalAlpha = cutFlash;
+      ctx.fillStyle = 'rgba(217,119,6,0.6)';
+      ctx.beginPath(); ctx.arc((axA + axB) / 2, PIVOT_Y + 20, 18, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#d97706'; ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.moveTo(axA - 12, PIVOT_Y + 10); ctx.lineTo(axA + 4, PIVOT_Y + 26); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(axA + 12, PIVOT_Y + 10); ctx.lineTo(axA - 4, PIVOT_Y + 26); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(axB - 12, PIVOT_Y + 10); ctx.lineTo(axB + 4, PIVOT_Y + 26); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(axB + 12, PIVOT_Y + 10); ctx.lineTo(axB - 4, PIVOT_Y + 26); ctx.stroke();
+      ctx.restore();
+    }
+
+    if (sysA.landed) {
+      ctx.fillStyle = '#16a34a';
+      ctx.font = '11px system-ui';
+      ctx.textAlign = 'center';
+      ctx.fillText('A 落地 t=' + sysA.landTime.toFixed(2) + 's', axA, gY + 22);
+    }
+    if (sysB.landed) {
+      ctx.fillStyle = '#16a34a';
+      ctx.font = '11px system-ui';
+      ctx.textAlign = 'center';
+      ctx.fillText('B 落地 t=' + sysB.landTime.toFixed(2) + 's', axB, gY + 22);
+    }
+
+    ctx.fillStyle = '#6b7280';
+    ctx.font = '11px system-ui';
+    ctx.textAlign = 'center';
+    ctx.fillText('A · 弹簧悬挂', axA, PIVOT_Y - 24);
+    ctx.fillText('B · 绳子悬挂', axB, PIVOT_Y - 24);
+  }
+
+  function niceCeil(v) {
+    if (!isFinite(v) || v <= 0) return 1;
+    const m = Math.pow(10, Math.floor(Math.log10(v)));
+    const n = v / m;
+    return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10) * m;
+  }
+  function niceStep(mx) {
+    if (!isFinite(mx) || mx <= 0) return 1;
+    const r = mx / 5, m = Math.pow(10, Math.floor(Math.log10(r)));
+    const n = r / m;
+    return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10) * m;
+  }
+  function tickDec(s) { return s >= 1 ? 0 : Math.min(6, Math.ceil(-Math.log10(s) + 1e-9)); }
+
+  function drawTimeChart(c, cx, cfg) {
+    const w = c.clientWidth || c.width;
+    const h = c.clientHeight || c.height;
+    cx.clearRect(0, 0, w, h);
+    const padL = 46, padR = 14, padT = 18, padB = 26;
+    const gW = w - padL - padR, gH = h - padT - padB;
+    if (gW < 40 || gH < 40) return;
+    const tWin = 10;
+    const tAxEnd = Math.max(tWin, time);
+    const tStart = tAxEnd - tWin;
+    const px = t => padL + (t - tStart) / tWin * gW;
+    let lo = 0, hi = 0.5;
+    cfg.series.forEach(s => s.pts.forEach(([, y]) => { if (y < lo) lo = y; if (y > hi) hi = y; }));
+    const yMin = lo < 0 ? -niceCeil(-lo * 1.08) : 0;
+    const yMax = niceCeil(hi * 1.05);
+    const py = y => padT + gH - (y - yMin) / (yMax - yMin) * gH;
+
+    cx.fillStyle = '#f8fafc';
+    cx.fillRect(padL, padT, gW, gH);
+    cx.font = '10px system-ui';
+    const yS = niceStep(yMax - yMin), yD = tickDec(yS);
+    cx.fillStyle = '#6b7280';
+    for (let i = Math.ceil(yMin / yS - 1e-9); i <= Math.floor(yMax / yS + 1e-9); i++) {
+      const y = py(i * yS);
+      const z = Math.abs(i * yS) < yS * 0.15;
+      cx.strokeStyle = z ? 'rgba(31,41,55,0.6)' : 'rgba(31,41,55,0.08)';
+      cx.lineWidth = z ? 1.5 : 1;
+      cx.beginPath(); cx.moveTo(padL, y); cx.lineTo(padL + gW, y); cx.stroke();
+      cx.textAlign = 'right';
+      cx.fillText((i * yS).toFixed(yD), padL - 6, y + 3);
+    }
+    cx.textAlign = 'center';
+    for (let tt = Math.ceil(tStart / 2) * 2; tt <= tAxEnd + 1e-9; tt += 2) {
+      const x = px(tt);
+      cx.strokeStyle = 'rgba(31,41,55,0.08)';
+      cx.beginPath(); cx.moveTo(x, padT); cx.lineTo(x, padT + gH); cx.stroke();
+      cx.fillText(tt.toFixed(0), x, padT + gH + 15);
+    }
+    cx.strokeStyle = '#94a3b8';
+    cx.lineWidth = 1;
+    cx.strokeRect(padL, padT, gW, gH);
+    cx.fillStyle = '#6b7280';
+    cx.textAlign = 'left';
+    cx.fillText(cfg.yLabel, padL + 6, padT + 12);
+    cx.textAlign = 'right';
+    cx.fillText('t/s', padL + gW, padT + gH - 6);
+
+    if (cfg.series[0].pts.length < 2) return;
+    cx.save();
+    cx.beginPath(); cx.rect(padL, padT, gW, gH); cx.clip();
+
+    if (cfg.shadePts && cfg.series.length >= 2) {
+      const a = cfg.series[0].pts, b = cfg.series[1].pts;
+      cx.beginPath();
+      a.forEach(([t, y], i) => { const X = px(t), Y = py(y); i === 0 ? cx.moveTo(X, Y) : cx.lineTo(X, Y); });
+      for (let i = b.length - 1; i >= 0; i--) cx.lineTo(px(b[i][0]), py(b[i][1]));
+      cx.closePath();
+      cx.fillStyle = 'rgba(217,119,6,0.12)';
+      cx.fill();
+    }
+
+    cfg.series.forEach(s => {
+      cx.strokeStyle = s.color;
+      cx.lineWidth = s.width || 2;
+      cx.beginPath();
+      s.pts.forEach(([t, y], i) => { const X = px(t), Y = py(y); i === 0 ? cx.moveTo(X, Y) : cx.lineTo(X, Y); });
+      cx.stroke();
+    });
+
+    if (cfg.curY !== undefined) {
+      cx.fillStyle = '#d97706';
+      cx.beginPath();
+      cx.arc(px(time), py(cfg.curY), 3.5, 0, Math.PI * 2);
+      cx.fill();
+    }
+    cx.restore();
+  }
+
+  function drawVT() {
+    const ptsA = trace.map(([t, v]) => [t, v]);
+    const ptsB = trace.map(([t, , v]) => [t, v]);
+    const tEnd = Math.max(10, time);
+    drawTimeChart(vtCv, vtCtx, {
+      series: [
+        { pts: ptsA, color: '#0284c7', width: 2 },
+        { pts: ptsB, color: '#dc2626', width: 2 }
+      ],
+      shadePts: true,
+      yLabel: 'v/(m/s)',
+      curY: sysA.vy
+    });
+  }
+
+  function drawST() {
+    const ptsA = trace.map(([t, , , s]) => [t, params.h - s]);
+    const ptsB = trace.map(([t, , , , s]) => [t, params.h - s]);
+    drawTimeChart(stCv, stCtx, {
+      series: [
+        { pts: ptsA, color: '#0284c7', width: 2 },
+        { pts: ptsB, color: '#dc2626', width: 2 }
+      ],
+      shadePts: true,
+      yLabel: 's/m',
+      curY: params.h - sysA.y
+    });
+  }
+
+  function updateHud() {
+    tNum.textContent = time.toFixed(2) + ' s';
+    aV.textContent = sysA.vy.toFixed(2) + ' m/s';
+    bV.textContent = sysB.vy.toFixed(2) + ' m/s';
+    aA.textContent = sysA.ay.toFixed(2) + ' m/s²';
+    bA.textContent = sysB.ay.toFixed(2) + ' m/s²';
+    aX.textContent = sysA.stretch.toFixed(3) + ' m';
+    aS.textContent = (params.h - sysA.y).toFixed(2) + ' m';
+    bS.textContent = (params.h - sysB.y).toFixed(2) + ' m';
+    dsNum.textContent = Math.abs(sysA.y - sysB.y).toFixed(2) + ' m';
+  }
+
+  function setSliders(dis) {
+    [elH, elK, elM, elC, elSp].forEach(el => { el.disabled = dis; });
+  }
+
+  function refreshParams() {
+    params.h = +elH.value; params.k = +elK.value; params.m = +elM.value;
+    params.zeta = +elC.value; params.speed = +elSp.value;
+    hVal.textContent = params.h.toFixed(1) + ' m';
+    kVal.textContent = params.k + ' N/m';
+    mVal.textContent = params.m.toFixed(1) + ' kg';
+    cVal.textContent = params.zeta.toFixed(2);
+  }
+
+  function onParamChange() {
+    refreshParams();
+    if (phase === 'idle' || phase === 'done') reset();
+  }
+
+  [elH, elK, elM, elC].forEach(el => el.addEventListener('input', onParamChange));
+  elSp.addEventListener('input', refreshParams);
+
+  startBtn.addEventListener('click', () => {
+    if (phase === 'done') return;
+    if (phase === 'idle') {
+      running = true; paused = false; phase = 'run';
+      cutStartTime = time; cutFlash = 1;
+      startBtn.disabled = true; startBtn.textContent = '运行中…';
+      pauseBtn.disabled = false; pauseBtn.textContent = '⏸ 暂停';
+      setSliders(true);
+      hudRow.setAttribute('aria-live', 'off');
+    }
+  });
+
+  pauseBtn.addEventListener('click', () => {
+    if (phase !== 'run' && phase !== 'pause') return;
+    if (phase === 'run') {
+      phase = 'pause'; paused = true;
+      pauseBtn.textContent = '▶ 继续';
+      hudRow.setAttribute('aria-live', 'polite');
+    } else {
+      phase = 'run'; paused = false;
+      pauseBtn.textContent = '⏸ 暂停';
+      hudRow.setAttribute('aria-live', 'off');
+    }
+  });
+
+  resetBtn.addEventListener('click', () => { lastTs = 0; reset(); });
+
+  document.addEventListener('keydown', e => {
+    const tag = e.target && e.target.tagName;
+    if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA' || tag === 'BUTTON') return;
+    if (e.code === 'Space') { e.preventDefault(); if (phase === 'idle') startBtn.click(); else pauseBtn.click(); }
+    else if (e.code === 'KeyR') { e.preventDefault(); resetBtn.click(); }
+  });
+
+  let lastTs = 0;
+  function loop(ts) {
+    if (lastTs === 0) lastTs = ts;
+    const rawDt = Math.min((ts - lastTs) / 1000, 0.05);
+    lastTs = ts;
+    if (running && !paused) step(rawDt * params.speed);
+    drawAll();
+    requestAnimationFrame(loop);
+  }
+
+  fit(cv); fit(vtCv); fit(stCv);
+  refreshParams();
+  reset();
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

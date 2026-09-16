@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>竖直上抛运动演示｜高中物理</title>
+    <meta name="description" content="竖直上抛运动教学演示：可调初速度与播放速度，实时展示小球高度、速度矢量与恒定重力加速度，同步绘制 v-t 与 s-t 图像，呈现上升减速、最高点速度为零、下落加速的完整过程。">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background-color: #eef2f6;
+            color: #1f2937;
+            font-family: system-ui, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 12px 32px;
+        }
+        main {
+            width: 100%;
+            max-width: 880px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1 {
+            font-size: 22px;
+            margin-bottom: 12px;
+            text-align: center;
+        }
+        .canvas-wrap { width: 100%; }
+        canvas#scene {
+            display: block;
+            width: 100%;
+            aspect-ratio: 880 / 520;
+            border: 2px solid #2563eb;
+            border-radius: 10px;
+            background-color: #ffffff;
+        }
+        .control-panel {
+            margin-top: 14px;
+            width: 100%;
+            display: grid;
+            grid-template-columns: minmax(240px, 1fr) minmax(280px, 1.25fr);
+            gap: 14px;
+        }
+        @media (max-width: 720px) {
+            .control-panel { grid-template-columns: 1fr; }
+        }
+        .param-group,
+        .data-group {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 14px 16px;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+        }
+        .chart-panel {
+            background: transparent;
+            border: none;
+            border-radius: 0;
+            padding: 0;
+        }
+        .chart-panel .group-title {
+            padding: 0 2px;
+        }
+        .group-title {
+            font-size: 12px;
+            color: #6b7280;
+            margin-bottom: 10px;
+            letter-spacing: 0.5px;
+        }
+        .param-row {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            margin-bottom: 10px;
+        }
+        .param-row label {
+            font-size: 13px;
+            color: #1f2937;
+            white-space: nowrap;
+            min-width: 82px;
+        }
+        .param-row input[type=range] { flex: 1; }
+        .param-row .val {
+            min-width: 64px;
+            text-align: right;
+            font-size: 13px;
+            font-variant-numeric: tabular-nums;
+            color: #1f2937;
+        }
+        .fixed-note {
+            margin-top: 4px;
+            font-size: 12px;
+            color: #6b7280;
+            line-height: 1.6;
+        }
+        .fixed-note b { color: #b45309; font-weight: 600; }
+        .data-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 9px;
+        }
+        @media (max-width: 560px) {
+            .data-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+        .data-item {
+            background: #f8fafc;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 8px 10px;
+        }
+        .data-item.span-full { grid-column: 1 / -1; }
+        .data-item span {
+            display: block;
+            font-size: 11px;
+            color: #6b7280;
+            margin-bottom: 4px;
+        }
+        .data-item b {
+            display: block;
+            font-size: 14px;
+            color: #1f2937;
+            font-variant-numeric: tabular-nums;
+        }
+        .charts-row {
+            margin-top: 16px;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+        @media (max-width: 720px) {
+            .charts-row { grid-template-columns: 1fr; }
+        }
+        .chart-panel canvas {
+            display: block;
+            width: 100%;
+            aspect-ratio: 20 / 9;
+            background: #ffffff;
+            border: 2px solid #2563eb;
+            border-radius: 10px;
+        }
+        .play-bar {
+            margin-top: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .play-bar select {
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 6px 10px;
+            font-size: 13px;
+            background: #fff;
+            color: #1f2937;
+            cursor: pointer;
+        }
+        .formula-card {
+            margin-top: 16px;
+            width: 100%;
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 14px 16px;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+        }
+        .formula-card .group-title { margin-bottom: 8px; }
+        .formula-card .fixed-note { margin-top: 0; }
+        button {
+            background: #2563eb;
+            border: none;
+            color: white;
+            padding: 9px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.15s ease, transform 0.15s ease;
+        }
+        button:hover:not(:disabled) { background: #1d4ed8; }
+        button:active:not(:disabled) { transform: translateY(1px); }
+        button:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+        .legend {
+            margin-top: 12px;
+            font-size: 12px;
+            color: #6b7280;
+            text-align: center;
+            line-height: 1.8;
+        }
+        .legend span { margin: 0 6px; }
+    </style>
+</head>
+<body>
+    <main>
+        <h1>竖直上抛运动演示</h1>
+        <div class="canvas-wrap">
+            <canvas id="scene" role="img" aria-label="竖直上抛运动演示"></canvas>
+            <div class="play-bar">
+                <button id="btnStart" type="button">开始</button>
+                <button id="btnPause" type="button" disabled>暂停</button>
+                <button id="btnReset" type="button">重置</button>
+                <select id="speed" title="播放速度" aria-label="播放速度倍率">
+                    <option value="0.5" selected>0.5×</option>
+                    <option value="1">1×</option>
+                    <option value="2">2×</option>
+                    <option value="4">4×</option>
+                </select>
+            </div>
+        </div>
+        <div class="charts-row">
+            <section class="chart-panel">
+                <div class="group-title">速度-时间图 (v-t)</div>
+                <canvas id="vtChart" role="img" aria-label="速度-时间图像，斜率恒为 -g"></canvas>
+            </section>
+            <section class="chart-panel">
+                <div class="group-title">位移-时间图 (s-t)</div>
+                <canvas id="stChart" role="img" aria-label="位移-时间图像，开口向下的抛物线"></canvas>
+            </section>
+        </div>
+        <section class="formula-card">
+            <div class="group-title">公式与判定</div>
+            <div class="fixed-note">
+                    重力加速度 <b>g = 10 m/s²</b>（固定值），以竖直向上为正方向。<br>
+                    公式：y = v₀t − ½gt²，v = v₀ − gt
+                </div>
+        </section>
+        <div class="control-panel">
+            <section class="param-group" aria-labelledby="parameterTitle">
+                <div class="group-title" id="parameterTitle">参数设定</div>
+                <div class="param-row">
+                    <label for="v0">初速度 v₀</label>
+                    <input id="v0" type="range" min="5" max="40" value="20" step="1">
+                    <div class="val" id="v0Val">20 m/s</div>
+                </div>
+                                            </section>
+            <section class="data-group" aria-labelledby="dataTitle" aria-live="polite">
+                <div class="group-title" id="dataTitle">实时数值</div>
+                <div class="data-grid">
+                    <div class="data-item"><span>时间 t</span><b id="time">0.00 s</b></div>
+                    <div class="data-item"><span>高度 y</span><b id="height">0.00 m</b></div>
+                    <div class="data-item"><span>速度 v（向上为正）</span><b id="vel">20.00 m/s</b></div>
+                    <div class="data-item"><span>加速度 a</span><b id="acc">-10.00 m/s²</b></div>
+                    <div class="data-item"><span>飞行时间 T = 2v₀/g</span><b id="flightTime">4.00 s</b></div>
+                    <div class="data-item"><span>落地速度（大小 = v₀）</span><b id="landVel">20.00 m/s</b></div>
+                    <div class="data-item span-full"><span>最大高度 H = v₀²/2g（最高点处 v = 0）</span><b id="maxHeight">20.00 m</b></div>
+                </div>
+            </section>
+        </div>
+                <div class="legend">
+            <span style="color:#dc2626">→ 速度 v（上升向上、下落反向）</span>
+            <span style="color:#ea580c">→ 加速度 a = g（恒定向下）</span>
+            <span>⚪ 小球</span>
+            <span>虚线：运动轨迹</span>
+            <span style="color:#0d9488">● 最高点</span>
+            <span style="color:#2563eb">● 落地点</span>
+            <span style="color:#dc2626">● 图中当前点</span>
+        </div>
+    </main>
+    <script>
+        const g = 10;
+        const BASE_WIDTH = 880;
+        const BASE_HEIGHT = 520;
+        const CHART_ASPECT = 20 / 9;
+        const PAD = { left: 64, right: 30, top: 44, bottom: 58 };
+        const sceneView = { width: BASE_WIDTH, height: BASE_HEIGHT };
+        const vtView = { width: 400, height: 180 };
+        const stView = { width: 400, height: 180 };
+
+        const sceneCanvas = document.getElementById('scene');
+        const sctx = sceneCanvas.getContext('2d');
+        const vtCanvas = document.getElementById('vtChart');
+        const vtCtx = vtCanvas.getContext('2d');
+        const stCanvas = document.getElementById('stChart');
+        const stCtx = stCanvas.getContext('2d');
+        const inputV0 = document.getElementById('v0');
+        const inputSpeed = document.getElementById('speed');
+        const v0Val = document.getElementById('v0Val');
+        const elTime = document.getElementById('time');
+        const elHeight = document.getElementById('height');
+        const elVel = document.getElementById('vel');
+        const elAcc = document.getElementById('acc');
+        const elFlightTime = document.getElementById('flightTime');
+        const elLandVel = document.getElementById('landVel');
+        const elMaxHeight = document.getElementById('maxHeight');
+        const btnStart = document.getElementById('btnStart');
+        const btnPause = document.getElementById('btnPause');
+        const btnReset = document.getElementById('btnReset');
+
+        let state = 'idle';
+        let t = 0;
+        let lastTs = null;
+        let raf = null;
+
+        function v0Of() { return Number(inputV0.value); }
+        function speedOf() { return Number(inputSpeed.value); }
+        function yOf(time) { return v0Of() * time - 0.5 * g * time * time; }
+        function vOf(time) { return v0Of() - g * time; }
+        function tEnd() { return 2 * v0Of() / g; }
+        function apexHeight() { return v0Of() * v0Of() / (2 * g); }
+
+        function niceCeil(value) {
+            if (!isFinite(value) || value <= 0) return 1;
+            const magnitude = Math.pow(10, Math.floor(Math.log10(value)));
+            const normalized = value / magnitude;
+            const factor = normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10;
+            return factor * magnitude;
+        }
+
+        function niceStep(maxValue) {
+            const rawStep = maxValue / 5;
+            const magnitude = Math.pow(10, Math.floor(Math.log10(rawStep)));
+            const normalized = rawStep / magnitude;
+            const factor = normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10;
+            return factor * magnitude;
+        }
+
+        function tickDecimals(step) {
+            if (step >= 1) return 0;
+            return Math.min(6, Math.ceil(-Math.log10(step) + 1e-9));
+        }
+
+        function sceneGeometry() {
+            const hMax = niceCeil(Math.max(apexHeight(), 1) * 1.05);
+            const originX = PAD.left;
+            const originY = sceneView.height - PAD.bottom;
+            const plotTop = PAD.top;
+            const availableHeight = originY - plotTop;
+            const scale = availableHeight / hMax;
+            const ballX = originX + (sceneView.width - PAD.left - PAD.right) / 2;
+            return { hMax, originX, originY, plotTop, scale, ballX };
+        }
+
+        function yToScreen(geometry, y) {
+            return geometry.originY - y * geometry.scale;
+        }
+
+        function drawGround(geometry) {
+            sctx.strokeStyle = '#94a3b8';
+            sctx.lineWidth = 2;
+            sctx.beginPath();
+            sctx.moveTo(8, geometry.originY);
+            sctx.lineTo(sceneView.width - 8, geometry.originY);
+            sctx.stroke();
+            sctx.strokeStyle = '#cbd5e1';
+            sctx.lineWidth = 1;
+            sctx.beginPath();
+            for (let x = 20; x < sceneView.width - 12; x += 26) {
+                sctx.moveTo(x, geometry.originY);
+                sctx.lineTo(x - 10, geometry.originY + 10);
+            }
+            sctx.stroke();
+        }
+
+        function drawRuler(geometry) {
+            const yStep = niceStep(geometry.hMax);
+            const decimals = tickDecimals(yStep);
+            sctx.strokeStyle = '#94a3b8';
+            sctx.lineWidth = 2;
+            sctx.beginPath();
+            sctx.moveTo(geometry.originX, geometry.plotTop);
+            sctx.lineTo(geometry.originX, geometry.originY);
+            sctx.stroke();
+            sctx.fillStyle = '#6b7280';
+            sctx.font = '11px system-ui, sans-serif';
+            sctx.textAlign = 'right';
+            for (let m = 0; m <= geometry.hMax + yStep * 0.001; m += yStep) {
+                const py = yToScreen(geometry, m);
+                sctx.strokeStyle = '#94a3b8';
+                sctx.lineWidth = 1;
+                sctx.beginPath();
+                sctx.moveTo(geometry.originX - 5, py);
+                sctx.lineTo(geometry.originX, py);
+                sctx.stroke();
+                sctx.fillText(m.toFixed(decimals), geometry.originX - 8, py + 4);
+            }
+            sctx.textAlign = 'left';
+            sctx.fillText('y/m', geometry.originX - 40, geometry.plotTop - 10);
+            sctx.fillStyle = '#6b7280';
+            sctx.fillText('y 向上为正', geometry.originX + 8, geometry.plotTop + 14);
+        }
+
+        function drawTrajectoryAndApex(geometry) {
+            const apexY = yToScreen(geometry, apexHeight());
+            sctx.save();
+            sctx.strokeStyle = 'rgba(37, 99, 235, 0.55)';
+            sctx.lineWidth = 2;
+            sctx.setLineDash([7, 7]);
+            sctx.beginPath();
+            sctx.moveTo(geometry.ballX, geometry.originY);
+            sctx.lineTo(geometry.ballX, apexY);
+            sctx.stroke();
+            sctx.strokeStyle = 'rgba(13, 148, 136, 0.35)';
+            sctx.lineWidth = 1;
+            sctx.setLineDash([4, 5]);
+            sctx.beginPath();
+            sctx.moveTo(geometry.originX, apexY);
+            sctx.lineTo(geometry.ballX, apexY);
+            sctx.stroke();
+            sctx.restore();
+            sctx.fillStyle = '#0d9488';
+            sctx.beginPath();
+            sctx.arc(geometry.ballX, apexY, 4, 0, Math.PI * 2);
+            sctx.fill();
+            sctx.fillStyle = '#0f766e';
+            sctx.font = '12px system-ui, sans-serif';
+            sctx.textAlign = 'center';
+            sctx.fillText('最高点 H = ' + apexHeight().toFixed(1) + ' m', geometry.ballX + 4, apexY - 12);
+        }
+
+        function drawArrow(fromX, fromY, toX, toY, color) {
+            const dx = toX - fromX;
+            const dy = toY - fromY;
+            const length = Math.hypot(dx, dy);
+            if (length < 2) return null;
+            const headLength = 9;
+            const angle = Math.atan2(dy, dx);
+            const ex = Math.max(3, Math.min(sceneView.width - 3, toX));
+            const ey = Math.max(3, Math.min(sceneView.height - 3, toY));
+            sctx.strokeStyle = color;
+            sctx.fillStyle = color;
+            sctx.lineWidth = 3;
+            sctx.beginPath();
+            sctx.moveTo(fromX, fromY);
+            sctx.lineTo(ex, ey);
+            sctx.stroke();
+            sctx.beginPath();
+            sctx.moveTo(ex, ey);
+            sctx.lineTo(ex - headLength * Math.cos(angle - Math.PI / 6), ey - headLength * Math.sin(angle - Math.PI / 6));
+            sctx.lineTo(ex - headLength * Math.cos(angle + Math.PI / 6), ey - headLength * Math.sin(angle + Math.PI / 6));
+            sctx.closePath();
+            sctx.fill();
+            return { x: ex, y: ey };
+        }
+
+        function drawVectors(geometry, bx, by) {
+            const v = vOf(t);
+            const scale = Math.min(3.5, 130 / Math.max(v0Of(), g));
+            sctx.font = '12px system-ui, sans-serif';
+            sctx.textAlign = 'left';
+            if (Math.abs(v) * scale >= 2) {
+                const tip = drawArrow(bx, by, bx, by - v * scale, '#dc2626');
+                if (tip) {
+                    sctx.fillStyle = '#dc2626';
+                    if (v > 0) sctx.fillText('v', tip.x + 8, tip.y + 4);
+                    else sctx.fillText('v', tip.x + 8, tip.y - 6);
+                }
+            } else {
+                sctx.fillStyle = '#dc2626';
+                sctx.fillText('v = 0', bx + 10, by + 4);
+            }
+            const aTip = drawArrow(bx, by, bx, by + g * scale, '#ea580c');
+            if (aTip) {
+                sctx.fillStyle = '#ea580c';
+                sctx.fillText('a', aTip.x + 8, aTip.y + 12);
+            }
+        }
+
+        function drawBall(bx, by) {
+            sctx.fillStyle = '#dbeafe';
+            sctx.beginPath();
+            sctx.arc(bx, by, 6, 0, Math.PI * 2);
+            sctx.fill();
+            sctx.strokeStyle = '#2563eb';
+            sctx.lineWidth = 2;
+            sctx.stroke();
+        }
+
+        function drawLandingMarker(geometry) {
+            if (state !== 'ended') return;
+            sctx.strokeStyle = '#2563eb';
+            sctx.lineWidth = 2;
+            sctx.beginPath();
+            sctx.arc(geometry.ballX, geometry.originY, 10, 0, Math.PI * 2);
+            sctx.stroke();
+            sctx.fillStyle = '#1f2937';
+            sctx.font = '12px system-ui, sans-serif';
+            sctx.textAlign = 'center';
+            sctx.fillText('落地 v = -v₀', geometry.ballX, geometry.originY + 28);
+        }
+
+        function drawScene() {
+            const geometry = sceneGeometry();
+            sctx.clearRect(0, 0, sceneView.width, sceneView.height);
+            drawGround(geometry);
+            drawRuler(geometry);
+            drawTrajectoryAndApex(geometry);
+            const bx = geometry.ballX;
+            const by = yToScreen(geometry, yOf(t));
+            drawVectors(geometry, bx, by);
+            drawBall(bx, by);
+            drawLandingMarker(geometry);
+        }
+
+        function drawChart(view, ctx, fn, yMin, yMax, unit, zeroLine, yLabel) {
+            const padL = 48, padR = 16, padT = 16, padB = 30;
+            const plotW = view.width - padL - padR;
+            const plotH = view.height - padT - padB;
+            const tMax = tEnd();
+            const xOfTime = (time) => padL + (tMax > 0 ? time / tMax : 0) * plotW;
+            const yOfVal = (val) => {
+                const p = padT + plotH - (val - yMin) / (yMax - yMin) * plotH;
+                return Math.max(padT, Math.min(padT + plotH, p));
+            };
+            ctx.clearRect(0, 0, view.width, view.height);
+
+            const yStep = niceStep(yMax - yMin);
+            const yDecimals = tickDecimals(yStep);
+            ctx.font = '10px system-ui, sans-serif';
+            const iStart = Math.ceil(yMin / yStep - 1e-9);
+            const iEnd = Math.floor(yMax / yStep + 1e-9);
+            for (let i = iStart; i <= iEnd; i++) {
+                const val = i * yStep;
+                const py = yOfVal(val);
+                ctx.strokeStyle = '#e5e7eb';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(padL, py);
+                ctx.lineTo(padL + plotW, py);
+                ctx.stroke();
+                ctx.fillStyle = '#6b7280';
+                ctx.textAlign = 'right';
+                ctx.fillText(val.toFixed(yDecimals), padL - 6, py + 3);
+            }
+            if (zeroLine && yMin < 0 && yMax > 0) {
+                const py0 = yOfVal(0);
+                ctx.strokeStyle = '#94a3b8';
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.moveTo(padL, py0);
+                ctx.lineTo(padL + plotW, py0);
+                ctx.stroke();
+            }
+
+            const tStep = niceStep(tMax);
+            const tDecimals = tickDecimals(tStep);
+            ctx.textAlign = 'center';
+            for (let tt = 0; tt <= tMax + tStep * 0.001; tt += tStep) {
+                const px = xOfTime(tt);
+                ctx.strokeStyle = '#e5e7eb';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(px, padT);
+                ctx.lineTo(px, padT + plotH);
+                ctx.stroke();
+                ctx.fillStyle = '#6b7280';
+                ctx.fillText(tt.toFixed(tDecimals), px, padT + plotH + 16);
+            }
+
+            ctx.strokeStyle = '#94a3b8';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(padL, padT);
+            ctx.lineTo(padL, padT + plotH);
+            ctx.lineTo(padL + plotW, padT + plotH);
+            ctx.stroke();
+
+            ctx.fillStyle = '#6b7280';
+            ctx.textAlign = 'left';
+            ctx.fillText(yLabel, padL + 6, padT + 12);
+            ctx.textAlign = 'right';
+            ctx.fillText('t/s', padL + plotW, view.height - 8);
+
+            ctx.strokeStyle = '#2563eb';
+            ctx.lineWidth = 2.5;
+            ctx.lineJoin = 'round';
+            ctx.beginPath();
+            const samples = 120;
+            for (let i = 0; i <= samples; i++) {
+                const time = (i / samples) * tMax;
+                const px = xOfTime(time);
+                const py = yOfVal(fn(time));
+                if (i === 0) ctx.moveTo(px, py);
+                else ctx.lineTo(px, py);
+            }
+            ctx.stroke();
+
+            const frac = tMax > 0 ? Math.min(t / tMax, 1) : 0;
+            const pxNow = padL + frac * plotW;
+            const pyNow = yOfVal(fn(t));
+            ctx.strokeStyle = 'rgba(37, 99, 235, 0.35)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(pxNow, padT);
+            ctx.lineTo(pxNow, padT + plotH);
+            ctx.stroke();
+            ctx.fillStyle = '#dc2626';
+            ctx.beginPath();
+            ctx.arc(pxNow, pyNow, 4.5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.font = '10px system-ui, sans-serif';
+            const valText = fn(t).toFixed(1) + unit;
+            let lx = pxNow + 7, ly = pyNow - 7;
+            if (lx > padL + plotW - 40) lx = pxNow - 44;
+            if (ly < padT + 10) ly = pyNow + 16;
+            ctx.textAlign = 'left';
+            ctx.fillStyle = '#1f2937';
+            ctx.fillText(valText, lx, ly);
+        }
+
+        function vAxisMax() {
+            return Math.max(10, Math.ceil(v0Of() * 1.05 / 5) * 5);
+        }
+
+        function drawCharts() {
+            const vMax = vAxisMax();
+            const sMax = niceCeil(Math.max(apexHeight(), 5) * 1.05);
+            drawChart(vtView, vtCtx, vOf, -vMax, vMax, ' m/s', true, 'v (m/s)');
+            drawChart(stView, stCtx, yOf, 0, sMax, ' m', false, 's (m)');
+        }
+
+        function renderAll() {
+            drawScene();
+            drawCharts();
+        }
+
+        function updateReadouts() {
+            const y = yOf(t);
+            const v = vOf(t);
+            elTime.textContent = t.toFixed(2) + ' s';
+            elHeight.textContent = y.toFixed(2) + ' m';
+            elVel.textContent = v.toFixed(2) + ' m/s';
+            elAcc.textContent = '-' + g.toFixed(2) + ' m/s²';
+            elFlightTime.textContent = tEnd().toFixed(2) + ' s';
+            elLandVel.textContent = v0Of().toFixed(2) + ' m/s';
+            elMaxHeight.textContent = apexHeight().toFixed(2) + ' m';
+            sceneCanvas.setAttribute(
+                'aria-label',
+                `竖直上抛运动演示：当前时间${t.toFixed(2)}秒，高度${y.toFixed(2)}米，速度${v.toFixed(2)}米每秒（向上为正）`
+            );
+        }
+
+        function setupCanvas(canvas, view, aspect) {
+            const cssWidth = canvas.clientWidth || 400;
+            const cssHeight = cssWidth / aspect;
+            const devicePixelRatio = window.devicePixelRatio || 1;
+            canvas.width = Math.round(cssWidth * devicePixelRatio);
+            canvas.height = Math.round(cssHeight * devicePixelRatio);
+            canvas.getContext('2d').setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+            view.width = cssWidth;
+            view.height = cssHeight;
+        }
+
+        function resizeAll() {
+            setupCanvas(sceneCanvas, sceneView, BASE_WIDTH / BASE_HEIGHT);
+            setupCanvas(vtCanvas, vtView, CHART_ASPECT);
+            setupCanvas(stCanvas, stView, CHART_ASPECT);
+            renderAll();
+        }
+
+        function frame(timestamp) {
+            if (state !== 'running') return;
+            if (lastTs === null) lastTs = timestamp;
+            const dt = Math.min((timestamp - lastTs) / 1000, 0.05) * speedOf();
+            lastTs = timestamp;
+            t = Math.min(t + dt, tEnd());
+            const ended = t >= tEnd();
+            if (ended) state = 'ended';
+            renderAll();
+            updateReadouts();
+            if (ended) {
+                btnStart.disabled = false;
+                btnStart.textContent = '重新开始';
+                btnPause.disabled = true;
+                btnPause.textContent = '暂停';
+                btnReset.disabled = false;
+                inputV0.disabled = false;
+                return;
+            }
+            raf = requestAnimationFrame(frame);
+        }
+
+        function start() {
+            if (state === 'running' || state === 'paused') return;
+            t = 0;
+            lastTs = null;
+            state = 'running';
+            btnStart.disabled = true;
+            btnStart.textContent = '运行中…';
+            btnPause.disabled = false;
+            btnPause.textContent = '暂停';
+            btnReset.disabled = true;
+            inputV0.disabled = true;
+            updateReadouts();
+            renderAll();
+            raf = requestAnimationFrame(frame);
+        }
+
+        function pause() {
+            if (state !== 'running') return;
+            state = 'paused';
+            if (raf) cancelAnimationFrame(raf);
+            btnStart.disabled = false;
+            btnStart.textContent = '重新开始';
+            btnPause.disabled = false;
+            btnPause.textContent = '继续';
+            btnReset.disabled = false;
+        }
+
+        function resume() {
+            if (state !== 'paused') return;
+            state = 'running';
+            lastTs = null;
+            btnStart.disabled = true;
+            btnStart.textContent = '运行中…';
+            btnPause.disabled = false;
+            btnPause.textContent = '暂停';
+            btnReset.disabled = true;
+            raf = requestAnimationFrame(frame);
+        }
+
+        function reset() {
+            if (raf) cancelAnimationFrame(raf);
+            state = 'idle';
+            t = 0;
+            lastTs = null;
+            inputV0.disabled = false;
+            btnStart.disabled = false;
+            btnStart.textContent = '开始';
+            btnPause.disabled = true;
+            btnPause.textContent = '暂停';
+            btnReset.disabled = false;
+            updateReadouts();
+            renderAll();
+        }
+
+        function updateParameterLabels() {
+            v0Val.textContent = inputV0.value + ' m/s';
+        }
+
+        btnStart.addEventListener('click', start);
+        btnPause.addEventListener('click', () => {
+            if (state === 'running') pause();
+            else if (state === 'paused') resume();
+        });
+        btnReset.addEventListener('click', reset);
+        inputV0.addEventListener('input', () => {
+            updateParameterLabels();
+            if (state === 'idle' || state === 'ended') reset();
+        });
+        inputSpeed.addEventListener('input', updateParameterLabels);
+        window.addEventListener('keydown', (e) => {
+            const ae = document.activeElement;
+            if (ae && (ae.tagName === 'INPUT' || ae.tagName === 'BUTTON' || ae.tagName === 'SELECT' || ae.tagName === 'TEXTAREA' || ae.isContentEditable)) return;
+            if (e.code === 'Space') {
+                e.preventDefault();
+                if (state === 'running') pause();
+                else if (state === 'paused') resume();
+                else start();
+            } else if (e.key === 'r' || e.key === 'R') {
+                reset();
+            }
+        });
+        window.addEventListener('resize', resizeAll);
+        if (typeof ResizeObserver !== 'undefined') {
+            const observer = new ResizeObserver(resizeAll);
+            observer.observe(sceneCanvas);
+            observer.observe(vtCanvas);
+            observer.observe(stCanvas);
+        }
+
+        updateParameterLabels();
+        resizeAll();
+        reset();
+    </script>
+</body>
+</html>

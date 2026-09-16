@@ -1,0 +1,13 @@
+# 临时文件
+*.zip
+*.tmp
+*.log
+cdp-test.js
+
+# 旧版本备份
+old-*.html
+_repo/
+
+# 系统文件
+.DS_Store
+Thumbs.db

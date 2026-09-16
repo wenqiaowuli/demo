@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>超重和失重演示｜高中物理</title>
+    <meta name="description" content="超重和失重教学演示：电梯往返全程自动演示加速上升、匀速、减速上升、停靠、加速下降、匀速、减速下降各阶段中体重计视重的变化，同步绘制 v-t 与视重 F-t 图像（带实重 G=mg 参考线），直观呈现超重与失重取决于加速度方向而非速度方向。">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background-color: #eef2f6;
+            color: #1f2937;
+            font-family: system-ui, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 12px 32px;
+        }
+        main {
+            width: 100%;
+            max-width: 880px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1 {
+            font-size: 22px;
+            margin-bottom: 12px;
+            text-align: center;
+        }
+        .canvas-wrap { width: 100%; }
+        canvas#scene {
+            display: block;
+            width: 100%;
+            aspect-ratio: 880 / 520;
+            border: 2px solid #2563eb;
+            border-radius: 10px;
+            background-color: #ffffff;
+        }
+        .control-panel {
+            margin-top: 14px;
+            width: 100%;
+            display: grid;
+            grid-template-columns: minmax(240px, 1fr) minmax(280px, 1.25fr);
+            gap: 14px;
+        }
+        @media (max-width: 720px) {
+            .control-panel { grid-template-columns: 1fr; }
+        }
+        .param-group,
+        .data-group {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 14px 16px;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+        }
+        .chart-panel {
+            background: transparent;
+            border: none;
+            border-radius: 0;
+            padding: 0;
+        }
+        .chart-panel .group-title {
+            padding: 0 2px;
+        }
+        .group-title {
+            font-size: 12px;
+            color: #6b7280;
+            margin-bottom: 10px;
+            letter-spacing: 0.5px;
+        }
+        .param-row {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            margin-bottom: 10px;
+        }
+        .param-row label {
+            font-size: 13px;
+            color: #1f2937;
+            white-space: nowrap;
+            min-width: 82px;
+        }
+        .param-row input[type=range] { flex: 1; }
+        .param-row .val {
+            min-width: 64px;
+            text-align: right;
+            font-size: 13px;
+            font-variant-numeric: tabular-nums;
+            color: #1f2937;
+        }
+        .fixed-note {
+            margin-top: 4px;
+            font-size: 12px;
+            color: #6b7280;
+            line-height: 1.6;
+        }
+        .fixed-note b { color: #b45309; font-weight: 600; }
+        .data-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 9px;
+        }
+        @media (max-width: 560px) {
+            .data-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+        .data-item {
+            background: #f8fafc;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 8px 10px;
+        }
+        .data-item.span-full { grid-column: 1 / -1; }
+        .data-item span {
+            display: block;
+            font-size: 11px;
+            color: #6b7280;
+            margin-bottom: 4px;
+        }
+        .data-item b {
+            display: block;
+            font-size: 14px;
+            color: #1f2937;
+            font-variant-numeric: tabular-nums;
+        }
+        .charts-row {
+            margin-top: 16px;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+        @media (max-width: 720px) {
+            .charts-row { grid-template-columns: 1fr; }
+        }
+        .chart-panel canvas {
+            display: block;
+            width: 100%;
+            aspect-ratio: 20 / 9;
+            background: #ffffff;
+            border: 2px solid #2563eb;
+            border-radius: 10px;
+        }
+        .play-bar {
+            margin-top: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .play-bar select {
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 6px 10px;
+            font-size: 13px;
+            background: #fff;
+            color: #1f2937;
+            cursor: pointer;
+        }
+        .formula-card {
+            margin-top: 16px;
+            width: 100%;
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 14px 16px;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+        }
+        .formula-card .group-title { margin-bottom: 8px; }
+        .formula-card .fixed-note { margin-top: 0; }
+        button {
+            background: #2563eb;
+            border: none;
+            color: white;
+            padding: 9px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.15s ease, transform 0.15s ease;
+        }
+        button:hover:not(:disabled) { background: #1d4ed8; }
+        button:active:not(:disabled) { transform: translateY(1px); }
+        button:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+        .legend {
+            margin-top: 12px;
+            font-size: 12px;
+            color: #6b7280;
+            text-align: center;
+            line-height: 1.8;
+        }
+        .legend span { margin: 0 6px; }
+    </style>
+</head>
+<body>
+    <main>
+        <h1>超重和失重演示</h1>
+        <div class="canvas-wrap">
+            <canvas id="scene" role="img" aria-label="超重和失重演示：电梯内的人站在体重计上"></canvas>
+            <div class="play-bar">
+                <button id="btnStart" type="button">开始</button>
+                <button id="btnPauseResume" type="button" disabled>暂停</button>
+                <button id="btnReset" type="button">重置</button>
+                <select id="speed" title="播放速度" aria-label="播放速度倍率">
+                    <option value="0.5">0.5×</option>
+                    <option value="1" selected>1×</option>
+                    <option value="2">2×</option>
+                    <option value="4">4×</option>
+                </select>
+            </div>
+        </div>
+        <div class="charts-row">
+            <section class="chart-panel">
+                <div class="group-title">速度-时间图 (v-t)</div>
+                <canvas id="vtChart" role="img" aria-label="速度-时间图像，往返行程的对称梯形"></canvas>
+            </section>
+            <section class="chart-panel">
+                <div class="group-title">视重-时间图 (F-t)</div>
+                <canvas id="ftChart" role="img" aria-label="体重计视重-时间图像，带实重 G=mg 参考虚线"></canvas>
+            </section>
+        </div>
+        <section class="formula-card">
+            <div class="group-title">公式与判定</div>
+            <div class="fixed-note">
+                    视重公式：<b>F = m(g + a)</b>，a 竖直向上为正，<b>g = 10 m/s²</b>（固定）。<br>
+                    超重 ⇔ 加速度向上；失重 ⇔ 加速度向下；<b>与速度方向无关</b>。<br>
+                    实重 G = mg 恒定不变，变的只是体重计读数（视重）。<br>
+                    a = g 时 F = 0，即完全失重（如自由落体）。<br>
+                    阶段：加速↑<span style="color:#ea580c">(超重)</span>→匀速↑→减速↑<span style="color:#2563eb">(失重)</span>→停靠→加速↓<span style="color:#2563eb">(失重)</span>→匀速↓→减速↓<span style="color:#ea580c">(超重)</span>
+                </div>
+        </section>
+        <div class="control-panel">
+            <section class="param-group" aria-labelledby="parameterTitle">
+                <div class="group-title" id="parameterTitle">参数设定</div>
+                <div class="param-row">
+                    <label for="acc">加速度 a</label>
+                    <input id="acc" type="range" min="0.5" max="10" value="2" step="0.5" aria-label="加减速阶段加速度大小，上限为 g">
+                    <div class="val" id="accVal">2.0 m/s²</div>
+                </div>
+                <div class="param-row">
+                    <label for="vmax">最大速度</label>
+                    <input id="vmax" type="range" min="1" max="10" value="6" step="0.5" aria-label="匀速阶段最大速度">
+                    <div class="val" id="vmaxVal">6.0 m/s</div>
+                </div>
+                <div class="param-row">
+                    <label for="tconst">匀速时长</label>
+                    <input id="tconst" type="range" min="0" max="6" value="2" step="0.5" aria-label="匀速阶段持续时间">
+                    <div class="val" id="tconstVal">2.0 s</div>
+                </div>
+                <div class="param-row">
+                    <label for="mass">质量 m</label>
+                    <input id="mass" type="range" min="40" max="100" value="60" step="1" aria-label="人的质量，影响实重与视重">
+                    <div class="val" id="massVal">60 kg</div>
+                </div>
+                                            </section>
+            <section class="data-group" aria-labelledby="dataTitle" aria-live="polite">
+                <div class="group-title" id="dataTitle">实时数值</div>
+                <div class="data-grid">
+                    <div class="data-item"><span>时间 t</span><b id="time">0.00 s</b></div>
+                    <div class="data-item"><span>速度 v（上为正）</span><b id="vel">0.00 m/s</b></div>
+                    <div class="data-item"><span>加速度 a</span><b id="accNow">0.00 m/s²</b></div>
+                    <div class="data-item"><span>运动阶段</span><b id="phase">静止（待机）</b></div>
+                    <div class="data-item"><span>高度 y</span><b id="height">0.00 m</b></div>
+                    <div class="data-item"><span>实重 G = mg</span><b id="grav">600 N</b></div>
+                    <div class="data-item"><span>视重 F（体重计）</span><b id="fApp">600 N</b></div>
+                    <div class="data-item"><span>F / G</span><b id="fRatio">1.00 × G</b></div>
+                    <div class="data-item"><span>行程时间 T</span><b id="tTotal">16.80 s</b></div>
+                    <div class="data-item span-full"><span>超失重状态</span><b id="stateText">正常</b></div>
+                </div>
+            </section>
+        </div>
+                <div class="legend">
+            <span>□ 电梯轿厢（内有人与体重计）</span>
+            <span style="color:#ea580c">→ 加速度 a</span>
+            <span>楼层线（每层 3 m）与左侧高度标尺</span>
+            <span style="color:#0d9488">-- 虚线：上行高度 H / 图中实重 G</span>
+            <span style="color:#dc2626">● 图中当前点</span>
+        </div>
+    </main>
+    <script>
+        const g = 10;
+        const T_PAUSE = 0.8;        // 顶层停靠时长
+        const BASE_WIDTH = 880;
+        const BASE_HEIGHT = 520;
+        const CHART_ASPECT = 20 / 9;
+        const PAD = { left: 64, right: 30, top: 44, bottom: 58 };
+        const CABIN_W = 96, CABIN_H = 84;
+        const A_ARROW_SCALE = 8, A_ARROW_MAX = 80;
+        const COLOR_OVER = '#ea580c', COLOR_NORMAL = '#1f2937', COLOR_UNDER = '#2563eb', COLOR_FREE = '#0d9488';
+        const sceneView = { width: BASE_WIDTH, height: BASE_HEIGHT };
+        const vtView = { width: 400, height: 180 };
+        const ftView = { width: 400, height: 180 };
+
+        const sceneCanvas = document.getElementById('scene');
+        const sctx = sceneCanvas.getContext('2d');
+        const vtCanvas = document.getElementById('vtChart');
+        const vtCtx = vtCanvas.getContext('2d');
+        const ftCanvas = document.getElementById('ftChart');
+        const ftCtx = ftCanvas.getContext('2d');
+        const inputAcc = document.getElementById('acc');
+        const inputVmax = document.getElementById('vmax');
+        const inputTconst = document.getElementById('tconst');
+        const inputMass = document.getElementById('mass');
+        const inputSpeed = document.getElementById('speed');
+        const accVal = document.getElementById('accVal');
+        const vmaxVal = document.getElementById('vmaxVal');
+        const tconstVal = document.getElementById('tconstVal');
+        const massVal = document.getElementById('massVal');
+        const elTime = document.getElementById('time');
+        const elVel = document.getElementById('vel');
+        const elAccNow = document.getElementById('accNow');
+        const elPhase = document.getElementById('phase');
+        const elHeight = document.getElementById('height');
+        const elGrav = document.getElementById('grav');
+        const elFApp = document.getElementById('fApp');
+        const elFRatio = document.getElementById('fRatio');
+        const elTTotal = document.getElementById('tTotal');
+        const elStateText = document.getElementById('stateText');
+        const btnStart = document.getElementById('btnStart');
+        const btnPauseResume = document.getElementById('btnPauseResume');
+        const btnReset = document.getElementById('btnReset');
+
+        let state = 'idle';
+        let t = 0;
+        let lastTs = null;
+        let raf = null;
+
+        function aOf() { return Number(inputAcc.value); }
+        function vmaxOf() { return Number(inputVmax.value); }
+        function t2Of() { return Number(inputTconst.value); }
+        function mOf() { return Number(inputMass.value); }
+        function speedOf() { return Number(inputSpeed.value); }
+        function t1Of() { return vmaxOf() / aOf(); }
+        function tTotalOf() { return 4 * t1Of() + 2 * t2Of() + T_PAUSE; }
+        function heightOf() { return vmaxOf() * (t1Of() + t2Of()); }
+        function gForceOf() { return mOf() * g; }
+        function axisMax(value) {
+            return Math.max(5, Math.ceil(value / 5) * 5);
+        }
+
+        // 分阶段运动学：返回 {name, a, v, y, F}（a、v 以向上为正，F 恒为正）
+        function phaseAt(time) {
+            const a = aOf(), vmax = vmaxOf(), t2 = t2Of(), m = mOf();
+            const t1 = t1Of();
+            const tB = t1, tC = t1 + t2, tD = 2 * t1 + t2, tE = tD + T_PAUSE;
+            const tF = tE + t1, tG = tF + t2, tH = tG + t1;
+            const yA = 0.5 * vmax * t1;              // 加速上升段末高度
+            const yB = yA + vmax * t2;               // 匀速段末高度
+            const H = vmax * (t1 + t2);
+            if (time < tB) {
+                return { name: '加速上升', a: a, v: a * time, y: 0.5 * a * time * time, F: m * (g + a) };
+            }
+            if (time < tC) {
+                return { name: '匀速上升', a: 0, v: vmax, y: yA + vmax * (time - tB), F: m * g };
+            }
+            if (time < tD) {
+                const tau = time - tC;
+                return { name: '减速上升', a: -a, v: vmax - a * tau, y: yB + vmax * tau - 0.5 * a * tau * tau, F: m * (g - a) };
+            }
+            if (time < tE) {
+                return { name: '顶层停靠', a: 0, v: 0, y: H, F: m * g };
+            }
+            if (time < tF) {
+                const tau = time - tE;
+                return { name: '加速下降', a: -a, v: -a * tau, y: H - 0.5 * a * tau * tau, F: m * (g - a) };
+            }
+            if (time < tG) {
+                const tau = time - tF;
+                return { name: '匀速下降', a: 0, v: -vmax, y: H - yA - vmax * tau, F: m * g };
+            }
+            if (time < tH) {
+                const tau = time - tG;
+                return { name: '减速下降', a: a, v: -(vmax - a * tau), y: H - yB - (vmax * tau - 0.5 * a * tau * tau), F: m * (g + a) };
+            }
+            return { name: '已返回', a: 0, v: 0, y: 0, F: m * g };
+        }
+
+        function stateOf(ph) {
+            if (ph.a > 1e-9) return { label: '超重', color: COLOR_OVER };
+            if (ph.a < -1e-9) {
+                return ph.F <= 1e-6
+                    ? { label: '完全失重', color: COLOR_FREE }
+                    : { label: '失重', color: COLOR_UNDER };
+            }
+            return { label: '正常', color: COLOR_NORMAL };
+        }
+
+        function niceCeil(value) {
+            if (!isFinite(value) || value <= 0) return 1;
+            const magnitude = Math.pow(10, Math.floor(Math.log10(value)));
+            const normalized = value / magnitude;
+            const factor = normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10;
+            return factor * magnitude;
+        }
+
+        function niceStep(maxValue) {
+            const rawStep = maxValue / 5;
+            const magnitude = Math.pow(10, Math.floor(Math.log10(rawStep)));
+            const normalized = rawStep / magnitude;
+            const factor = normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10;
+            return factor * magnitude;
+        }
+
+        function tickDecimals(step) {
+            if (step >= 1) return 0;
+            return Math.min(6, Math.ceil(-Math.log10(step) + 1e-9));
+        }
+
+        function sceneGeometry() {
+            const hMax = axisMax(Math.max(heightOf(), 1) * 1.05);
+            const originX = PAD.left;
+            const originY = sceneView.height - PAD.bottom;
+            const plotTop = PAD.top;
+            const availableHeight = originY - plotTop;
+            const scale = availableHeight / hMax;
+            const cabinX = originX + (sceneView.width - PAD.left - PAD.right) / 2;
+            return { hMax, originX, originY, plotTop, scale, cabinX };
+        }
+
+        function yToScreen(geometry, heightAboveGround) {
+            return geometry.originY - heightAboveGround * geometry.scale;
+        }
+
+        function drawGround(geometry) {
+            sctx.strokeStyle = '#94a3b8';
+            sctx.lineWidth = 2;
+            sctx.beginPath();
+            sctx.moveTo(8, geometry.originY);
+            sctx.lineTo(sceneView.width - 8, geometry.originY);
+            sctx.stroke();
+            sctx.strokeStyle = '#cbd5e1';
+            sctx.lineWidth = 1;
+            sctx.beginPath();
+            for (let x = 20; x < sceneView.width - 12; x += 26) {
+                sctx.moveTo(x, geometry.originY);
+                sctx.lineTo(x - 10, geometry.originY + 10);
+            }
+            sctx.stroke();
+        }
+
+        function drawRuler(geometry) {
+            const yStep = niceStep(geometry.hMax);
+            const decimals = tickDecimals(yStep);
+            sctx.strokeStyle = '#94a3b8';
+            sctx.lineWidth = 2;
+            sctx.beginPath();
+            sctx.moveTo(geometry.originX, geometry.plotTop);
+            sctx.lineTo(geometry.originX, geometry.originY);
+            sctx.stroke();
+            sctx.fillStyle = '#6b7280';
+            sctx.font = '11px system-ui, sans-serif';
+            sctx.textAlign = 'right';
+            for (let m = 0; m <= geometry.hMax + yStep * 0.001; m += yStep) {
+                const py = yToScreen(geometry, m);
+                sctx.strokeStyle = '#94a3b8';
+                sctx.lineWidth = 1;
+                sctx.beginPath();
+                sctx.moveTo(geometry.originX - 5, py);
+                sctx.lineTo(geometry.originX, py);
+                sctx.stroke();
+                sctx.fillText(m.toFixed(decimals), geometry.originX - 8, py + 4);
+            }
+            sctx.textAlign = 'left';
+            sctx.fillText('y/m', geometry.originX - 40, geometry.plotTop - 10);
+            sctx.fillStyle = '#6b7280';
+            sctx.fillText('高度以离地计，a 以竖直向上为正', geometry.originX + 8, geometry.plotTop + 14);
+        }
+
+        function drawFloors(geometry) {
+            sctx.font = '10px system-ui, sans-serif';
+            for (let k = 0; ; k++) {
+                const h = k * 3;
+                if (h > geometry.hMax + 1e-9) break;
+                const py = yToScreen(geometry, h);
+                sctx.strokeStyle = 'rgba(148, 163, 184, 0.45)';
+                sctx.lineWidth = 1;
+                sctx.beginPath();
+                sctx.moveTo(geometry.originX + 2, py);
+                sctx.lineTo(sceneView.width - 8, py);
+                sctx.stroke();
+                sctx.fillStyle = '#6b7280';
+                sctx.textAlign = 'left';
+                sctx.fillText((k + 1) + 'F', sceneView.width - PAD.right + 4, py + 3);
+            }
+        }
+
+        function drawTopLine(geometry) {
+            const py = yToScreen(geometry, heightOf());
+            sctx.save();
+            sctx.strokeStyle = 'rgba(13, 148, 136, 0.55)';
+            sctx.lineWidth = 2;
+            sctx.setLineDash([7, 7]);
+            sctx.beginPath();
+            sctx.moveTo(geometry.originX, py);
+            sctx.lineTo(sceneView.width - 14, py);
+            sctx.stroke();
+            sctx.restore();
+            sctx.fillStyle = '#0d9488';
+            sctx.font = '12px system-ui, sans-serif';
+            sctx.textAlign = 'right';
+            sctx.fillText('上行高度 H = ' + heightOf().toFixed(1) + ' m', sceneView.width - 88, py - 10);
+        }
+
+        function roundRect(ctx, x, y, w, h, r) {
+            ctx.beginPath();
+            ctx.moveTo(x + r, y);
+            ctx.arcTo(x + w, y, x + w, y + h, r);
+            ctx.arcTo(x + w, y + h, x, y + h, r);
+            ctx.arcTo(x, y + h, x, y, r);
+            ctx.arcTo(x, y, x + w, y, r);
+            ctx.closePath();
+        }
+
+        function drawCabin(geometry, floorY) {
+            const x = geometry.cabinX - CABIN_W / 2;
+            const y = floorY - CABIN_H;
+            // 悬挂导轨与吊索
+            sctx.strokeStyle = '#cbd5e1';
+            sctx.lineWidth = 2;
+            sctx.beginPath();
+            sctx.moveTo(geometry.cabinX, geometry.plotTop);
+            sctx.lineTo(geometry.cabinX, y);
+            sctx.stroke();
+            // 轿厢
+            sctx.fillStyle = '#dbeafe';
+            sctx.strokeStyle = '#2563eb';
+            sctx.lineWidth = 2;
+            roundRect(sctx, x, y, CABIN_W, CABIN_H, 6);
+            sctx.fill();
+            sctx.stroke();
+            // 体重计
+            sctx.fillStyle = '#e2e8f0';
+            sctx.strokeStyle = '#94a3b8';
+            sctx.lineWidth = 1;
+            roundRect(sctx, geometry.cabinX - 24, floorY - 9, 48, 9, 2);
+            sctx.fill();
+            sctx.stroke();
+            // 简化人形（在加高后的轿厢内垂直居中）
+            sctx.strokeStyle = '#1f2937';
+            sctx.fillStyle = '#1f2937';
+            sctx.lineWidth = 3;
+            sctx.lineCap = 'round';
+            sctx.beginPath(); // 头
+            sctx.arc(geometry.cabinX, y + 22, 6.5, 0, Math.PI * 2);
+            sctx.fill();
+            sctx.beginPath(); // 躯干
+            sctx.moveTo(geometry.cabinX, y + 31);
+            sctx.lineTo(geometry.cabinX, y + 56);
+            sctx.stroke();
+            sctx.beginPath(); // 腿
+            sctx.moveTo(geometry.cabinX, y + 56);
+            sctx.lineTo(geometry.cabinX - 8, floorY - 9);
+            sctx.moveTo(geometry.cabinX, y + 56);
+            sctx.lineTo(geometry.cabinX + 8, floorY - 9);
+            sctx.stroke();
+            sctx.lineCap = 'butt';
+            return { x, y };
+        }
+
+        function drawArrow(fromX, fromY, toX, toY, color) {
+            const dx = toX - fromX;
+            const dy = toY - fromY;
+            const length = Math.hypot(dx, dy);
+            if (length < 2) return null;
+            const headLength = 9;
+            const angle = Math.atan2(dy, dx);
+            const ex = Math.max(3, Math.min(sceneView.width - 3, toX));
+            const ey = Math.max(3, Math.min(sceneView.height - 3, toY));
+            sctx.strokeStyle = color;
+            sctx.fillStyle = color;
+            sctx.lineWidth = 3;
+            sctx.beginPath();
+            sctx.moveTo(fromX, fromY);
+            sctx.lineTo(ex, ey);
+            sctx.stroke();
+            sctx.beginPath();
+            sctx.moveTo(ex, ey);
+            sctx.lineTo(ex - headLength * Math.cos(angle - Math.PI / 6), ey - headLength * Math.sin(angle - Math.PI / 6));
+            sctx.lineTo(ex - headLength * Math.cos(angle + Math.PI / 6), ey - headLength * Math.sin(angle + Math.PI / 6));
+            sctx.closePath();
+            sctx.fill();
+            return { x: ex, y: ey };
+        }
+
+        function readingLabelY(geometry, cabin) {
+            const centerY = cabin.y + CABIN_H / 2;
+            const y0 = Math.max(geometry.plotTop + 4, Math.min(geometry.originY - 36, centerY - 15));
+            return y0 + 20;
+        }
+
+        function drawVectors(geometry, cabin) {
+            const ph = phaseAt(t);
+            const aShow = state === 'idle' ? 0 : ph.a;
+            const centerY = cabin.y + CABIN_H / 2;
+            sctx.font = 'bold 13px system-ui, sans-serif';
+            sctx.textAlign = 'right';
+            sctx.fillStyle = '#ea580c';
+            const aX = geometry.cabinX - CABIN_W / 2 - 18;
+            const aLen = Math.min(Math.abs(aShow) * A_ARROW_SCALE, A_ARROW_MAX);
+            const aText = aShow === 0
+                ? 'a = 0'
+                : 'a = ' + (aShow > 0 ? '+' : '-') + Math.abs(aShow).toFixed(1) + ' m/s²';
+            if (aLen >= 2) {
+                const dir = aShow >= 0 ? -1 : 1;
+                drawArrow(aX, centerY, aX, centerY + dir * aLen, '#ea580c');
+            }
+            sctx.fillText(aText, aX - 10, readingLabelY(geometry, cabin));
+        }
+
+        function drawBubble(geometry, cabin) {
+            const ph = phaseAt(t);
+            const fShow = state === 'idle' ? gForceOf() : ph.F;
+            const textX = Math.min(geometry.cabinX + CABIN_W / 2 + 28, sceneView.width - 112);
+            sctx.textAlign = 'left';
+            sctx.font = 'bold 13px system-ui, sans-serif';
+            sctx.fillStyle = COLOR_NORMAL;
+            sctx.fillText('视重 = ' + fShow.toFixed(0) + ' N', textX, readingLabelY(geometry, cabin));
+        }
+
+        function drawEndMark(geometry) {
+            if (state !== 'ended') return;
+            sctx.strokeStyle = '#2563eb';
+            sctx.lineWidth = 2;
+            sctx.beginPath();
+            sctx.arc(geometry.cabinX, geometry.originY, 12, 0, Math.PI * 2);
+            sctx.stroke();
+            sctx.fillStyle = '#1f2937';
+            sctx.font = '12px system-ui, sans-serif';
+            sctx.textAlign = 'center';
+            sctx.fillText('已返回地面', geometry.cabinX - 90, geometry.originY - 10);
+        }
+
+        function drawScene() {
+            const geometry = sceneGeometry();
+            sctx.clearRect(0, 0, sceneView.width, sceneView.height);
+            drawGround(geometry);
+            drawRuler(geometry);
+            drawFloors(geometry);
+            drawTopLine(geometry);
+            const ph = phaseAt(t);
+            const floorY = yToScreen(geometry, ph.y);
+            const cabin = drawCabin(geometry, floorY);
+            drawVectors(geometry, cabin);
+            drawBubble(geometry, cabin);
+            drawEndMark(geometry);
+        }
+
+        function drawChart(view, ctx, fn, yMin, yMax, unit, yLabel, opts) {
+            const padL = 48, padR = 16, padT = 16, padB = 30;
+            const plotW = view.width - padL - padR;
+            const plotH = view.height - padT - padB;
+            const tMax = tTotalOf();
+            const xOfTime = (time) => padL + (tMax > 0 ? time / tMax : 0) * plotW;
+            const yOfVal = (val) => {
+                const p = padT + plotH - (val - yMin) / (yMax - yMin) * plotH;
+                return Math.max(padT, Math.min(padT + plotH, p));
+            };
+            ctx.clearRect(0, 0, view.width, view.height);
+
+            const yStep = niceStep(yMax - yMin);
+            const yDecimals = tickDecimals(yStep);
+            ctx.font = '10px system-ui, sans-serif';
+            const iStart = Math.ceil(yMin / yStep - 1e-9);
+            const iEnd = Math.floor(yMax / yStep + 1e-9);
+            for (let i = iStart; i <= iEnd; i++) {
+                const val = i * yStep;
+                const py = yOfVal(val);
+                ctx.strokeStyle = '#e5e7eb';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(padL, py);
+                ctx.lineTo(padL + plotW, py);
+                ctx.stroke();
+                ctx.fillStyle = '#6b7280';
+                ctx.textAlign = 'right';
+                ctx.fillText(val.toFixed(yDecimals), padL - 6, py + 3);
+            }
+            if (yMin < 0 && yMax > 0) {
+                const py0 = yOfVal(0);
+                ctx.strokeStyle = '#94a3b8';
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.moveTo(padL, py0);
+                ctx.lineTo(padL + plotW, py0);
+                ctx.stroke();
+            }
+            if (opts && opts.refLine !== undefined) {
+                const pyR = yOfVal(opts.refLine);
+                ctx.save();
+                ctx.strokeStyle = opts.refColor || '#0d9488';
+                ctx.lineWidth = 1.5;
+                ctx.setLineDash([6, 5]);
+                ctx.beginPath();
+                ctx.moveTo(padL, pyR);
+                ctx.lineTo(padL + plotW, pyR);
+                ctx.stroke();
+                ctx.restore();
+                ctx.fillStyle = opts.refColor || '#0d9488';
+                ctx.textAlign = 'right';
+                ctx.fillText(opts.refLabel || 'G = mg', padL + plotW - 4, pyR - 5);
+            }
+
+            const tStep = niceStep(tMax);
+            const tDecimals = tickDecimals(tStep);
+            ctx.textAlign = 'center';
+            for (let tt = 0; tt <= tMax + tStep * 0.001; tt += tStep) {
+                const px = xOfTime(tt);
+                ctx.strokeStyle = '#e5e7eb';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(px, padT);
+                ctx.lineTo(px, padT + plotH);
+                ctx.stroke();
+                ctx.fillStyle = '#6b7280';
+                ctx.fillText(tt.toFixed(tDecimals), px, padT + plotH + 16);
+            }
+
+            ctx.strokeStyle = '#94a3b8';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(padL, padT);
+            ctx.lineTo(padL, padT + plotH);
+            ctx.lineTo(padL + plotW, padT + plotH);
+            ctx.stroke();
+
+            ctx.fillStyle = '#6b7280';
+            ctx.textAlign = 'left';
+            ctx.fillText(yLabel, padL + 6, padT + 12);
+            ctx.textAlign = 'right';
+            ctx.fillText('t/s', padL + plotW, view.height - 8);
+
+            ctx.strokeStyle = '#2563eb';
+            ctx.lineWidth = 2.5;
+            ctx.lineJoin = 'round';
+            ctx.beginPath();
+            const samples = 240;
+            for (let i = 0; i <= samples; i++) {
+                const time = (i / samples) * tMax;
+                const px = xOfTime(time);
+                const py = yOfVal(fn(time));
+                if (i === 0) ctx.moveTo(px, py);
+                else ctx.lineTo(px, py);
+            }
+            ctx.stroke();
+
+            if (state === 'idle') return;
+            const frac = tMax > 0 ? Math.min(t / tMax, 1) : 0;
+            const pxNow = padL + frac * plotW;
+            const pyNow = yOfVal(fn(t));
+            ctx.strokeStyle = 'rgba(37, 99, 235, 0.35)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(pxNow, padT);
+            ctx.lineTo(pxNow, padT + plotH);
+            ctx.stroke();
+            ctx.fillStyle = '#dc2626';
+            ctx.beginPath();
+            ctx.arc(pxNow, pyNow, 4.5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.font = '10px system-ui, sans-serif';
+            const valText = fn(t).toFixed(1) + unit;
+            let lx = pxNow + 7, ly = pyNow - 7;
+            if (lx > padL + plotW - 48) lx = pxNow - 52;
+            if (ly < padT + 10) ly = pyNow + 16;
+            ctx.textAlign = 'left';
+            ctx.fillStyle = '#1f2937';
+            ctx.fillText(valText, lx, ly);
+        }
+
+        function drawCharts() {
+            const vMaxAxis = axisMax(vmaxOf() * 1.05);
+            const fMax = axisMax(gForceOf() * (1 + aOf() / g) * 1.05);
+            drawChart(vtView, vtCtx, (time) => phaseAt(time).v, -vMaxAxis, vMaxAxis, ' m/s', 'v (m/s)', null);
+            drawChart(ftView, ftCtx, (time) => phaseAt(time).F, 0, fMax, ' N', 'F (N)', {
+                refLine: gForceOf(),
+                refColor: '#0d9488',
+                refLabel: '实重 G = ' + gForceOf().toFixed(0) + ' N',
+            });
+        }
+
+        function renderAll() {
+            drawScene();
+            drawCharts();
+        }
+
+        function updateReadouts() {
+            const ph = phaseAt(t);
+            const st = stateOf(ph);
+            let phaseName = ph.name;
+            if (state === 'idle') phaseName = '静止（待机）';
+            const accShow = state === 'idle' ? 0 : ph.a;
+            const accText = (accShow > 0 ? '+' : '') + accShow.toFixed(2) + ' m/s²';
+            elTime.textContent = t.toFixed(2) + ' s';
+            elVel.textContent = (state === 'idle' ? 0 : ph.v).toFixed(2) + ' m/s';
+            elAccNow.textContent = accText;
+            elPhase.textContent = phaseName;
+            elHeight.textContent = ph.y.toFixed(2) + ' m';
+            elGrav.textContent = gForceOf().toFixed(0) + ' N';
+            elFApp.textContent = (state === 'idle' ? gForceOf() : ph.F).toFixed(0) + ' N';
+            elFRatio.textContent = ((state === 'idle' ? gForceOf() : ph.F) / gForceOf()).toFixed(2) + ' × G';
+            elTTotal.textContent = tTotalOf().toFixed(2) + ' s';
+            elStateText.textContent = state === 'idle' ? '正常' : st.label;
+            elStateText.style.color = state === 'idle' ? COLOR_NORMAL : st.color;
+            sceneCanvas.setAttribute(
+                'aria-label',
+                `超重和失重演示：当前时间${t.toFixed(2)}秒，阶段${phaseName}，视重${(state === 'idle' ? gForceOf() : ph.F).toFixed(0)}牛，实重${gForceOf().toFixed(0)}牛，${elStateText.textContent}`
+            );
+        }
+
+        function setupCanvas(canvas, view, aspect) {
+            const cssWidth = canvas.clientWidth || 400;
+            const cssHeight = cssWidth / aspect;
+            const devicePixelRatio = window.devicePixelRatio || 1;
+            canvas.width = Math.round(cssWidth * devicePixelRatio);
+            canvas.height = Math.round(cssHeight * devicePixelRatio);
+            canvas.getContext('2d').setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+            view.width = cssWidth;
+            view.height = cssHeight;
+        }
+
+        function resizeAll() {
+            setupCanvas(sceneCanvas, sceneView, BASE_WIDTH / BASE_HEIGHT);
+            setupCanvas(vtCanvas, vtView, CHART_ASPECT);
+            setupCanvas(ftCanvas, ftView, CHART_ASPECT);
+            renderAll();
+        }
+
+        function setButtons() {
+            if (state === 'running') {
+                btnStart.disabled = true;
+                btnStart.textContent = '运行中…';
+                btnPauseResume.disabled = false;
+                btnPauseResume.textContent = '暂停';
+                btnReset.disabled = true;
+            } else if (state === 'paused') {
+                btnStart.disabled = false;
+                btnStart.textContent = '重新开始';
+                btnPauseResume.disabled = false;
+                btnPauseResume.textContent = '继续';
+                btnReset.disabled = false;
+            } else if (state === 'ended') {
+                btnStart.disabled = false;
+                btnStart.textContent = '重新开始';
+                btnPauseResume.disabled = true;
+                btnPauseResume.textContent = '暂停';
+                btnReset.disabled = false;
+            } else {
+                btnStart.disabled = false;
+                btnStart.textContent = '开始';
+                btnPauseResume.disabled = true;
+                btnPauseResume.textContent = '暂停';
+                btnReset.disabled = false;
+            }
+        }
+
+        function setParamInputs() {
+            const lock = state === 'running' || state === 'paused';
+            inputAcc.disabled = lock;
+            inputVmax.disabled = lock;
+            inputTconst.disabled = lock;
+            inputMass.disabled = lock;
+        }
+
+        function frame(timestamp) {
+            if (state !== 'running') return;
+            if (lastTs === null) lastTs = timestamp;
+            const dt = Math.min((timestamp - lastTs) / 1000, 0.05) * speedOf();
+            lastTs = timestamp;
+            t = Math.min(t + dt, tTotalOf());
+            const ended = t >= tTotalOf();
+            if (ended) state = 'ended';
+            renderAll();
+            updateReadouts();
+            if (ended) {
+                setButtons();
+                setParamInputs();
+                return;
+            }
+            raf = requestAnimationFrame(frame);
+        }
+
+        function start() {
+            if (state === 'running' || state === 'paused') return;
+            t = 0;
+            lastTs = null;
+            state = 'running';
+            setButtons();
+            setParamInputs();
+            updateReadouts();
+            renderAll();
+            raf = requestAnimationFrame(frame);
+        }
+
+        function pause() {
+            if (state !== 'running') return;
+            state = 'paused';
+            if (raf) cancelAnimationFrame(raf);
+            setButtons();
+            updateReadouts();
+        }
+
+        function resume() {
+            if (state !== 'paused') return;
+            state = 'running';
+            lastTs = null;
+            setButtons();
+            raf = requestAnimationFrame(frame);
+        }
+
+        function togglePauseResume() {
+            if (state === 'running') pause();
+            else if (state === 'paused') resume();
+        }
+
+        function reset() {
+            if (raf) cancelAnimationFrame(raf);
+            state = 'idle';
+            t = 0;
+            lastTs = null;
+            setButtons();
+            setParamInputs();
+            updateReadouts();
+            renderAll();
+        }
+
+        function updateParameterLabels() {
+            accVal.textContent = Number(inputAcc.value).toFixed(1) + ' m/s²';
+            vmaxVal.textContent = Number(inputVmax.value).toFixed(1) + ' m/s';
+            tconstVal.textContent = Number(inputTconst.value).toFixed(1) + ' s';
+            massVal.textContent = inputMass.value + ' kg';
+        }
+
+        btnStart.addEventListener('click', start);
+        btnPauseResume.addEventListener('click', togglePauseResume);
+        btnReset.addEventListener('click', reset);
+        [inputAcc, inputVmax, inputTconst, inputMass].forEach((input) => {
+            input.addEventListener('input', () => {
+                updateParameterLabels();
+                if (state === 'idle' || state === 'ended') reset();
+            });
+        });
+        inputSpeed.addEventListener('input', updateParameterLabels);
+        window.addEventListener('resize', resizeAll);
+        window.addEventListener('keydown', (e) => {
+            const ae = document.activeElement;
+            if (ae && (ae.tagName === 'INPUT' || ae.tagName === 'BUTTON' || ae.tagName === 'SELECT' || ae.tagName === 'TEXTAREA' || ae.isContentEditable)) return;
+            if (e.code === 'Space') {
+                e.preventDefault();
+                if (state === 'running') pause();
+                else if (state === 'paused') resume();
+                else start();
+            } else if (e.key === 'r' || e.key === 'R') {
+                reset();
+            }
+        });
+        if (typeof ResizeObserver !== 'undefined') {
+            const observer = new ResizeObserver(resizeAll);
+            observer.observe(sceneCanvas);
+            observer.observe(vtCanvas);
+            observer.observe(ftCanvas);
+        }
+
+        updateParameterLabels();
+        resizeAll();
+        reset();
+    </script>
+</body>
+</html>
