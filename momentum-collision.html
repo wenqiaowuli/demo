@@ -84,14 +84,15 @@
             letter-spacing: 0.5px;
         }
         .control-panel {
-            margin-top: 14px;
+            margin-top: 16px;
             width: 100%;
             display: grid;
-            grid-template-columns: minmax(240px, 1fr) minmax(280px, 1.25fr);
-            gap: 14px;
+            grid-template-columns: 1fr;
+            gap: 0;
         }
-        @media (max-width: 720px) {
-            .control-panel { grid-template-columns: 1fr; }
+        .data-group {
+            width: 100%;
+            margin-top: 16px;
         }
         .param-group,
         .data-group {
@@ -150,10 +151,10 @@
         input[type=range]:disabled { opacity: 0.45; cursor: not-allowed; }
         .data-grid {
             display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
+            grid-template-columns: repeat(5, minmax(0, 1fr));
             gap: 9px;
         }
-        @media (max-width: 560px) {
+        @media (max-width: 800px) {
             .data-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         }
         .data-item {
@@ -217,6 +218,7 @@
     
 	.play-bar {
 	    margin-top: 12px;
+	    width: 100%;
 	    display: flex;
 	    align-items: center;
 	    gap: 10px;
@@ -231,27 +233,24 @@
 	    color: #1f2937;
 	    cursor: pointer;
 	}
-.formula-card {
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    border-radius: 10px;
-    padding: 16px 20px;
-    margin: 14px 0;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-}
-.formula-card .group-title {
-    font-size: 15px;
-    font-weight: 600;
-    color: #1f2937;
-    margin-bottom: 10px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid #e5e7eb;
-}
-.formula-card .fixed-note {
-    font-size: 13px;
-    line-height: 1.7;
-    color: #4b5563;
-}
+        .fixed-note {
+            margin-top: 8px;
+            font-size: 12px;
+            color: #6b7280;
+            line-height: 1.6;
+        }
+        .fixed-note b { color: #b45309; font-weight: 600; }
+        .formula-card {
+            margin-top: 16px;
+            width: 100%;
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 14px 16px;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+        }
+        .formula-card .group-title { margin-bottom: 8px; }
+        .formula-card .fixed-note { margin-top: 0; }
     </style>
 </head>
 <body>
@@ -259,11 +258,6 @@
         <h1>动量守恒演示</h1>
         <div class="canvas-wrap">
             <canvas id="scene" role="img" aria-label="动量守恒演示：两球一维碰撞，展示碰前碰后的速度、动量与总动量"></canvas>
-            <div class="play-bar">
-                <button id="btnStart" type="button">开始</button>
-            <button id="btnPause" type="button" disabled>暂停</button>
-            <button id="btnReset" type="button" disabled>重置</button>
-            </div>
         </div>
         <div class="charts-row">
             <section class="chart-panel">
@@ -275,10 +269,29 @@
                 <canvas id="ptChart" role="img" aria-label="两球动量与总动量的动量-时间图像，总动量为水平直线"></canvas>
             </section>
         </div>
-        
-        <section class="formula-card">
-            <div class="group-title">公式与判定</div>
-            
+        <div class="play-bar">
+            <button id="btnStart" type="button">开始</button>
+            <button id="btnPause" type="button" disabled>暂停</button>
+            <button id="btnReset" type="button" disabled>重置</button>
+            <select id="ts" title="播放速度" aria-label="播放速度倍率">
+                <option value="0.5">0.5×</option>
+                <option value="1" selected>1×</option>
+                <option value="2">2×</option>
+                <option value="4">4×</option>
+            </select>
+        </div>
+        <section class="data-group" id="dataPanel" aria-labelledby="dataTitle" aria-live="polite">
+            <div class="group-title" id="dataTitle">实时数值</div>
+            <div class="data-grid">
+                <div class="data-item"><span>球A速度 v<sub>A</sub></span><b id="dVA">3.00 m/s</b></div>
+                <div class="data-item"><span>球B速度 v<sub>B</sub></span><b id="dVB">-2.00 m/s</b></div>
+                <div class="data-item"><span>碰撞状态</span><b id="dState">待开始</b></div>
+                <div class="data-item"><span>球A动量 p<sub>A</sub></span><b id="dPA">15.00</b></div>
+                <div class="data-item"><span>球B动量 p<sub>B</sub></span><b id="dPB">-6.00</b></div>
+                <div class="data-item"><span>碰撞时刻</span><b id="dTCol">—</b></div>
+                <div class="data-item"><span>总动量 Σp (kg·m/s)</span><b id="dPT">9.00</b></div>
+                <div class="data-item"><span>总动能 E<sub>k</sub> (J)</span><b id="dEK">31.50 J</b></div>
+            </div>
         </section>
         <div class="control-panel">
             <section class="param-group" aria-labelledby="parameterTitle">
@@ -310,26 +323,19 @@
                     <input id="vB" type="range" min="-5" max="5" value="-2" step="0.1">
                     <div class="val" id="vBVal">-2.0 m/s</div>
                 </div>
-                <div class="param-row">
-                    <label for="ts">动画速度</label>
-                    <input id="ts" type="range" min="5" max="30" value="10" step="1">
-                    <div class="val" id="tsVal">1.0×</div>
-                </div>
-            </section>
-            <section class="data-group" id="dataPanel" aria-labelledby="dataTitle" aria-live="polite">
-                <div class="group-title" id="dataTitle">实时数据显示</div>
-                <div class="data-grid">
-                    <div class="data-item"><span>球A速度 v<sub>A</sub></span><b id="dVA">3.00 m/s</b></div>
-                    <div class="data-item"><span>球B速度 v<sub>B</sub></span><b id="dVB">-2.00 m/s</b></div>
-                    <div class="data-item"><span>碰撞状态</span><b id="dState">待开始</b></div>
-                    <div class="data-item"><span>球A动量 p<sub>A</sub></span><b id="dPA">15.00</b></div>
-                    <div class="data-item"><span>球B动量 p<sub>B</sub></span><b id="dPB">-6.00</b></div>
-                    <div class="data-item"><span>碰撞时刻</span><b id="dTCol">—</b></div>
-                    <div class="data-item"><span>总动量 Σp (kg·m/s)</span><b id="dPT">9.00</b></div>
-                    <div class="data-item"><span>总动能 E<sub>k</sub> (J)</span><b id="dEK">31.50 J</b></div>
-                </div>
             </section>
         </div>
+        <section class="formula-card">
+            <div class="group-title">推导与判断</div>
+            <div class="fixed-note">
+                动量守恒条件：系统不受外力或所受<b>外力矢量和为零</b>（本演示中两球间碰撞力为内力，不改变系统总动量）。<br>
+                动量守恒定律：<b>m<sub>A</sub>·v<sub>A</sub> + m<sub>B</sub>·v<sub>B</sub> = m<sub>A</sub>·v<sub>A</sub>′ + m<sub>B</sub>·v<sub>B</sub>′</b>——碰撞前后系统总动量保持不变。<br>
+                完全弹性碰撞：动量守恒<b>且动能守恒</b>，v<sub>A</sub>′ = ((m<sub>A</sub>−m<sub>B</sub>)v<sub>A</sub> + 2m<sub>B</sub>v<sub>B</sub>)/(m<sub>A</sub>+m<sub>B</sub>)，v<sub>B</sub>′ = ((m<sub>B</sub>−m<sub>A</sub>)v<sub>B</sub> + 2m<sub>A</sub>v<sub>A</sub>)/(m<sub>A</sub>+m<sub>B</sub>)，碰后两球分离；<b>质量相等时交换速度</b>。<br>
+                完全非弹性碰撞：碰后<b>共速</b> v′ = (m<sub>A</sub>v<sub>A</sub> + m<sub>B</sub>v<sub>B</sub>)/(m<sub>A</sub>+m<sub>B</sub>)，动量守恒但动能损失最大（转化为内能）。<br>
+                判断：p-t 图中总动量 <b>Σp 始终为水平直线</b>（碰撞前后不变）；总动能只在完全弹性碰撞中保持不变，完全非弹性碰撞中减小。<br>
+                判断：碰撞中动能不可能增大（无外力做功）；恢复系数 e = 1 对应完全弹性，e = 0 对应完全非弹性。
+            </div>
+        </section>
         
         <div class="status" id="status"></div>
         <div class="legend">
@@ -361,7 +367,6 @@
         const elVAVal = document.getElementById('vAVal');
         const elMBVal = document.getElementById('mBVal');
         const elVBVal = document.getElementById('vBVal');
-        const elTsVal = document.getElementById('tsVal');
         const elDVA   = document.getElementById('dVA');
         const elDVB   = document.getElementById('dVB');
         const elDPA   = document.getElementById('dPA');
@@ -1062,12 +1067,11 @@
             P.v0A = parseFloat(elVA.value);
             P.mB = parseFloat(elMB.value);
             P.v0B = parseFloat(elVB.value);
-            timeScale = parseFloat(elTs.value) / 10;
+            timeScale = parseFloat(elTs.value);
             elMAVal.textContent = P.mA.toFixed(1) + ' kg';
             elVAVal.textContent = P.v0A.toFixed(1) + ' m/s';
             elMBVal.textContent = P.mB.toFixed(1) + ' kg';
             elVBVal.textContent = P.v0B.toFixed(1) + ' m/s';
-            elTsVal.textContent = timeScale.toFixed(1) + '×';
         }
 
         function redrawPreview() {
@@ -1317,8 +1321,7 @@
         });
 
         elTs.addEventListener('input', () => {
-            timeScale = parseFloat(elTs.value) / 10;
-            elTsVal.textContent = timeScale.toFixed(1) + '×';
+            timeScale = parseFloat(elTs.value);
         });
 
         radios.forEach(r => {
