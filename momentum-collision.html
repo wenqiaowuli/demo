@@ -1,0 +1,1386 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!--
+    文件描述：动量守恒演示（排版重构版 v2）
+    物理内容：展示两球一维对心碰撞的动量守恒过程，支持完全弹性碰撞（动能守恒）与
+              完全非弹性碰撞（共速、动能损失）两种类型；两球质量与初速度可调（可为负），
+              系统总动量全程守恒，动能差异直观呈现于 p-t 图与数据面板。
+              预仿真 + 回放架构：碰撞时刻由解析式 t* = 间距 / 相对接近速度 精确求得，
+              碰后速度按类型解析求解，v-t / p-t 图从预计算序列回放。
+    v2 变更：参照板块运动演示（block-plate.html）统一系列排版：单列居中 880px、
+              蓝框主画布、v-t 与 p-t 双图面板（Σp 水平线直观展示动量守恒）、
+              参数/数据双卡、状态行预告与总结、预仿真+回放、数据逐帧刷新、
+              运行中滑条禁用、空格/R 快捷键、DPR 自适应与 aria 无障碍。
+              修复：地面标尺 60px/m 假定错位、动量条 maxP=60 量程溢出；物理公式不变。
+    适用场景：高中物理"动量守恒定律"教学，可调 m_A、m_B、v_A、v_B 与碰撞类型，
+              实时显示 v-t 图、p-t 图、两球动量、总动量、总动能与碰撞时刻。
+    风格：与板块运动演示网页（block-plate.html）统一的深色系列。
+    -->
+    <title>动量守恒演示｜高中物理</title>
+    <meta name="description" content="高中物理动量守恒定律教学演示：可调两球质量与初速度，完全弹性/完全非弹性碰撞，实时显示 v-t 图、p-t 图、总动量与总动能，验证动量守恒与动能损失。">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background-color: #eef2f6;
+            color: #1f2937;
+            font-family: system-ui, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 12px 32px;
+        }
+        main {
+            width: 100%;
+            max-width: 880px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1 {
+            font-size: 22px;
+            margin-bottom: 12px;
+            text-align: center;
+        }
+        .canvas-wrap { width: 100%; }
+        canvas {
+            display: block;
+            width: 100%;
+            border: 2px solid #2563eb;
+            border-radius: 10px;
+            background-color: #ffffff;
+        }
+        canvas#scene { aspect-ratio: 880 / 520; }
+        .charts-row {
+            margin-top: 16px;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+        @media (max-width: 720px) {
+            .charts-row { grid-template-columns: 1fr; }
+        }
+        .chart-panel {
+            background: transparent;
+            border: none;
+            border-radius: 0;
+            padding: 0;
+        }
+        .chart-panel .group-title {
+            padding: 0 2px;
+        }
+        .chart-panel canvas {
+            aspect-ratio: 20 / 9;
+            border-width: 2px;
+        }
+        .group-title {
+            font-size: 12px;
+            color: #6b7280;
+            margin-bottom: 10px;
+            letter-spacing: 0.5px;
+        }
+        .control-panel {
+            margin-top: 14px;
+            width: 100%;
+            display: grid;
+            grid-template-columns: minmax(240px, 1fr) minmax(280px, 1.25fr);
+            gap: 14px;
+        }
+        @media (max-width: 720px) {
+            .control-panel { grid-template-columns: 1fr; }
+        }
+        .param-group,
+        .data-group {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 14px 16px;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+        }
+        .param-row {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            margin-bottom: 10px;
+        }
+        .param-row:last-child { margin-bottom: 0; }
+        .param-row label {
+            font-size: 13px;
+            color: #1f2937;
+            white-space: nowrap;
+            min-width: 96px;
+        }
+        .param-row input[type=range] { flex: 1; }
+        .param-row .val {
+            min-width: 64px;
+            text-align: right;
+            font-size: 13px;
+            font-variant-numeric: tabular-nums;
+            color: #1f2937;
+        }
+        .ctype {
+            flex: 1;
+            display: flex;
+            gap: 8px;
+        }
+        .ctype label {
+            flex: 1;
+            text-align: center;
+            padding: 7px 0;
+            background: #f8fafc;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            color: #1f2937;
+            min-width: 0;
+            transition: background-color 0.15s ease, border-color 0.15s ease;
+        }
+        .ctype input { display: none; }
+        .ctype label:has(input:checked) {
+            border-color: #2563eb;
+            background: rgba(37, 99, 235, 0.15);
+            color: #1f2937;
+        }
+        .ctype label:has(input:disabled) { opacity: 0.45; cursor: not-allowed; }
+        input[type=range]:disabled { opacity: 0.45; cursor: not-allowed; }
+        .data-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 9px;
+        }
+        @media (max-width: 560px) {
+            .data-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+        .data-item {
+            background: #f8fafc;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 8px 10px;
+        }
+        .data-item span {
+            display: block;
+            font-size: 11px;
+            color: #6b7280;
+            margin-bottom: 4px;
+        }
+        .data-item b {
+            display: block;
+            font-size: 13px;
+            color: #1f2937;
+            font-variant-numeric: tabular-nums;
+        }
+        
+        button {
+            background: #2563eb;
+            border: none;
+            color: white;
+            padding: 9px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.15s ease, transform 0.15s ease;
+        }
+        button:hover:not(:disabled) { background: #1d4ed8; }
+        button:active:not(:disabled) { transform: translateY(1px); }
+        button:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+        .status {
+            margin-top: 10px;
+            font-size: 12px;
+            color: #6b7280;
+            text-align: center;
+            min-height: 16px;
+            max-width: 100%;
+        }
+        .legend {
+            margin-top: 12px;
+            font-size: 12px;
+            color: #6b7280;
+            text-align: center;
+            line-height: 1.8;
+        }
+        .legend span { margin: 0 6px; }
+        .legend .formula {
+            display: block;
+            margin-top: 4px;
+            color: #1f2937;
+            font-family: 'Times New Roman', serif;
+            letter-spacing: 0.5px;
+        }
+    
+.play-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background: #f8fafc;
+    border-top: 1px solid #e2e8f0;
+    border-radius: 0 0 8px 8px;
+}
+.play-bar button {
+    padding: 8px 16px;
+    font-size: 14px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    background: #ffffff;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.play-bar button:hover:not(:disabled) {
+    background: #f3f4f6;
+    border-color: #9ca3af;
+}
+.play-bar button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+.play-bar select {
+    padding: 6px 10px;
+    font-size: 13px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    background: #ffffff;
+    cursor: pointer;
+}
+.formula-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin: 14px 0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+.formula-card .group-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #e5e7eb;
+}
+.formula-card .fixed-note {
+    font-size: 13px;
+    line-height: 1.7;
+    color: #4b5563;
+}
+    </style>
+</head>
+<body>
+    <main>
+        <h1>动量守恒演示</h1>
+        <div class="canvas-wrap">
+            <canvas id="scene" role="img" aria-label="动量守恒演示：两球一维碰撞，展示碰前碰后的速度、动量与总动量"></canvas>
+            <div class="play-bar">
+                <button id="btnStart" type="button">开始</button>
+            <button id="btnPause" type="button" disabled>暂停</button>
+            <button id="btnReset" type="button" disabled>重置</button>
+            </div>
+        </div>
+        <div class="charts-row">
+            <section class="chart-panel">
+                <div class="group-title">速度-时间图 (v-t)</div>
+                <canvas id="vtChart" role="img" aria-label="两球的速度-时间图像"></canvas>
+            </section>
+            <section class="chart-panel">
+                <div class="group-title">动量-时间图 (p-t)</div>
+                <canvas id="ptChart" role="img" aria-label="两球动量与总动量的动量-时间图像，总动量为水平直线"></canvas>
+            </section>
+        </div>
+        
+        <section class="formula-card">
+            <div class="group-title">公式与判定</div>
+            
+        </section>
+        <div class="control-panel">
+            <section class="param-group" aria-labelledby="parameterTitle">
+                <div class="group-title" id="parameterTitle">参数设定</div>
+                <div class="param-row">
+                    <label>碰撞类型</label>
+                    <div class="ctype">
+                        <label><input type="radio" name="ctype" value="elastic" checked><span>完全弹性</span></label>
+                        <label><input type="radio" name="ctype" value="inelastic"><span>完全非弹性</span></label>
+                    </div>
+                </div>
+                <div class="param-row">
+                    <label for="mA">球A质量</label>
+                    <input id="mA" type="range" min="1" max="20" value="5" step="0.5">
+                    <div class="val" id="mAVal">5.0 kg</div>
+                </div>
+                <div class="param-row">
+                    <label for="vA">球A初速度</label>
+                    <input id="vA" type="range" min="-5" max="5" value="3" step="0.1">
+                    <div class="val" id="vAVal">3.0 m/s</div>
+                </div>
+                <div class="param-row">
+                    <label for="mB">球B质量</label>
+                    <input id="mB" type="range" min="1" max="20" value="3" step="0.5">
+                    <div class="val" id="mBVal">3.0 kg</div>
+                </div>
+                <div class="param-row">
+                    <label for="vB">球B初速度</label>
+                    <input id="vB" type="range" min="-5" max="5" value="-2" step="0.1">
+                    <div class="val" id="vBVal">-2.0 m/s</div>
+                </div>
+                <div class="param-row">
+                    <label for="ts">动画速度</label>
+                    <input id="ts" type="range" min="5" max="30" value="10" step="1">
+                    <div class="val" id="tsVal">1.0×</div>
+                </div>
+            </section>
+            <section class="data-group" id="dataPanel" aria-labelledby="dataTitle" aria-live="polite">
+                <div class="group-title" id="dataTitle">实时数据显示</div>
+                <div class="data-grid">
+                    <div class="data-item"><span>球A速度 v<sub>A</sub></span><b id="dVA">3.00 m/s</b></div>
+                    <div class="data-item"><span>球B速度 v<sub>B</sub></span><b id="dVB">-2.00 m/s</b></div>
+                    <div class="data-item"><span>碰撞状态</span><b id="dState">待开始</b></div>
+                    <div class="data-item"><span>球A动量 p<sub>A</sub></span><b id="dPA">15.00</b></div>
+                    <div class="data-item"><span>球B动量 p<sub>B</sub></span><b id="dPB">-6.00</b></div>
+                    <div class="data-item"><span>碰撞时刻</span><b id="dTCol">—</b></div>
+                    <div class="data-item"><span>总动量 Σp (kg·m/s)</span><b id="dPT">9.00</b></div>
+                    <div class="data-item"><span>总动能 E<sub>k</sub> (J)</span><b id="dEK">31.50 J</b></div>
+                </div>
+            </section>
+        </div>
+        
+        <div class="status" id="status"></div>
+        <div class="legend">
+            <span style="color:#2563eb">■ 球A</span>
+            <span><span style="color:#6b7280">■</span> 球B</span>
+            <span style="color:#d97706">→ v（速度箭头）</span>
+            <span style="color:#ea580c">▬ Σp 总动量</span>
+            <span>虚线：碰撞时刻（v-t 与 p-t 同步）</span>
+            
+        </div>
+    </main>
+
+    <script>
+    (() => {
+        // ========== DOM ==========
+        const canvas = document.getElementById('scene');
+        const ctx = canvas.getContext('2d');
+        const vtCanvas = document.getElementById('vtChart');
+        const vtctx = vtCanvas.getContext('2d');
+        const ptCanvas = document.getElementById('ptChart');
+        const ptctx = ptCanvas.getContext('2d');
+
+        const elMA   = document.getElementById('mA');
+        const elVA   = document.getElementById('vA');
+        const elMB   = document.getElementById('mB');
+        const elVB   = document.getElementById('vB');
+        const elTs   = document.getElementById('ts');
+        const elMAVal = document.getElementById('mAVal');
+        const elVAVal = document.getElementById('vAVal');
+        const elMBVal = document.getElementById('mBVal');
+        const elVBVal = document.getElementById('vBVal');
+        const elTsVal = document.getElementById('tsVal');
+        const elDVA   = document.getElementById('dVA');
+        const elDVB   = document.getElementById('dVB');
+        const elDPA   = document.getElementById('dPA');
+        const elDPB   = document.getElementById('dPB');
+        const elDPT   = document.getElementById('dPT');
+        const elDEK   = document.getElementById('dEK');
+        const elDState= document.getElementById('dState');
+        const elTCol  = document.getElementById('dTCol');
+        const elStatus   = document.getElementById('status');
+        const elDataPanel= document.getElementById('dataPanel');
+        const btnStart = document.getElementById('btnStart');
+        const btnPause = document.getElementById('btnPause');
+        const btnReset = document.getElementById('btnReset');
+        const radios = document.querySelectorAll('input[name=ctype]');
+        const getCtype = () => document.querySelector('input[name=ctype]:checked').value;
+
+        // ========== 常量 ==========
+        const BASE_WIDTH = 880;
+        const BASE_HEIGHT = 520;
+        const GRAPH_WIDTH = 440;
+        const GRAPH_HEIGHT = 198;
+        const view   = { width: BASE_WIDTH, height: BASE_HEIGHT };
+        const vtView = { width: GRAPH_WIDTH, height: GRAPH_HEIGHT };
+        const ptView = { width: GRAPH_WIDTH, height: GRAPH_HEIGHT };
+
+        const PAD_X = 50;
+        const PAD_RIGHT = 50;
+        const PAD_BOTTOM = 64;
+        const REGION_MIN = 0;
+        const REGION_MAX = 20;       // 活动区域 [0, 20] m
+        const START_A = 4;           // 球A初始位置 (m)
+        const START_B = 16;          // 球B初始位置 (m)
+        const T_CAP = 30;            // 仿真时长上限 (s)
+        const DT = 0.02;             // 采样步长 (s)
+        const BASE_SCALE = (BASE_WIDTH - PAD_X - PAD_RIGHT) / (REGION_MAX - REGION_MIN);
+        // 球半径（米）：基准比例尺下 14 + √m·6 px
+        const radiusM = m => (14 + Math.sqrt(m) * 6) / BASE_SCALE;
+        const viewScale = () => (view.width - PAD_X - PAD_RIGHT) / (REGION_MAX - REGION_MIN);
+
+        // ========== 物理参数 ==========
+        const P = {
+            type: 'elastic',
+            mA: 5, v0A: 3,
+            mB: 3, v0B: -2,
+        };
+        let timeScale = 1;
+
+        // ========== 预仿真（碰撞时刻解析求解 + 匀速序列采样） ==========
+        function simulate() {
+            const { type, mA, mB, v0A, v0B } = P;
+            const rA = radiusM(mA), rB = radiusM(mB);
+            const xA0 = START_A, xB0 = START_B;
+            const pTotal = mA * v0A + mB * v0B;
+            const ek0 = 0.5 * mA * v0A * v0A + 0.5 * mB * v0B * v0B;
+            const rel = v0A - v0B;
+            const gap = (xB0 - xA0) - (rA + rB);
+
+            let vA1 = v0A, vB1 = v0B;
+            let tCol = null, willCollide = false, noColReason = null;
+
+            if (rel > 1e-9) {
+                const tc = gap / rel;
+                if (tc <= T_CAP) { willCollide = true; tCol = tc; }
+                else noColReason = 'slow';
+            } else if (Math.abs(v0A) < 1e-9 && Math.abs(v0B) < 1e-9) {
+                noColReason = 'still';
+            }
+
+            if (willCollide) {
+                if (type === 'elastic') {
+                    vA1 = ((mA - mB) * v0A + 2 * mB * v0B) / (mA + mB);
+                    vB1 = ((mB - mA) * v0B + 2 * mA * v0A) / (mA + mB);
+                } else {
+                    const vf = pTotal / (mA + mB);
+                    vA1 = vf; vB1 = vf;
+                }
+            }
+
+            const tRef = tCol !== null ? tCol : 0;
+            const xcA = xA0 + v0A * tRef;
+            const xcB = xB0 + v0B * tRef;
+            const ek1 = willCollide
+                ? (0.5 * mA * vA1 * vA1 + 0.5 * mB * vB1 * vB1)
+                : ek0;
+
+            // 完全离开活动区域的时刻（用于结束判定）
+            const exitT = (x, r, v) => {
+                if (Math.abs(v) < 1e-9) return Infinity;
+                return v > 0 ? (REGION_MAX - (x - r)) / v : (REGION_MIN - (x + r)) / v;
+            };
+            let tEnd;
+            if (willCollide) {
+                const eA = exitT(xcA, rA, vA1), eB = exitT(xcB, rB, vB1);
+                tEnd = (!isFinite(eA) && !isFinite(eB)) ? tCol + 1.0 : tCol + Math.max(eA, eB);
+            } else {
+                const eA = exitT(xA0, rA, v0A), eB = exitT(xB0, rB, v0B);
+                tEnd = (!isFinite(eA) && !isFinite(eB)) ? 2.0 : Math.max(eA, eB);
+            }
+            tEnd = Math.min(tEnd, T_CAP);
+
+            const T = [], VA = [], VB = [], XA = [], XB = [], PA = [], PB = [], PT = [], EK = [];
+            const rec = (t, xA, xB, vA, vB) => {
+                T.push(t); XA.push(xA); XB.push(xB);
+                VA.push(vA); VB.push(vB);
+                PA.push(mA * vA); PB.push(mB * vB);
+                PT.push(mA * vA + mB * vB);
+                EK.push(0.5 * mA * vA * vA + 0.5 * mB * vB * vB);
+            };
+            rec(0, xA0, xB0, v0A, v0B);
+
+            let t = 0, guard = 0;
+            while (t < tEnd - 1e-9 && guard++ < 20000) {
+                const tn = Math.min(t + DT, tEnd);
+                if (willCollide && t < tCol - 1e-12 && tn >= tCol - 1e-12) {
+                    // 碰撞时刻样本：位置连续，速度切换为碰后值
+                    rec(tCol, xcA, xcB, vA1, vB1);
+                    t = tCol;
+                    continue;
+                }
+                const post = willCollide && t >= tCol - 1e-12;
+                const vA = post ? vA1 : v0A;
+                const vB = post ? vB1 : v0B;
+                const xA = post ? xcA + vA1 * (tn - tCol) : xA0 + v0A * tn;
+                const xB = post ? xcB + vB1 * (tn - tCol) : xB0 + v0B * tn;
+                rec(tn, xA, xB, vA, vB);
+                t = tn;
+            }
+
+            let colIdx = null;
+            if (willCollide) colIdx = T.findIndex(tt => tt >= tCol - 1e-12);
+
+            // 动量条量程（全程一致，避免运行中跳变）
+            let mAbs = 1;
+            for (let i = 0; i < PT.length; i++) {
+                mAbs = Math.max(mAbs, Math.abs(PA[i]), Math.abs(PB[i]), Math.abs(PT[i]));
+            }
+
+            return {
+                T, VA, VB, XA, XB, PA, PB, PT, EK,
+                tCol, colIdx, colX: (xcA + xcB) / 2, rA, rB,
+                vA1, vB1, willCollide, noColReason,
+                pTotal, ek0, ek1, tEnd, type,
+                barMax: mAbs * 1.08,
+            };
+        }
+
+        // ========== 状态 ==========
+        let state = 'idle';
+        let simT = 0;
+        let lastTs = null;
+        let sim = null;
+        let playIdx = 0;
+        let prevPlayIdx = 0;
+        let animId = null;
+        let lastDraw = null;
+        let trailA = [], trailB = [];
+        let particles = [];
+
+        // ========== 绘制：主场景 ==========
+        function drawBall(bx, by, r, c1, c2, label, mass, v) {
+            const grad = ctx.createRadialGradient(bx - r * 0.35, by - r * 0.35, r * 0.15, bx, by, r);
+            grad.addColorStop(0, '#ffffff');
+            grad.addColorStop(0.25, c1);
+            grad.addColorStop(1, c2);
+            ctx.beginPath();
+            ctx.arc(bx, by, r, 0, Math.PI * 2);
+            ctx.fillStyle = grad;
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(31,41,55,0.35)';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 13px system-ui';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'alphabetic';
+            ctx.fillText(label, bx, by - 2);
+            ctx.font = '9px system-ui';
+            ctx.fillText(mass.toFixed(1) + 'kg', bx, by + 12);
+
+            // 速度箭头（黄）
+            if (Math.abs(v) > 0.05) {
+                const len = Math.max(-72, Math.min(72, v * 14));
+                const ay = by - r - 12;
+                ctx.strokeStyle = '#d97706';
+                ctx.lineWidth = 2.5;
+                ctx.beginPath();
+                ctx.moveTo(bx, ay);
+                ctx.lineTo(bx + len, ay);
+                ctx.stroke();
+                const dir = len > 0 ? 1 : -1;
+                ctx.beginPath();
+                ctx.moveTo(bx + len, ay);
+                ctx.lineTo(bx + len - dir * 7, ay - 4.5);
+                ctx.lineTo(bx + len - dir * 7, ay + 4.5);
+                ctx.closePath();
+                ctx.fillStyle = '#d97706';
+                ctx.fill();
+                ctx.font = '10px system-ui';
+                ctx.textAlign = 'center';
+                ctx.fillText(v.toFixed(1) + ' m/s', bx + len / 2, ay - 7);
+            }
+        }
+
+        function drawTrail(trail, by) {
+            ctx.fillStyle = 'rgba(31,41,55,1)';
+            for (let i = 0; i < trail.length; i += 3) {
+                ctx.globalAlpha = (i / trail.length) * 0.18;
+                ctx.beginPath();
+                ctx.arc(SX(trail[i]), by, 2.2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.globalAlpha = 1;
+        }
+
+        function drawMomentumBars(vA, vB) {
+            const w = view.width;
+            const pA = P.mA * vA, pB = P.mB * vB, pT = pA + pB;
+            const pScale = sim ? sim.barMax
+                : Math.max(1, Math.abs(pA), Math.abs(pB), Math.abs(pT)) * 1.1;
+            const panelW = 400, panelH = 96;
+            const px = w / 2 - panelW / 2, py = 10;
+
+            ctx.fillStyle = '#f8fafc';
+            ctx.fillRect(px, py, panelW, panelH);
+            ctx.strokeStyle = '#e5e7eb';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(px, py, panelW, panelH);
+
+            ctx.fillStyle = '#6b7280';
+            ctx.font = '10px system-ui';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'alphabetic';
+            ctx.fillText('p / (kg·m/s)', px + 12, py + 15);
+
+            const zeroX = px + 210;
+            const half = 130;
+            const valueX = px + panelW - 10;
+            const rows = [
+                { label: 'A', v: pA, color: '#2563eb', fill: 'rgba(37,99,235,0.7)' },
+                { label: 'B', v: pB, color: '#6b7280', fill: 'rgba(107,114,128,0.7)' },
+                { label: 'Σp', v: pT, color: '#ea580c', fill: 'rgba(234,88,12,0.75)' },
+            ];
+
+            ctx.strokeStyle = 'rgba(31,41,55,0.3)';
+            ctx.beginPath();
+            ctx.moveTo(zeroX, py + 24);
+            ctx.lineTo(zeroX, py + 86);
+            ctx.stroke();
+
+            rows.forEach((row, i) => {
+                const y = py + 26 + i * 22;
+                ctx.fillStyle = row.color;
+                ctx.font = 'bold 11px system-ui';
+                ctx.textAlign = 'left';
+                ctx.fillText(row.label, px + 14, y + 10);
+                let bw = (row.v / pScale) * half;
+                bw = Math.max(-half, Math.min(half, bw));
+                ctx.fillStyle = row.fill;
+                ctx.fillRect(zeroX + Math.min(0, bw), y, Math.abs(bw), 12);
+                ctx.fillStyle = row.color;
+                ctx.font = '11px system-ui';
+                ctx.textAlign = 'right';
+                ctx.fillText(row.v.toFixed(2), valueX, y + 10);
+            });
+        }
+
+        function drawScene(t, vA, vB, xA, xB) {
+            ctx.clearRect(0, 0, view.width, view.height);
+
+            const s = viewScale();
+            const groundY = view.height - PAD_BOTTOM;
+
+            // 竖直网格（世界坐标）
+            const gridStep = s >= 30 ? 2 : 5;
+            ctx.strokeStyle = '#e5e7eb';
+            ctx.lineWidth = 1;
+            for (let m = REGION_MIN; m <= REGION_MAX; m += gridStep) {
+                const gx = SX(m);
+                ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, groundY); ctx.stroke();
+            }
+
+            // 正方向标注
+            ctx.fillStyle = '#6b7280';
+            ctx.font = '11px system-ui';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'alphabetic';
+            ctx.fillText('正方向 →', 12, 20);
+
+            // 地面
+            ctx.strokeStyle = '#cbd5e1';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(0, groundY);
+            ctx.lineTo(view.width, groundY);
+            ctx.stroke();
+
+            // 地面距离标注（米）
+            ctx.fillStyle = '#6b7280';
+            ctx.font = '11px system-ui';
+            ctx.textAlign = 'center';
+            for (let m = REGION_MIN; m <= REGION_MAX; m += 2) {
+                ctx.fillText(m + 'm', SX(m), groundY + 22);
+            }
+
+            // 活动区域裁剪（区域外不显示）
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(SX(REGION_MIN), 0, SX(REGION_MAX) - SX(REGION_MIN), view.height);
+            ctx.clip();
+
+            const rApx = radiusM(P.mA) * s;
+            const rBpx = radiusM(P.mB) * s;
+            const aBy = groundY - rApx;
+            const bBy = groundY - rBpx;
+
+            drawTrail(trailA, aBy);
+            drawTrail(trailB, bBy);
+
+            drawBall(SX(xA), aBy, rApx, '#2563eb', '#1d4ed8', 'A', P.mA, vA);
+            drawBall(SX(xB), bBy, rBpx, '#9ca3af', '#4b5563', 'B', P.mB, vB);
+
+            // 碰撞粒子
+            for (const pt of particles) {
+                ctx.globalAlpha = pt.life * 0.85;
+                ctx.beginPath();
+                ctx.arc(pt.x, pt.y, pt.r * pt.life, 0, Math.PI * 2);
+                ctx.fillStyle = pt.color;
+                ctx.fill();
+            }
+            ctx.globalAlpha = 1;
+            ctx.restore();
+
+            drawMomentumBars(vA, vB);
+
+            // 状态角标（预览态不显示）
+            if (state !== 'idle' && sim) {
+                const hit = sim.tCol !== null && t >= sim.tCol - 1e-9;
+                const txt = !sim.willCollide ? '未发生碰撞' : (hit ? '已碰撞 ✓' : '等待碰撞…');
+                const bw = 116, bx0 = view.width / 2 - bw / 2, by0 = groundY + 34;
+                ctx.fillStyle = 'rgba(15,23,42,0.06)';
+                ctx.fillRect(bx0, by0, bw, 24);
+                ctx.fillStyle = hit ? '#16a34a' : '#6b7280';
+                ctx.font = 'bold 12px system-ui';
+                ctx.textAlign = 'center';
+                ctx.fillText(txt, view.width / 2, by0 + 16);
+            }
+        }
+
+        function SX(x) { return PAD_X + (x - REGION_MIN) * viewScale(); }
+
+        // ========== 绘制：图表公共 ==========
+        function drawAxes(c, w, h) {
+            const padL = 50, padR = 18, padT = 16, padB = 32;
+            c.strokeStyle = '#94a3b8';
+            c.lineWidth = 2;
+            c.beginPath();
+            c.moveTo(padL, padT);
+            c.lineTo(padL, padT + h - padT - padB);
+            c.lineTo(padL + w - padL - padR, padT + h - padT - padB);
+            c.stroke();
+            return { padL, padR, padT, padB, plotW: w - padL - padR, plotH: h - padT - padB };
+        }
+
+        function drawCollisionMark(c, TX, padT, plotH, tMax) {
+            if (sim.tCol === null || sim.tCol > tMax) return;
+            c.strokeStyle = 'rgba(234,88,12,0.45)';
+            c.setLineDash([4, 4]);
+            c.beginPath();
+            c.moveTo(TX(sim.tCol), padT);
+            c.lineTo(TX(sim.tCol), padT + plotH);
+            c.stroke();
+            c.setLineDash([]);
+            c.fillStyle = '#ea580c';
+            c.font = '10px system-ui';
+            c.textAlign = 'center';
+            c.fillText('碰撞', TX(sim.tCol), padT + 10);
+        }
+
+        function drawPlayhead(c, TX, t, points, padT, plotH) {
+            c.strokeStyle = 'rgba(37, 99, 235, 0.35)';
+            c.lineWidth = 1;
+            c.beginPath();
+            c.moveTo(TX(t), padT);
+            c.lineTo(TX(t), padT + plotH);
+            c.stroke();
+            for (const [vy, color] of points) {
+                c.fillStyle = color;
+                c.beginPath();
+                c.arc(TX(t), vy, 3.5, 0, Math.PI * 2);
+                c.fill();
+            }
+        }
+
+        function drawTimeGrid(c, TX, tMax, padT, plotW, plotH) {
+            c.strokeStyle = '#e5e7eb';
+            c.lineWidth = 1;
+            const tStep = tMax <= 6 ? 1 : (tMax <= 12 ? 2 : 5);
+            for (let t = 0; t <= tMax; t += tStep) {
+                const x = TX(t);
+                c.beginPath(); c.moveTo(x, padT); c.lineTo(x, padT + plotH); c.stroke();
+                c.fillStyle = '#6b7280';
+                c.font = '10px system-ui';
+                c.textAlign = 'center';
+                c.fillText(t.toFixed(0) + 's', x, padT + plotH + 14);
+            }
+        }
+
+        function niceVGrid(c, lo, hi, VY, padL, plotW) {
+            c.strokeStyle = '#e5e7eb';
+            c.lineWidth = 1;
+            const range = hi - lo;
+            const raw = range / 5;
+            const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+            let step = mag;
+            if (raw / mag > 5) step = mag * 10;
+            else if (raw / mag > 2) step = mag * 5;
+            else if (raw / mag > 1) step = mag * 2;
+            const dec = step < 1 ? 1 : 0;
+            for (let v = Math.ceil(lo / step) * step; v <= hi; v += step) {
+                const y = VY(v);
+                c.beginPath(); c.moveTo(padL, y); c.lineTo(padL + plotW, y); c.stroke();
+                c.fillStyle = '#6b7280';
+                c.font = '10px system-ui';
+                c.textAlign = 'right';
+                c.fillText(v.toFixed(dec), padL - 5, y + 3);
+            }
+        }
+
+        // ========== 绘制：v-t 图 ==========
+        function drawVT() {
+            const w = vtView.width, h = vtView.height;
+            vtctx.clearRect(0, 0, w, h);
+            const { padL, padT, plotW, plotH } = drawAxes(vtctx, w, h);
+
+            if (!sim || playIdx < 1) {
+                vtctx.fillStyle = '#6b7280';
+                vtctx.font = '12px system-ui';
+                vtctx.textAlign = 'center';
+                vtctx.fillText('开始后将显示 v-t 图', w / 2, h / 2);
+                return;
+            }
+
+            const tMax = Math.max(6, sim.tEnd);
+            let vHi = -Infinity, vLo = Infinity;
+            for (let i = 0; i < sim.VA.length; i++) {
+                vHi = Math.max(vHi, sim.VA[i], sim.VB[i]);
+                vLo = Math.min(vLo, sim.VA[i], sim.VB[i]);
+            }
+            vHi = Math.max(vHi, P.v0A, P.v0B, 1) * 1.15;
+            vLo = Math.min(vLo, 0) * 1.15;
+            if (vLo >= 0) vLo = 0;
+
+            const TX = t => padL + (t / tMax) * plotW;
+            const VY = v => padT + plotH - ((v - vLo) / (vHi - vLo)) * plotH;
+
+            drawTimeGrid(vtctx, TX, tMax, padT, plotW, plotH);
+            niceVGrid(vtctx, vLo, vHi, VY, padL, plotW);
+
+            if (vLo < 0 && vHi > 0) {
+                vtctx.strokeStyle = 'rgba(31,41,55,0.3)';
+                vtctx.lineWidth = 1;
+                vtctx.beginPath();
+                vtctx.moveTo(padL, VY(0));
+                vtctx.lineTo(padL + plotW, VY(0));
+                vtctx.stroke();
+            }
+
+            drawCollisionMark(vtctx, TX, padT, plotH, tMax);
+
+            const endIdx = Math.min(playIdx + 1, sim.VA.length);
+            vtctx.lineWidth = 2;
+            vtctx.lineJoin = 'round';
+            vtctx.strokeStyle = '#2563eb';
+            vtctx.beginPath();
+            vtctx.moveTo(TX(sim.T[0]), VY(sim.VA[0]));
+            for (let i = 1; i < endIdx; i++) vtctx.lineTo(TX(sim.T[i]), VY(sim.VA[i]));
+            vtctx.stroke();
+            vtctx.strokeStyle = '#6b7280';
+            vtctx.beginPath();
+            vtctx.moveTo(TX(sim.T[0]), VY(sim.VB[0]));
+            for (let i = 1; i < endIdx; i++) vtctx.lineTo(TX(sim.T[i]), VY(sim.VB[i]));
+            vtctx.stroke();
+
+            const ci = Math.min(playIdx, sim.T.length - 1);
+            drawPlayhead(vtctx, TX, sim.T[ci], [
+                [VY(sim.VA[ci]), '#2563eb'],
+                [VY(sim.VB[ci]), '#6b7280'],
+            ], padT, plotH);
+
+            vtctx.fillStyle = '#6b7280';
+            vtctx.font = '11px system-ui';
+            vtctx.textAlign = 'center';
+            vtctx.fillText('t (s)', padL + plotW / 2, h - 4);
+            vtctx.save();
+            vtctx.translate(9, padT + plotH / 2);
+            vtctx.rotate(-Math.PI / 2);
+            vtctx.fillText('v (m/s)', 0, 0);
+            vtctx.restore();
+
+            vtctx.textAlign = 'left';
+            vtctx.fillStyle = '#2563eb';
+            vtctx.fillRect(padL + 6, padT + 22, 14, 3);
+            vtctx.fillStyle = '#6b7280';
+            vtctx.font = '10px system-ui';
+            vtctx.fillText('vₐ', padL + 24, padT + 28);
+            vtctx.fillStyle = '#6b7280';
+            vtctx.fillRect(padL + 52, padT + 22, 14, 3);
+            vtctx.fillStyle = '#6b7280';
+            vtctx.fillText('vᵦ', padL + 70, padT + 28);
+        }
+
+        // ========== 绘制：p-t 图 ==========
+        function drawPT() {
+            const w = ptView.width, h = ptView.height;
+            ptctx.clearRect(0, 0, w, h);
+            const { padL, padT, plotW, plotH } = drawAxes(ptctx, w, h);
+
+            if (!sim || playIdx < 1) {
+                ptctx.fillStyle = '#6b7280';
+                ptctx.font = '12px system-ui';
+                ptctx.textAlign = 'center';
+                ptctx.fillText('开始后将显示 p-t 图', w / 2, h / 2);
+                return;
+            }
+
+            const tMax = Math.max(6, sim.tEnd);
+            let pHi = 1;
+            for (let i = 0; i < sim.PT.length; i++) {
+                pHi = Math.max(pHi, Math.abs(sim.PA[i]), Math.abs(sim.PB[i]), Math.abs(sim.PT[i]));
+            }
+            pHi *= 1.15;
+            const pLo = -pHi;
+
+            const TX = t => padL + (t / tMax) * plotW;
+            const PY = p => padT + plotH - ((p - pLo) / (pHi - pLo)) * plotH;
+
+            drawTimeGrid(ptctx, TX, tMax, padT, plotW, plotH);
+            niceVGrid(ptctx, pLo, pHi, PY, padL, plotW);
+
+            // 零线（动量参考线，居中）
+            ptctx.strokeStyle = 'rgba(31,41,55,0.3)';
+            ptctx.lineWidth = 1;
+            ptctx.beginPath();
+            ptctx.moveTo(padL, PY(0));
+            ptctx.lineTo(padL + plotW, PY(0));
+            ptctx.stroke();
+
+            drawCollisionMark(ptctx, TX, padT, plotH, tMax);
+
+            const endIdx = Math.min(playIdx + 1, sim.PA.length);
+            ptctx.lineWidth = 2;
+            ptctx.lineJoin = 'round';
+            ptctx.strokeStyle = '#2563eb';
+            ptctx.beginPath();
+            ptctx.moveTo(TX(sim.T[0]), PY(sim.PA[0]));
+            for (let i = 1; i < endIdx; i++) ptctx.lineTo(TX(sim.T[i]), PY(sim.PA[i]));
+            ptctx.stroke();
+            ptctx.strokeStyle = '#6b7280';
+            ptctx.beginPath();
+            ptctx.moveTo(TX(sim.T[0]), PY(sim.PB[0]));
+            for (let i = 1; i < endIdx; i++) ptctx.lineTo(TX(sim.T[i]), PY(sim.PB[i]));
+            ptctx.stroke();
+            ptctx.strokeStyle = '#ea580c';
+            ptctx.beginPath();
+            ptctx.moveTo(TX(sim.T[0]), PY(sim.PT[0]));
+            for (let i = 1; i < endIdx; i++) ptctx.lineTo(TX(sim.T[i]), PY(sim.PT[i]));
+            ptctx.stroke();
+
+            const ci = Math.min(playIdx, sim.T.length - 1);
+            drawPlayhead(ptctx, TX, sim.T[ci], [
+                [PY(sim.PA[ci]), '#2563eb'],
+                [PY(sim.PB[ci]), '#6b7280'],
+                [PY(sim.PT[ci]), '#ea580c'],
+            ], padT, plotH);
+
+            ptctx.fillStyle = '#6b7280';
+            ptctx.font = '11px system-ui';
+            ptctx.textAlign = 'center';
+            ptctx.fillText('t (s)', padL + plotW / 2, h - 4);
+            ptctx.save();
+            ptctx.translate(9, padT + plotH / 2);
+            ptctx.rotate(-Math.PI / 2);
+            ptctx.fillText('p (kg·m/s)', 0, 0);
+            ptctx.restore();
+
+            ptctx.textAlign = 'left';
+            ptctx.fillStyle = '#2563eb';
+            ptctx.fillRect(padL + 6, padT + 22, 14, 3);
+            ptctx.fillStyle = '#6b7280';
+            ptctx.font = '10px system-ui';
+            ptctx.fillText('pₐ', padL + 24, padT + 28);
+            ptctx.fillStyle = '#6b7280';
+            ptctx.fillRect(padL + 52, padT + 22, 14, 3);
+            ptctx.fillStyle = '#6b7280';
+            ptctx.fillText('pᵦ', padL + 70, padT + 28);
+            ptctx.fillStyle = '#ea580c';
+            ptctx.fillRect(padL + 98, padT + 22, 14, 3);
+            ptctx.fillStyle = '#6b7280';
+            ptctx.fillText('Σp', padL + 116, padT + 28);
+        }
+
+        function drawCharts() {
+            drawVT();
+            drawPT();
+        }
+
+        // ========== 粒子 ==========
+        function spawnParticles(sx, sy) {
+            const colors = ['#d97706', '#2563eb', '#94a3b8', '#ea580c'];
+            for (let i = 0; i < 16; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = 40 + Math.random() * 90;
+                particles.push({
+                    x: sx, y: sy,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed - 70,
+                    life: 1.0,
+                    r: 1.5 + Math.random() * 2.5,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                });
+            }
+        }
+
+        function updateParticles(dt) {
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const pt = particles[i];
+                pt.x += pt.vx * dt;
+                pt.y += pt.vy * dt;
+                pt.vy += 140 * dt;
+                pt.life -= dt * 1.5;
+                if (pt.life <= 0) particles.splice(i, 1);
+            }
+        }
+
+        // ========== 数据面板 ==========
+        function setTColLabel() {
+            elTCol.textContent = sim.tCol !== null ? sim.tCol.toFixed(2) + ' s' : '—';
+        }
+
+        function updateLive(vA, vB) {
+            elDVA.textContent = vA.toFixed(2) + ' m/s';
+            elDVB.textContent = vB.toFixed(2) + ' m/s';
+            elDPA.textContent = (P.mA * vA).toFixed(2);
+            elDPB.textContent = (P.mB * vB).toFixed(2);
+            elDPT.textContent = (P.mA * vA + P.mB * vB).toFixed(2);
+            elDEK.textContent = (0.5 * P.mA * vA * vA + 0.5 * P.mB * vB * vB).toFixed(2) + ' J';
+            const hit = sim.tCol !== null && simT >= sim.tCol - 1e-9;
+            if (!sim.willCollide) {
+                elDState.textContent = '匀速滑行';
+                elDState.style.color = '#2563eb';
+            } else if (hit) {
+                elDState.textContent = '已碰撞';
+                elDState.style.color = '#ea580c';
+            } else {
+                elDState.textContent = '滑行中';
+                elDState.style.color = '#2563eb';
+            }
+        }
+
+        function predictStatus() {
+            if (sim.willCollide) {
+                if (P.type === 'elastic') {
+                    return `当前参数：t = ${sim.tCol.toFixed(2)} s 发生完全弹性碰撞，碰后 vA′ = ${sim.vA1.toFixed(2)} m/s、vB′ = ${sim.vB1.toFixed(2)} m/s；总动量 ${sim.pTotal.toFixed(2)} kg·m/s 全程不变，总动能守恒（${sim.ek0.toFixed(2)} J）。`;
+                }
+                return `当前参数：t = ${sim.tCol.toFixed(2)} s 发生完全非弹性碰撞，碰后两球共速 ${sim.vA1.toFixed(2)} m/s；总动量 ${sim.pTotal.toFixed(2)} kg·m/s 不变，总动能 ${sim.ek0.toFixed(2)} J → ${sim.ek1.toFixed(2)} J，损失 ${(sim.ek0 - sim.ek1).toFixed(2)} J。`;
+            }
+            if (sim.noColReason === 'slow') return '当前参数：两球接近过慢，演示时长内不会发生碰撞。';
+            if (sim.noColReason === 'still') return '当前参数：两球均静止，不会发生碰撞。';
+            return '当前参数：两球不会相遇（球 A 相对球 B 无接近速度），将各自匀速运动。';
+        }
+
+        function updateDataPanel() {
+            if (!sim) return;
+            if (state === 'idle') {
+                elDVA.textContent = P.v0A.toFixed(2) + ' m/s';
+                elDVB.textContent = P.v0B.toFixed(2) + ' m/s';
+                elDPA.textContent = (P.mA * P.v0A).toFixed(2);
+                elDPB.textContent = (P.mB * P.v0B).toFixed(2);
+                elDPT.textContent = sim.pTotal.toFixed(2);
+                elDEK.textContent = sim.ek0.toFixed(2) + ' J';
+                elDState.textContent = '待开始';
+                elDState.style.color = '#6b7280';
+                setTColLabel();
+                elStatus.textContent = predictStatus();
+            }
+        }
+
+        // ========== 控制状态 ==========
+        const paramInputs = [elMA, elVA, elMB, elVB, elTs, ...radios];
+        function setParamsDisabled(d) {
+            paramInputs.forEach(el => { el.disabled = d; });
+        }
+
+        function readParams() {
+            P.type = getCtype();
+            P.mA = parseFloat(elMA.value);
+            P.v0A = parseFloat(elVA.value);
+            P.mB = parseFloat(elMB.value);
+            P.v0B = parseFloat(elVB.value);
+            timeScale = parseFloat(elTs.value) / 10;
+            elMAVal.textContent = P.mA.toFixed(1) + ' kg';
+            elVAVal.textContent = P.v0A.toFixed(1) + ' m/s';
+            elMBVal.textContent = P.mB.toFixed(1) + ' kg';
+            elVBVal.textContent = P.v0B.toFixed(1) + ' m/s';
+            elTsVal.textContent = timeScale.toFixed(1) + '×';
+        }
+
+        function redrawPreview() {
+            lastDraw = { t: 0, vA: P.v0A, vB: P.v0B, xA: START_A, xB: START_B };
+            drawScene(0, P.v0A, P.v0B, START_A, START_B);
+            drawCharts();
+        }
+
+        // ========== 动画帧 ==========
+        function frame(ts) {
+            if (state !== 'running') return;
+            if (lastTs === null) lastTs = ts;
+            const rawDt = (ts - lastTs) / 1000;
+            lastTs = ts;
+            const dt = Math.min(rawDt, 0.05) * timeScale;
+            simT += dt;
+
+            while (playIdx < sim.T.length - 1 && sim.T[playIdx + 1] <= simT) {
+                playIdx++;
+            }
+
+            if (simT >= sim.tEnd) {
+                endSim();
+                return;
+            }
+
+            // 碰撞瞬间：粒子 + 状态提示
+            if (sim.colIdx !== null && prevPlayIdx < sim.colIdx && playIdx >= sim.colIdx) {
+                const s = viewScale();
+                const sx = PAD_X + sim.colX * s;
+                const sy = view.height - PAD_BOTTOM - ((sim.rA + sim.rB) / 2) * s;
+                spawnParticles(sx, sy);
+                elStatus.textContent = `碰撞！vA：${P.v0A.toFixed(2)} → ${sim.vA1.toFixed(2)} m/s，vB：${P.v0B.toFixed(2)} → ${sim.vB1.toFixed(2)} m/s`;
+                elStatus.style.color = '#ea580c';
+            }
+            prevPlayIdx = playIdx;
+
+            const i0 = playIdx;
+            const i1 = Math.min(i0 + 1, sim.T.length - 1);
+            const tau = sim.T[i1] - sim.T[i0];
+            const f = tau > 1e-12 ? (simT - sim.T[i0]) / tau : 0;
+            const vA = sim.VA[i0] + (sim.VA[i1] - sim.VA[i0]) * f;
+            const vB = sim.VB[i0] + (sim.VB[i1] - sim.VB[i0]) * f;
+            const xA = sim.XA[i0] + (sim.XA[i1] - sim.XA[i0]) * f;
+            const xB = sim.XB[i0] + (sim.XB[i1] - sim.XB[i0]) * f;
+
+            trailA.push(xA); if (trailA.length > 40) trailA.shift();
+            trailB.push(xB); if (trailB.length > 40) trailB.shift();
+
+            updateParticles(dt);
+            lastDraw = { t: simT, vA, vB, xA, xB };
+            drawScene(simT, vA, vB, xA, xB);
+            updateLive(vA, vB);
+            drawCharts();
+
+            animId = requestAnimationFrame(frame);
+        }
+
+        function endSim() {
+            state = 'ended';
+            if (animId) { cancelAnimationFrame(animId); animId = null; }
+
+            const lastI = sim.T.length - 1;
+            playIdx = lastI;
+            prevPlayIdx = lastI;
+            lastDraw = { t: sim.tEnd, vA: sim.VA[lastI], vB: sim.VB[lastI], xA: sim.XA[lastI], xB: sim.XB[lastI] };
+
+            drawScene(sim.tEnd, sim.VA[lastI], sim.VB[lastI], sim.XA[lastI], sim.XB[lastI]);
+            drawCharts();
+            updateLive(sim.VA[lastI], sim.VB[lastI]);
+
+            btnStart.disabled = false;
+            btnStart.textContent = '重新开始';
+            btnPause.disabled = true;
+            btnPause.textContent = '暂停';
+            btnReset.disabled = false;
+            setParamsDisabled(false);
+            elDataPanel.setAttribute('aria-live', 'polite');
+
+            if (!sim.willCollide) {
+                elStatus.textContent = '两球未发生碰撞，各自匀速运动并滑出。演示结束。';
+            } else if (P.type === 'elastic') {
+                elStatus.textContent = `碰后总动量 ${sim.pTotal.toFixed(2)} kg·m/s 保持不变，总动能 ${sim.ek1.toFixed(2)} J 守恒。演示结束。`;
+            } else {
+                elStatus.textContent = `总动量 ${sim.pTotal.toFixed(2)} kg·m/s 保持不变；总动能 ${sim.ek0.toFixed(2)} J → ${sim.ek1.toFixed(2)} J，损失 ${(sim.ek0 - sim.ek1).toFixed(2)} J 转化为内能。演示结束。`;
+            }
+            elStatus.style.color = '';
+        }
+
+        // ========== 控制 ==========
+        function start() {
+            if (state === 'running') return;
+            readParams();
+            sim = simulate();
+            state = 'running';
+            simT = 0;
+            lastTs = null;
+            playIdx = 0;
+            prevPlayIdx = 0;
+            trailA = []; trailB = [];
+            particles = [];
+            elStatus.textContent = '';
+            elStatus.style.color = '';
+            btnStart.disabled = true;
+            btnStart.textContent = '运行中…';
+            btnPause.disabled = false;
+            btnPause.textContent = '暂停';
+            btnReset.disabled = true;
+            setParamsDisabled(true);
+            elDataPanel.setAttribute('aria-live', 'off');
+            redrawPreview();
+            setTColLabel();
+            updateLive(P.v0A, P.v0B);
+            animId = requestAnimationFrame(frame);
+        }
+
+        function pauseSim() {
+            if (state !== 'running') return;
+            state = 'paused';
+            if (animId) { cancelAnimationFrame(animId); animId = null; }
+            lastTs = null;
+            btnStart.disabled = false;
+            btnStart.textContent = '重新开始';
+            btnPause.textContent = '继续';
+            btnReset.disabled = false;
+            elDataPanel.setAttribute('aria-live', 'polite');
+        }
+
+        function resumeSim() {
+            if (state !== 'paused') return;
+            state = 'running';
+            lastTs = null;
+            btnStart.disabled = true;
+            btnStart.textContent = '运行中…';
+            btnPause.textContent = '暂停';
+            btnReset.disabled = true;
+            elDataPanel.setAttribute('aria-live', 'off');
+            animId = requestAnimationFrame(frame);
+        }
+
+        function reset() {
+            if (animId) { cancelAnimationFrame(animId); animId = null; }
+            state = 'idle';
+            simT = 0;
+            lastTs = null;
+            playIdx = 0;
+            prevPlayIdx = 0;
+            trailA = []; trailB = [];
+            particles = [];
+            readParams();
+            sim = simulate();
+            btnStart.disabled = false;
+            btnStart.textContent = '开始';
+            btnPause.disabled = true;
+            btnPause.textContent = '暂停';
+            btnReset.disabled = false;
+            setParamsDisabled(false);
+            elDataPanel.setAttribute('aria-live', 'polite');
+            elStatus.style.color = '';
+            updateDataPanel();
+            redrawPreview();
+        }
+
+        // 参数预览守卫：结束态拖动滑条时自动回到预览态
+        function previewGuard() {
+            if (state === 'running') return false;
+            if (state === 'ended') {
+                state = 'idle';
+                simT = 0;
+                playIdx = 0;
+                prevPlayIdx = 0;
+                trailA = []; trailB = [];
+                particles = [];
+                elDState.textContent = '待开始';
+                elDState.style.color = '#6b7280';
+                elStatus.textContent = '';
+                elStatus.style.color = '';
+                btnStart.disabled = false;
+                btnPause.disabled = true;
+                btnPause.textContent = '暂停';
+                btnReset.disabled = true;
+                setParamsDisabled(false);
+                elDataPanel.setAttribute('aria-live', 'polite');
+            }
+            return true;
+        }
+
+        // ========== 自适应尺寸 ==========
+        function setupCanvas(canvasEl, viewObj, baseW, baseH) {
+            const cssWidth = canvasEl.clientWidth || baseW;
+            const cssHeight = cssWidth * baseH / baseW;
+            const devicePixelRatio = window.devicePixelRatio || 1;
+            canvasEl.width = Math.round(cssWidth * devicePixelRatio);
+            canvasEl.height = Math.round(cssHeight * devicePixelRatio);
+            canvasEl.getContext('2d').setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+            viewObj.width = cssWidth;
+            viewObj.height = cssHeight;
+        }
+
+        function resizeAll() {
+            setupCanvas(canvas, view, BASE_WIDTH, BASE_HEIGHT);
+            setupCanvas(vtCanvas, vtView, GRAPH_WIDTH, GRAPH_HEIGHT);
+            setupCanvas(ptCanvas, ptView, GRAPH_WIDTH, GRAPH_HEIGHT);
+            if (lastDraw) {
+                drawScene(lastDraw.t, lastDraw.vA, lastDraw.vB, lastDraw.xA, lastDraw.xB);
+            } else {
+                drawScene(0, P.v0A, P.v0B, START_A, START_B);
+            }
+            drawCharts();
+        }
+
+        // ========== 事件绑定 ==========
+        elMA.addEventListener('input', () => {
+            P.mA = parseFloat(elMA.value);
+            elMAVal.textContent = P.mA.toFixed(1) + ' kg';
+            if (!previewGuard()) return;
+            sim = simulate();
+            updateDataPanel();
+            redrawPreview();
+        });
+
+        elVA.addEventListener('input', () => {
+            P.v0A = parseFloat(elVA.value);
+            elVAVal.textContent = P.v0A.toFixed(1) + ' m/s';
+            if (!previewGuard()) return;
+            sim = simulate();
+            updateDataPanel();
+            redrawPreview();
+        });
+
+        elMB.addEventListener('input', () => {
+            P.mB = parseFloat(elMB.value);
+            elMBVal.textContent = P.mB.toFixed(1) + ' kg';
+            if (!previewGuard()) return;
+            sim = simulate();
+            updateDataPanel();
+            redrawPreview();
+        });
+
+        elVB.addEventListener('input', () => {
+            P.v0B = parseFloat(elVB.value);
+            elVBVal.textContent = P.v0B.toFixed(1) + ' m/s';
+            if (!previewGuard()) return;
+            sim = simulate();
+            updateDataPanel();
+            redrawPreview();
+        });
+
+        elTs.addEventListener('input', () => {
+            timeScale = parseFloat(elTs.value) / 10;
+            elTsVal.textContent = timeScale.toFixed(1) + '×';
+        });
+
+        radios.forEach(r => {
+            r.addEventListener('change', () => {
+                if (!previewGuard()) return;
+                P.type = getCtype();
+                sim = simulate();
+                updateDataPanel();
+            });
+        });
+
+        btnStart.addEventListener('click', start);
+        btnPause.addEventListener('click', () => {
+            if (state === 'running') pauseSim();
+            else if (state === 'paused') resumeSim();
+        });
+        btnReset.addEventListener('click', reset);
+
+        // 空格 toggle 开始/暂停/继续，R 重置（焦点在表单元素时不触发）
+        document.addEventListener('keydown', e => {
+            const tag = document.activeElement && document.activeElement.tagName;
+            if (tag === 'INPUT' || tag === 'BUTTON' || tag === 'SELECT' || tag === 'TEXTAREA') return;
+            if (e.code === 'Space') {
+                e.preventDefault();
+                if (state === 'running') pauseSim();
+                else if (state === 'paused') resumeSim();
+                else start();
+            } else if (e.key === 'r' || e.key === 'R') {
+                reset();
+            }
+        });
+
+        window.addEventListener('resize', resizeAll);
+        if (typeof ResizeObserver !== 'undefined') {
+            const observer = new ResizeObserver(resizeAll);
+            observer.observe(canvas);
+            observer.observe(vtCanvas);
+            observer.observe(ptCanvas);
+        }
+
+        // ========== 启动 ==========
+        resizeAll();
+        reset();
+    })();
+    </script>
+</body>
+</html>
