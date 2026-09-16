@@ -246,7 +246,7 @@
                 <div class="data-item"><span>速度 v</span><b id="vel" style="color:#16a34a">0.00 m/s</b></div>
                 <div class="data-item"><span>加速度 a</span><b id="acc">0.00 m/s²</b></div>
                 <div class="data-item"><span>位移 x</span><b id="pos">0.00 m</b></div>
-                <div class="data-item"><span>最大静摩擦力</span><b id="fMaxDisp">17.6 N</b></div>
+                <div class="data-item"><span>最大静摩擦力</span><b id="fMaxDisp">20.0 N</b></div>
                 <div class="data-item"><span>滑动摩擦力 μmg</span><b id="fKDisp">16.0 N</b></div>
                 <div class="data-item"><span>运动状态</span><b id="motion">待开始</b></div>
             </div>
@@ -266,8 +266,8 @@
                 </div>
                 <div class="param-row">
                     <label for="surge">最大静摩擦超出比例</label>
-                    <input id="surge" type="range" min="0" max="30" value="10" step="1">
-                    <div class="val" id="surgeVal">10 %</div>
+                    <input id="surge" type="range" min="0" max="30" value="25" step="1">
+                    <div class="val" id="surgeVal">25 %</div>
                 </div>
                 <div class="param-row">
                     <label for="rate">拉力增长率 k</label>
@@ -635,7 +635,8 @@
 
         function drawFtChart() {
             const tEnd = exitTimeOf();
-            const yMax = niceCeil(Math.max(FOf(tEnd), fMaxOf()) * 1.08);
+            // 纵轴聚焦：上限 = 最大静摩擦力 × 1.6，不随拉力峰值增长，保证台阶细节醒目
+            const yMax = fMaxOf() * 1.6;
             const frame = drawChartFrame(ftView, ftCtx, tEnd, yMax, 'F、f (N)', [
                 { v: fMaxOf(), color: '#9ca3af', label: 'fmax' },
             ]);
@@ -659,14 +660,36 @@
                 ftCtx.fillText('t*=' + tStar.toFixed(2) + 's', pxStar, frame.padT - 4);
             }
 
-            // 拉力 F 斜线
+            // 拉力 F 斜线（超出纵轴的部分截断，画上升箭头并标注）
+            const Fcur = FOf(cur);
+            const tClip = yMax / kOf();
             ftCtx.strokeStyle = COLOR_F;
             ftCtx.lineWidth = 2.5;
             ftCtx.lineJoin = 'round';
             ftCtx.beginPath();
             ftCtx.moveTo(frame.xOfTime(0), frame.yOfVal(0));
-            ftCtx.lineTo(frame.xOfTime(cur), frame.yOfVal(FOf(cur)));
-            ftCtx.stroke();
+            if (Fcur <= yMax) {
+                ftCtx.lineTo(frame.xOfTime(cur), frame.yOfVal(Fcur));
+                ftCtx.stroke();
+                ftCtx.fillStyle = COLOR_F;
+                ftCtx.beginPath();
+                ftCtx.arc(frame.xOfTime(cur), frame.yOfVal(Fcur), 4, 0, Math.PI * 2);
+                ftCtx.fill();
+            } else {
+                ftCtx.lineTo(frame.xOfTime(tClip), frame.padT);
+                ftCtx.stroke();
+                const clipX = frame.xOfTime(tClip);
+                ftCtx.fillStyle = COLOR_F;
+                ftCtx.beginPath();
+                ftCtx.moveTo(clipX, frame.padT - 2);
+                ftCtx.lineTo(clipX - 5, frame.padT + 9);
+                ftCtx.lineTo(clipX + 5, frame.padT + 9);
+                ftCtx.closePath();
+                ftCtx.fill();
+                ftCtx.font = '10px system-ui, sans-serif';
+                ftCtx.textAlign = 'left';
+                ftCtx.fillText('F 继续增大（超出图示）', clipX + 8, frame.padT + 12);
+            }
 
             // 摩擦力 f：重合段（橙虚线叠在 F 上，两色可见）→ 突降台阶 → 水平段（实线）
             if (cur > 1e-9) {
@@ -691,14 +714,34 @@
                 ftCtx.stroke();
             }
 
-            // 台阶 Δf 标注
+            // 台阶 Δf 竖直双向箭头标注（f滑 水平线 ↔ fmax 参考线）
             if (t > tStar + 0.05 && fMaxOf() - fKOf() > 1e-9) {
-                const yHi = frame.yOfVal(fMaxOf()), yLo = frame.yOfVal(fKOf());
                 const pxStar = frame.xOfTime(tStar);
-                ftCtx.fillStyle = '#ea580c';
+                const yHi = frame.yOfVal(fMaxOf());
+                const yLo = frame.yOfVal(fKOf());
+                const ax = pxStar + 10;
+                ftCtx.strokeStyle = COLOR_FRIC;
+                ftCtx.fillStyle = COLOR_FRIC;
+                ftCtx.lineWidth = 1.5;
+                ftCtx.beginPath();
+                ftCtx.moveTo(ax, yHi + 3);
+                ftCtx.lineTo(ax, yLo - 3);
+                ftCtx.stroke();
+                ftCtx.beginPath();
+                ftCtx.moveTo(ax, yHi);
+                ftCtx.lineTo(ax - 3.5, yHi + 6);
+                ftCtx.lineTo(ax + 3.5, yHi + 6);
+                ftCtx.closePath();
+                ftCtx.fill();
+                ftCtx.beginPath();
+                ftCtx.moveTo(ax, yLo);
+                ftCtx.lineTo(ax - 3.5, yLo - 6);
+                ftCtx.lineTo(ax + 3.5, yLo - 6);
+                ftCtx.closePath();
+                ftCtx.fill();
                 ftCtx.font = '10px system-ui, sans-serif';
                 ftCtx.textAlign = 'left';
-                ftCtx.fillText('Δf=' + (fMaxOf() - fKOf()).toFixed(1) + ' N', pxStar + 6, (yHi + yLo) / 2 + 3);
+                ftCtx.fillText('Δf=' + (fMaxOf() - fKOf()).toFixed(1) + ' N', ax + 6, (yHi + yLo) / 2 + 3);
             }
 
             // 当前点
