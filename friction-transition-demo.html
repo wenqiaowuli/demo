@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>静摩擦与滑动摩擦转化演示｜高中物理</title>
+    <meta name="description" content="静摩擦与滑动摩擦转化教学演示：水平拉力 F = kt 线性增大，静摩擦随拉力同步增大至最大静摩擦，起动瞬间突降为滑动摩擦，物块加速滑离。F-t 图呈现重合—突降—分离的台阶特征，v-t 图联动展示。">
+    <!--
+    文件描述：静摩擦与滑动摩擦转化演示
+    物理模型：水平拉力 F = k·t 线性缓慢增大。静止阶段静摩擦 f = F（0 ≤ f ≤ μs·mg）；
+              F 达到最大静摩擦 μs·mg（临界时刻 t* = μs·mg/k）时突降为滑动摩擦 μmg，
+              此后 a = (F − μmg)/m。滑出 +20 m 边界结束。g = 10 m/s² 固定。
+    页面布局：画布 → F-t / v-t 双图 → 播放控制 → 实时数值（5 列）→ 参数设定 → 推导与判断 → 图例
+              （参照水平直线运动演示页）。
+    -->
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background-color: #eef2f6;
+            color: #1f2937;
+            font-family: system-ui, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 12px 32px;
+        }
+        main {
+            width: 100%;
+            max-width: 880px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1 {
+            font-size: 22px;
+            margin-bottom: 12px;
+            text-align: center;
+        }
+        .canvas-wrap { width: 100%; }
+        canvas#scene {
+            display: block;
+            width: 100%;
+            aspect-ratio: 880 / 520;
+            border: 2px solid #2563eb;
+            border-radius: 10px;
+            background-color: #ffffff;
+        }
+        .control-panel {
+            margin-top: 16px;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0;
+        }
+        .param-group,
+        .data-group {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 14px 16px;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+        }
+        .data-group {
+            width: 100%;
+            margin-top: 16px;
+        }
+        .chart-panel {
+            background: transparent;
+            border: none;
+            border-radius: 0;
+            padding: 0;
+        }
+        .chart-panel .group-title {
+            padding: 0 2px;
+        }
+        .group-title {
+            font-size: 12px;
+            color: #6b7280;
+            margin-bottom: 10px;
+            letter-spacing: 0.5px;
+        }
+        .param-row {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            margin-bottom: 10px;
+        }
+        .param-row label {
+            font-size: 13px;
+            color: #1f2937;
+            white-space: nowrap;
+            min-width: 100px;
+        }
+        .param-row input[type=range] { flex: 1; }
+        .param-row .val {
+            min-width: 70px;
+            text-align: right;
+            font-size: 13px;
+            font-variant-numeric: tabular-nums;
+            color: #1f2937;
+        }
+        .fixed-note {
+            margin-top: 8px;
+            font-size: 12px;
+            color: #6b7280;
+            line-height: 1.6;
+        }
+        .fixed-note b { color: #b45309; font-weight: 600; }
+        input[type=range]:disabled { opacity: 0.45; cursor: not-allowed; }
+        .data-grid {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            gap: 9px;
+        }
+        @media (max-width: 800px) {
+            .data-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+        .data-item {
+            background: #f8fafc;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 8px 10px;
+        }
+        .data-item.span-full { grid-column: 1 / -1; }
+        .data-item span {
+            display: block;
+            font-size: 11px;
+            color: #6b7280;
+            margin-bottom: 4px;
+        }
+        .data-item b {
+            display: block;
+            font-size: 14px;
+            color: #1f2937;
+            font-variant-numeric: tabular-nums;
+        }
+        .charts-row {
+            margin-top: 16px;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+        @media (max-width: 720px) {
+            .charts-row { grid-template-columns: 1fr; }
+        }
+        .chart-panel canvas {
+            display: block;
+            width: 100%;
+            aspect-ratio: 20 / 9;
+            background: #ffffff;
+            border: 2px solid #2563eb;
+            border-radius: 10px;
+        }
+        .play-bar {
+            margin-top: 12px;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .play-bar select {
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 6px 10px;
+            font-size: 13px;
+            background: #fff;
+            color: #1f2937;
+            cursor: pointer;
+        }
+        .formula-card {
+            margin-top: 16px;
+            width: 100%;
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 14px 16px;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+        }
+        .formula-card .group-title { margin-bottom: 8px; }
+        .formula-card .fixed-note { margin-top: 0; }
+        button {
+            background: #2563eb;
+            border: none;
+            color: white;
+            padding: 9px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.15s ease, transform 0.15s ease;
+        }
+        button:hover:not(:disabled) { background: #1d4ed8; }
+        button:active:not(:disabled) { transform: translateY(1px); }
+        button:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+        .legend {
+            margin-top: 12px;
+            font-size: 12px;
+            color: #6b7280;
+            text-align: center;
+            line-height: 1.8;
+        }
+        .legend span { margin: 0 6px; }
+    </style>
+</head>
+<body>
+    <main>
+        <h1>静摩擦与滑动摩擦转化演示</h1>
+        <div class="canvas-wrap">
+            <canvas id="scene" role="img" aria-label="静摩擦与滑动摩擦转化演示：拉力逐渐增大，物块由静止到突变为滑动"></canvas>
+        </div>
+        <div class="charts-row">
+            <section class="chart-panel">
+                <div class="group-title">拉力与摩擦力-时间图 (F、f–t)</div>
+                <canvas id="ftChart" role="img" aria-label="拉力与摩擦力随时间变化图像：静止段摩擦力与拉力重合，临界时刻突降为滑动摩擦"></canvas>
+            </section>
+            <section class="chart-panel">
+                <div class="group-title">速度-时间图 (v-t)</div>
+                <canvas id="vtChart" role="img" aria-label="物块速度随时间变化图像，临界时刻后开始加速"></canvas>
+            </section>
+        </div>
+        <div class="play-bar">
+            <button id="btnStart" type="button">开始</button>
+            <button id="btnPauseResume" type="button" disabled>暂停</button>
+            <button id="btnReset" type="button">重置</button>
+            <select id="speed" title="播放速度" aria-label="播放速度倍率">
+                <option value="0.5">0.5×</option>
+                <option value="1" selected>1×</option>
+                <option value="2">2×</option>
+                <option value="4">4×</option>
+            </select>
+        </div>
+        <section class="data-group" aria-labelledby="dataTitle" aria-live="polite">
+            <div class="group-title" id="dataTitle">实时数值</div>
+            <div class="data-grid">
+                <div class="data-item"><span>时间 t</span><b id="time">0.00 s</b></div>
+                <div class="data-item"><span>拉力 F</span><b id="pullF">0.00 N</b></div>
+                <div class="data-item"><span>摩擦力 f</span><b id="fricF">0.00 N</b></div>
+                <div class="data-item"><span>摩擦性质</span><b id="fricType">—</b></div>
+                <div class="data-item"><span>速度 v</span><b id="vel">0.00 m/s</b></div>
+                <div class="data-item"><span>加速度 a</span><b id="acc">0.00 m/s²</b></div>
+                <div class="data-item"><span>位移 x</span><b id="pos">0.00 m</b></div>
+                <div class="data-item"><span>最大静摩擦 μ<sub>s</sub>mg</span><b id="fMaxDisp">20.0 N</b></div>
+                <div class="data-item"><span>滑动摩擦 μmg</span><b id="fKDisp">16.0 N</b></div>
+                <div class="data-item"><span>运动状态</span><b id="motion">待开始</b></div>
+            </div>
+        </section>
+        <div class="control-panel">
+            <section class="param-group" aria-labelledby="parameterTitle">
+                <div class="group-title" id="parameterTitle">参数设定</div>
+                <div class="param-row">
+                    <label for="mass">质量 m</label>
+                    <input id="mass" type="range" min="1" max="10" value="4" step="0.5">
+                    <div class="val" id="mVal">4.0 kg</div>
+                </div>
+                <div class="param-row">
+                    <label for="muS">静摩擦因数 μ<sub>s</sub></label>
+                    <input id="muS" type="range" min="0.2" max="1" value="0.5" step="0.05">
+                    <div class="val" id="muSVal">0.50</div>
+                </div>
+                <div class="param-row">
+                    <label for="mu">动摩擦因数 μ</label>
+                    <input id="mu" type="range" min="0.05" max="1" value="0.4" step="0.05">
+                    <div class="val" id="muVal">0.40</div>
+                </div>
+                <div class="param-row">
+                    <label for="rate">拉力增长率 k</label>
+                    <input id="rate" type="range" min="2" max="20" value="6" step="1">
+                    <div class="val" id="kVal">6 N/s</div>
+                </div>
+            </section>
+        </div>
+        <section class="formula-card">
+            <div class="group-title">推导与判断</div>
+            <div class="fixed-note">
+                静摩擦力的"被动性"：<b>f = F</b>，随外力同步变化，范围 <b>0 ≤ f ≤ f<sub>max</sub> = μ<sub>s</sub>mg</b>。<br>
+                临界判断：<b>F = f<sub>max</sub></b>（t<sup>*</sup> = μ<sub>s</sub>mg/k）时物块即将滑动，此时摩擦力达到最大。<br>
+                突变判断：起动瞬间 f 由 μ<sub>s</sub>mg <b>突降</b>为 μmg（μ<sub>s</sub> &gt; μ），加速度跳变为 a = (μ<sub>s</sub> − μ)g，产生"冲刺"效果。<br>
+                滑动后：<b>a = (F − μmg)/m</b>，拉力继续增大则加速度增大，v-t 图为开口向上的曲线。<br>
+                近似说明：通常 μ<sub>s</sub> 略大于 μ，粗略计算时可取 μ<sub>s</sub> ≈ μ（此时突变量为零）。
+            </div>
+        </section>
+                <div class="legend">
+            <span style="color:#2563eb">—— 拉力 F = k·t</span>
+            <span style="color:#ea580c">—— 摩擦力 f（突降台阶）</span>
+            <span style="color:#6b7280">– – 最大静摩擦 μ<sub>s</sub>mg</span>
+            <span>竖虚线：临界时刻 t<sup>*</sup></span>
+            <span>⌨ 空格 = 播放/暂停　R = 重置</span>
+        </div>
+    </main>
+    <script>
+        const g = 10;
+        const X_MAX = 20;
+        const BASE_WIDTH = 880;
+        const BASE_HEIGHT = 520;
+        const CHART_ASPECT = 20 / 9;
+        const sceneView = { width: BASE_WIDTH, height: BASE_HEIGHT };
+        const ftView = { width: 400, height: 180 };
+        const vtView = { width: 400, height: 180 };
+        const COLOR_F = '#2563eb', COLOR_FRIC = '#ea580c', COLOR_REF = '#94a3b8';
+
+        const sceneCanvas = document.getElementById('scene');
+        const sctx = sceneCanvas.getContext('2d');
+        const ftCanvas = document.getElementById('ftChart');
+        const ftCtx = ftCanvas.getContext('2d');
+        const vtCanvas = document.getElementById('vtChart');
+        const vtCtx = vtCanvas.getContext('2d');
+        const inputM = document.getElementById('mass');
+        const inputMuS = document.getElementById('muS');
+        const inputMu = document.getElementById('mu');
+        const inputK = document.getElementById('rate');
+        const inputSpeed = document.getElementById('speed');
+        const mVal = document.getElementById('mVal');
+        const muSVal = document.getElementById('muSVal');
+        const muVal = document.getElementById('muVal');
+        const kVal = document.getElementById('kVal');
+        const elTime = document.getElementById('time');
+        const elPull = document.getElementById('pullF');
+        const elFric = document.getElementById('fricF');
+        const elType = document.getElementById('fricType');
+        const elVel = document.getElementById('vel');
+        const elAcc = document.getElementById('acc');
+        const elPos = document.getElementById('pos');
+        const elFMax = document.getElementById('fMaxDisp');
+        const elFK = document.getElementById('fKDisp');
+        const elMotion = document.getElementById('motion');
+        const btnStart = document.getElementById('btnStart');
+        const btnPauseResume = document.getElementById('btnPauseResume');
+        const btnReset = document.getElementById('btnReset');
+
+        let state = 'idle';
+        let t = 0;
+        let lastTs = null;
+        let raf = null;
+
+        function mOf() { return Number(inputM.value); }
+        function muSOf() { return Number(inputMuS.value); }
+        function muOf() { return Number(inputMu.value); }
+        function kOf() { return Number(inputK.value); }
+        function speedOf() { return Number(inputSpeed.value); }
+        function fMaxOf() { return muSOf() * mOf() * g; }
+        function fKOf() { return muOf() * mOf() * g; }
+        function tStarOf() { return fMaxOf() / kOf(); }
+        function FOf(time) { return kOf() * time; }
+
+        // 闭式解：t* 前静止，t* 后匀加速（F 增大 → a 增大）
+        function fOf(time) {
+            const tStar = tStarOf();
+            return time < tStar - 1e-9 ? FOf(time) : fKOf();
+        }
+        function aOf(time) {
+            const tStar = tStarOf();
+            return time < tStar - 1e-9 ? 0 : (FOf(time) - fKOf()) / mOf();
+        }
+        function vOf(time) {
+            const tStar = tStarOf();
+            if (time < tStar - 1e-9) return 0;
+            const k = kOf(), m = mOf(), fK = fKOf();
+            return (k / (2 * m)) * (time * time - tStar * tStar) - (fK / m) * (time - tStar);
+        }
+        function xOf(time) {
+            const tStar = tStarOf();
+            if (time < tStar - 1e-9) return 0;
+            const k = kOf(), m = mOf(), fK = fKOf();
+            return (k / (6 * m)) * time * time * time
+                 - (k * tStar * tStar / (2 * m)) * time
+                 + (k * tStar * tStar * tStar / (3 * m))
+                 - (fK / (2 * m)) * (time - tStar) * (time - tStar);
+        }
+        // 结束时刻：x(t) 达到 X_MAX（对 t 二分求根）
+        function exitTimeOf() {
+            const tStar = tStarOf();
+            let lo = tStar, hi = tStar + 120;
+            if (xOf(hi) < X_MAX) return hi;
+            for (let i = 0; i < 60; i++) {
+                const mid = (lo + hi) / 2;
+                if (xOf(mid) < X_MAX) lo = mid; else hi = mid;
+            }
+            return hi;
+        }
+        function niceStep(maxValue) {
+            if (!isFinite(maxValue) || maxValue <= 0) return 1;
+            const rawStep = maxValue / 5;
+            const magnitude = Math.pow(10, Math.floor(Math.log10(rawStep)));
+            const normalized = rawStep / magnitude;
+            const factor = normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10;
+            return factor * magnitude;
+        }
+        function tickDecimals(step) {
+            if (step >= 1) return 0;
+            return Math.min(6, Math.ceil(-Math.log10(step) + 1e-9));
+        }
+        function niceCeil(value) {
+            if (!isFinite(value) || value <= 0) return 1;
+            const magnitude = Math.pow(10, Math.floor(Math.log10(value)));
+            const normalized = value / magnitude;
+            const factor = normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10;
+            return factor * magnitude;
+        }
+
+        // ========== 主场景 ==========
+        function sceneGeometry() {
+            const plotL = 70, plotR = sceneView.width - 46;
+            const groundY = Math.round(sceneView.height * 2 / 3);
+            const pix = (plotR - plotL) / X_MAX;
+            const xToScreen = x => plotL + x * pix;
+            return { plotL, plotR, groundY, pix, xToScreen };
+        }
+
+        function drawArrowH(fromX, y, dx, color, width) {
+            if (Math.abs(dx) < 2) return null;
+            const sign = Math.sign(dx);
+            const tipX = fromX + dx;
+            sctx.strokeStyle = color;
+            sctx.lineWidth = width || 3;
+            sctx.beginPath();
+            sctx.moveTo(fromX, y);
+            sctx.lineTo(tipX, y);
+            sctx.stroke();
+            sctx.fillStyle = color;
+            sctx.beginPath();
+            sctx.moveTo(tipX + sign * 5, y);
+            sctx.lineTo(tipX - sign * 7, y - 5);
+            sctx.lineTo(tipX - sign * 7, y + 5);
+            sctx.closePath();
+            sctx.fill();
+            return { x: tipX, y: y };
+        }
+
+        function drawScene() {
+            const gm = sceneGeometry();
+            const w = sceneView.width, h = sceneView.height;
+            sctx.fillStyle = '#ffffff';
+            sctx.fillRect(0, 0, w, h);
+
+            // 方向说明
+            sctx.fillStyle = '#6b7280';
+            sctx.font = '12px system-ui, sans-serif';
+            sctx.textAlign = 'left';
+            sctx.fillText('F 向右 · 摩擦力与运动方向相反', 18, 22);
+
+            // 地面
+            sctx.strokeStyle = '#94a3b8';
+            sctx.lineWidth = 2;
+            sctx.beginPath();
+            sctx.moveTo(30, gm.groundY);
+            sctx.lineTo(w - 30, gm.groundY);
+            sctx.stroke();
+            sctx.strokeStyle = '#cbd5e1';
+            sctx.lineWidth = 1;
+            sctx.beginPath();
+            for (let x = 40; x < w - 30; x += 16) {
+                sctx.moveTo(x, gm.groundY);
+                sctx.lineTo(x - 8, gm.groundY + 8);
+            }
+            sctx.stroke();
+
+            // 米刻度（0–20 m）
+            sctx.font = '11px system-ui, sans-serif';
+            sctx.textAlign = 'center';
+            for (let m = 0; m <= X_MAX; m += 2) {
+                const px = gm.xToScreen(m);
+                sctx.strokeStyle = '#94a3b8';
+                sctx.beginPath();
+                sctx.moveTo(px, gm.groundY);
+                sctx.lineTo(px, gm.groundY + (m % 4 === 0 ? 8 : 5));
+                sctx.stroke();
+                if (m % 4 === 0) {
+                    sctx.fillStyle = m === 0 ? '#1f2937' : '#6b7280';
+                    sctx.fillText(String(m), px, gm.groundY + 22);
+                }
+            }
+            sctx.fillStyle = '#6b7280';
+            sctx.textAlign = 'right';
+            sctx.fillText('x/m', w - 32, gm.groundY + 22);
+
+            // 右边界虚线
+            sctx.save();
+            sctx.strokeStyle = 'rgba(37, 99, 235, 0.35)';
+            sctx.setLineDash([5, 5]);
+            sctx.beginPath();
+            sctx.moveTo(gm.xToScreen(X_MAX), gm.groundY - 60);
+            sctx.lineTo(gm.xToScreen(X_MAX), gm.groundY + 10);
+            sctx.stroke();
+            sctx.restore();
+            sctx.fillStyle = 'rgba(37, 99, 235, 0.8)';
+            sctx.textAlign = 'center';
+            sctx.fillText('20 m', gm.xToScreen(X_MAX) - 20, gm.groundY - 66);
+
+            // 物块
+            const blockS = 46;
+            const bx = gm.xToScreen(xOf(t));
+            const by = gm.groundY - blockS / 2;
+            const grad = sctx.createLinearGradient(0, by - blockS / 2, 0, by + blockS / 2);
+            grad.addColorStop(0, '#93c5fd');
+            grad.addColorStop(1, '#2563eb');
+            sctx.fillStyle = grad;
+            sctx.fillRect(bx - blockS / 2, by - blockS / 2, blockS, blockS);
+            sctx.strokeStyle = '#1d4ed8';
+            sctx.lineWidth = 2;
+            sctx.strokeRect(bx - blockS / 2, by - blockS / 2, blockS, blockS);
+
+            // 接触面示意（物块下方短斜线）
+            sctx.strokeStyle = '#64748b';
+            sctx.lineWidth = 1.5;
+            sctx.beginPath();
+            for (let x = bx - blockS / 2 + 4; x < bx + blockS / 2 - 2; x += 8) {
+                sctx.moveTo(x + 6, gm.groundY);
+                sctx.lineTo(x, gm.groundY + 5);
+            }
+            sctx.stroke();
+
+            // 拉力箭头（右）与摩擦力箭头（左）
+            const F = FOf(t), f = fOf(t), v = vOf(t);
+            const fLen = 16 + Math.min(f * 5, 100);
+            const tipF = drawArrowH(bx + blockS / 2, by, 16 + Math.min(F * 5, 120), '#dc2626');
+            const tipfric = drawArrowH(bx - blockS / 2, by, -fLen, '#ea580c');
+            sctx.font = 'bold 12px system-ui, sans-serif';
+            sctx.textAlign = 'center';
+            if (tipF) {
+                sctx.fillStyle = '#dc2626';
+                sctx.fillText('F = ' + F.toFixed(1) + ' N', tipF.x + 4, by - 14);
+            } else {
+                sctx.fillStyle = '#dc2626';
+                sctx.fillText('F = 0', bx + blockS / 2 + 34, by - 14);
+            }
+            if (tipfric) {
+                sctx.fillStyle = '#ea580c';
+                sctx.fillText('f = ' + f.toFixed(1) + ' N', tipfric.x - 4, by - 14);
+            } else {
+                sctx.fillStyle = '#ea580c';
+                sctx.fillText('f = 0', bx - blockS / 2 - 34, by - 14);
+            }
+
+            // 速度箭头（物块上方）
+            if (v > 0.05) {
+                const vTip = drawArrowH(bx, by - blockS / 2 - 18, 16 + Math.min(v * 8, 100), '#2563eb', 3.5);
+                sctx.fillStyle = '#2563eb';
+                sctx.font = 'bold 12px system-ui, sans-serif';
+                if (vTip) sctx.fillText('v = ' + v.toFixed(2) + ' m/s', vTip.x + 6, vTip.y + 4);
+                // 滑动标记
+                sctx.fillStyle = '#6b7280';
+                sctx.font = '11px system-ui, sans-serif';
+                sctx.fillText('滑动中', bx, gm.groundY + 36);
+            }
+
+            // 临界闪烁提示
+            const tStar = tStarOf();
+            if (t >= tStar && t < tStar + 1.0 && state !== 'idle') {
+                const alpha = 1 - (t - tStar) / 1.0;
+                sctx.fillStyle = 'rgba(234, 88, 12, ' + (alpha * 0.9).toFixed(3) + ')';
+                sctx.font = 'bold 20px system-ui, sans-serif';
+                sctx.textAlign = 'center';
+                sctx.fillText('发生突变！f：' + fMaxOf().toFixed(1) + ' N → ' + fKOf().toFixed(1) + ' N', w / 2, 58);
+            }
+        }
+
+        // ========== 图表 ==========
+        function drawChartFrame(view, ctx, tEnd, yMax, yLabel, refLines) {
+            const padL = 48, padR = 16, padT = 16, padB = 30;
+            const plotW = view.width - padL - padR;
+            const plotH = view.height - padT - padB;
+            const xOfTime = time => padL + (tEnd > 0 ? time / tEnd : 0) * plotW;
+            const yOfVal = val => {
+                const p = padT + plotH - val / yMax * plotH;
+                return Math.max(padT, Math.min(padT + plotH, p));
+            };
+            ctx.clearRect(0, 0, view.width, view.height);
+
+            const yStep = niceStep(yMax);
+            const yDecimals = tickDecimals(yStep);
+            ctx.font = '10px system-ui, sans-serif';
+            for (let val = 0; val <= yMax + yStep * 0.001; val += yStep) {
+                const py = yOfVal(val);
+                ctx.strokeStyle = '#e5e7eb';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(padL, py);
+                ctx.lineTo(padL + plotW, py);
+                ctx.stroke();
+                ctx.fillStyle = '#6b7280';
+                ctx.textAlign = 'right';
+                ctx.fillText(val.toFixed(yDecimals), padL - 6, py + 3);
+            }
+
+            const tStep = niceStep(tEnd);
+            const tDecimals = tickDecimals(tStep);
+            ctx.textAlign = 'center';
+            for (let tt = 0; tt <= tEnd + tStep * 0.001; tt += tStep) {
+                const px = xOfTime(tt);
+                ctx.strokeStyle = '#e5e7eb';
+                ctx.beginPath();
+                ctx.moveTo(px, padT);
+                ctx.lineTo(px, padT + plotH);
+                ctx.stroke();
+                ctx.fillStyle = '#6b7280';
+                ctx.fillText(tt.toFixed(tDecimals), px, padT + plotH + 15);
+            }
+
+            ctx.strokeStyle = '#94a3b8';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(padL, padT);
+            ctx.lineTo(padL, padT + plotH);
+            ctx.lineTo(padL + plotW, padT + plotH);
+            ctx.stroke();
+
+            ctx.fillStyle = '#6b7280';
+            ctx.textAlign = 'left';
+            ctx.fillText(yLabel, padL + 6, padT + 12);
+            ctx.textAlign = 'right';
+            ctx.fillText('t/s', padL + plotW, view.height - 8);
+
+            (refLines || []).forEach(rl => {
+                const py = yOfVal(rl.v);
+                ctx.save();
+                ctx.strokeStyle = rl.color || COLOR_REF;
+                ctx.lineWidth = 1.5;
+                ctx.setLineDash([6, 5]);
+                ctx.beginPath();
+                ctx.moveTo(padL, py);
+                ctx.lineTo(padL + plotW, py);
+                ctx.stroke();
+                ctx.restore();
+                if (rl.label) {
+                    ctx.fillStyle = rl.color || COLOR_REF;
+                    ctx.textAlign = 'right';
+                    ctx.fillText(rl.label, padL + plotW - 4, py - 5);
+                }
+            });
+
+            return { padL, padR, padT, padB, plotW, plotH, xOfTime, yOfVal };
+        }
+
+        function drawFtChart() {
+            const tEnd = exitTimeOf();
+            const yMax = niceCeil(Math.max(FOf(tEnd), fMaxOf()) * 1.08);
+            const frame = drawChartFrame(ftView, ftCtx, tEnd, yMax, 'F、f (N)', [
+                { v: fMaxOf(), color: '#9ca3af', label: 'μs·mg' },
+            ]);
+            const cur = Math.min(t, tEnd);
+
+            // 临界竖虚线
+            const tStar = tStarOf();
+            if (tStar > 0 && tStar < tEnd) {
+                const pxStar = frame.xOfTime(tStar);
+                ftCtx.save();
+                ftCtx.strokeStyle = 'rgba(234, 88, 12, 0.5)';
+                ftCtx.setLineDash([4, 4]);
+                ftCtx.beginPath();
+                ftCtx.moveTo(pxStar, frame.padT);
+                ftCtx.lineTo(pxStar, frame.padT + frame.plotH);
+                ftCtx.stroke();
+                ftCtx.restore();
+                ftCtx.fillStyle = '#ea580c';
+                ftCtx.font = '10px system-ui, sans-serif';
+                ftCtx.textAlign = 'center';
+                ftCtx.fillText('t*=' + tStar.toFixed(2) + 's', pxStar, frame.padT - 4);
+            }
+
+            // 拉力 F 斜线
+            ftCtx.strokeStyle = COLOR_F;
+            ftCtx.lineWidth = 2.5;
+            ftCtx.lineJoin = 'round';
+            ftCtx.beginPath();
+            ftCtx.moveTo(frame.xOfTime(0), frame.yOfVal(0));
+            ftCtx.lineTo(frame.xOfTime(cur), frame.yOfVal(FOf(cur)));
+            ftCtx.stroke();
+
+            // 摩擦力 f：重合段 → 突降台阶 → 水平段
+            ftCtx.strokeStyle = COLOR_FRIC;
+            ftCtx.lineWidth = 3;
+            ftCtx.beginPath();
+            ftCtx.moveTo(frame.xOfTime(0), frame.yOfVal(0));
+            if (cur <= tStar) {
+                ftCtx.lineTo(frame.xOfTime(cur), frame.yOfVal(FOf(cur)));
+            } else {
+                ftCtx.lineTo(frame.xOfTime(tStar), frame.yOfVal(fMaxOf()));
+                ftCtx.lineTo(frame.xOfTime(tStar), frame.yOfVal(fKOf()));
+                ftCtx.lineTo(frame.xOfTime(cur), frame.yOfVal(fKOf()));
+            }
+            ftCtx.stroke();
+
+            // 台阶 Δf 标注
+            if (t > tStar + 0.05 && fMaxOf() - fKOf() > 1e-9) {
+                const yHi = frame.yOfVal(fMaxOf()), yLo = frame.yOfVal(fKOf());
+                const pxStar = frame.xOfTime(tStar);
+                ftCtx.fillStyle = '#ea580c';
+                ftCtx.font = '10px system-ui, sans-serif';
+                ftCtx.textAlign = 'left';
+                ftCtx.fillText('Δf=' + (fMaxOf() - fKOf()).toFixed(1) + ' N', pxStar + 6, (yHi + yLo) / 2 + 3);
+            }
+
+            // 当前点
+            ftCtx.fillStyle = COLOR_F;
+            ftCtx.beginPath();
+            ftCtx.arc(frame.xOfTime(cur), frame.yOfVal(FOf(cur)), 4, 0, Math.PI * 2);
+            ftCtx.fill();
+            ftCtx.fillStyle = COLOR_FRIC;
+            ftCtx.beginPath();
+            ftCtx.arc(frame.xOfTime(cur), frame.yOfVal(fOf(cur)), 4, 0, Math.PI * 2);
+            ftCtx.fill();
+        }
+
+        function drawVtChart() {
+            const tEnd = exitTimeOf();
+            const yMax = niceCeil(Math.max(vOf(tEnd), 0.5) * 1.08);
+            const frame = drawChartFrame(vtView, vtCtx, tEnd, yMax, 'v (m/s)', []);
+            const cur = Math.min(t, tEnd);
+            const tStar = tStarOf();
+
+            if (tStar > 0 && tStar < tEnd) {
+                const pxStar = frame.xOfTime(tStar);
+                vtCtx.save();
+                vtCtx.strokeStyle = 'rgba(234, 88, 12, 0.5)';
+                vtCtx.setLineDash([4, 4]);
+                vtCtx.beginPath();
+                vtCtx.moveTo(pxStar, frame.padT);
+                vtCtx.lineTo(pxStar, frame.padT + frame.plotH);
+                vtCtx.stroke();
+                vtCtx.restore();
+            }
+
+            vtCtx.strokeStyle = COLOR_F;
+            vtCtx.lineWidth = 2.5;
+            vtCtx.lineJoin = 'round';
+            vtCtx.beginPath();
+            const samples = 120;
+            for (let i = 0; i <= samples; i++) {
+                const time = (i / samples) * cur;
+                const px = frame.xOfTime(time);
+                const py = frame.yOfVal(vOf(time));
+                if (i === 0) vtCtx.moveTo(px, py);
+                else vtCtx.lineTo(px, py);
+            }
+            vtCtx.stroke();
+
+            vtCtx.fillStyle = COLOR_F;
+            vtCtx.beginPath();
+            vtCtx.arc(frame.xOfTime(cur), frame.yOfVal(vOf(cur)), 4, 0, Math.PI * 2);
+            vtCtx.fill();
+            vtCtx.font = '10px system-ui, sans-serif';
+            const valText = vOf(cur).toFixed(2) + ' m/s';
+            let lx = frame.xOfTime(cur) + 7;
+            if (lx > frame.padL + frame.plotW - 56) lx = frame.xOfTime(cur) - 60;
+            vtCtx.textAlign = 'left';
+            vtCtx.fillStyle = '#1f2937';
+            vtCtx.fillText(valText, lx, frame.yOfVal(vOf(cur)) - 6);
+        }
+
+        function drawCharts() {
+            drawFtChart();
+            drawVtChart();
+        }
+
+        function renderAll() {
+            drawScene();
+            drawCharts();
+        }
+
+        // ========== 数值面板 ==========
+        function updateReadouts() {
+            const tStar = tStarOf();
+            elTime.textContent = t.toFixed(2) + ' s';
+            elPull.textContent = FOf(t).toFixed(2) + ' N';
+            elFric.textContent = fOf(t).toFixed(2) + ' N';
+            elVel.textContent = vOf(t).toFixed(2) + ' m/s';
+            elAcc.textContent = aOf(t).toFixed(2) + ' m/s²';
+            elPos.textContent = xOf(t).toFixed(2) + ' m';
+            elFMax.textContent = fMaxOf().toFixed(1) + ' N';
+            elFK.textContent = fKOf().toFixed(1) + ' N';
+            elType.style.color = '';
+            elType.style.background = '';
+            if (state === 'idle' && t === 0) {
+                elType.textContent = '—';
+                elMotion.textContent = '待开始';
+            } else if (state === 'ended') {
+                elType.textContent = '滑动摩擦';
+                elMotion.textContent = '已滑出边界';
+            } else if (Math.abs(t - tStar) < 0.15 && t >= tStar - 0.15) {
+                elType.textContent = '最大静摩擦';
+                elType.style.color = '#ea580c';
+                elType.style.background = '#fef3c7';
+                elMotion.textContent = '即将滑动';
+            } else if (t < tStar - 1e-9) {
+                elType.textContent = '静摩擦';
+                elMotion.textContent = '静止（静摩擦锁定）';
+            } else {
+                elType.textContent = '滑动摩擦';
+                elMotion.textContent = '加速滑动';
+            }
+            sceneCanvas.setAttribute('aria-label',
+                '静摩擦与滑动摩擦转化演示：时间' + t.toFixed(2) + '秒，拉力' + FOf(t).toFixed(1) + '牛，摩擦力' + fOf(t).toFixed(1) + '牛，速度' + vOf(t).toFixed(2) + '米每秒，' + elMotion.textContent);
+        }
+
+        function updateParameterLabels() {
+            mVal.textContent = mOf().toFixed(1) + ' kg';
+            muSVal.textContent = muSOf().toFixed(2);
+            muVal.textContent = muOf().toFixed(2);
+            kVal.textContent = kOf().toFixed(0) + ' N/s';
+        }
+
+        function setupCanvas(canvas, view, aspect) {
+            const cssWidth = canvas.clientWidth || 400;
+            const cssHeight = cssWidth / aspect;
+            const devicePixelRatio = window.devicePixelRatio || 1;
+            canvas.width = Math.round(cssWidth * devicePixelRatio);
+            canvas.height = Math.round(cssHeight * devicePixelRatio);
+            canvas.getContext('2d').setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+            view.width = cssWidth;
+            view.height = cssHeight;
+        }
+        function resizeAll() {
+            setupCanvas(sceneCanvas, sceneView, BASE_WIDTH / BASE_HEIGHT);
+            setupCanvas(ftCanvas, ftView, CHART_ASPECT);
+            setupCanvas(vtCanvas, vtView, CHART_ASPECT);
+            renderAll();
+        }
+
+        function setParamLocks(disabled) {
+            inputM.disabled = disabled;
+            inputMuS.disabled = disabled;
+            inputMu.disabled = disabled;
+            inputK.disabled = disabled;
+        }
+
+        function endRun() {
+            state = 'ended';
+            btnStart.disabled = false;
+            btnStart.textContent = '重新开始';
+            btnPauseResume.disabled = true;
+            btnPauseResume.textContent = '暂停';
+            setParamLocks(false);
+        }
+
+        function frame(timestamp) {
+            if (state !== 'running') return;
+            if (lastTs === null) lastTs = timestamp;
+            const dt = Math.min((timestamp - lastTs) / 1000, 0.05) * speedOf();
+            lastTs = timestamp;
+            const tNew = t + dt;
+            const tEnd = exitTimeOf();
+            if (tNew >= tEnd) {
+                t = tEnd;
+                renderAll();
+                updateReadouts();
+                endRun();
+                return;
+            }
+            t = tNew;
+            renderAll();
+            updateReadouts();
+            raf = requestAnimationFrame(frame);
+        }
+
+        function start() {
+            if (state === 'running' || state === 'paused') return;
+            if (raf) cancelAnimationFrame(raf);
+            t = 0;
+            lastTs = null;
+            state = 'running';
+            btnStart.disabled = true;
+            btnStart.textContent = '运行中…';
+            btnPauseResume.disabled = false;
+            btnPauseResume.textContent = '暂停';
+            setParamLocks(true);
+            updateReadouts();
+            renderAll();
+            raf = requestAnimationFrame(frame);
+        }
+
+        function pause() {
+            if (state !== 'running') return;
+            state = 'paused';
+            if (raf) cancelAnimationFrame(raf);
+            btnStart.disabled = false;
+            btnStart.textContent = '重新开始';
+            btnPauseResume.textContent = '继续';
+        }
+
+        function resume() {
+            if (state !== 'paused') return;
+            state = 'running';
+            lastTs = null;
+            btnStart.disabled = true;
+            btnStart.textContent = '运行中…';
+            btnPauseResume.textContent = '暂停';
+            raf = requestAnimationFrame(frame);
+        }
+
+        function reset() {
+            if (raf) cancelAnimationFrame(raf);
+            state = 'idle';
+            t = 0;
+            lastTs = null;
+            setParamLocks(false);
+            btnStart.disabled = false;
+            btnStart.textContent = '开始';
+            btnPauseResume.disabled = true;
+            btnPauseResume.textContent = '暂停';
+            updateParameterLabels();
+            updateReadouts();
+            renderAll();
+        }
+
+        inputM.addEventListener('input', () => {
+            updateParameterLabels();
+            if (state === 'idle' || state === 'ended') reset();
+        });
+        inputMuS.addEventListener('input', () => {
+            // 联动钳制：μ 不超过 μs
+            if (muOf() > muSOf()) inputMu.value = muSOf();
+            updateParameterLabels();
+            if (state === 'idle' || state === 'ended') reset();
+        });
+        inputMu.addEventListener('input', () => {
+            if (muOf() > muSOf()) inputMu.value = muSOf();
+            updateParameterLabels();
+            if (state === 'idle' || state === 'ended') reset();
+        });
+        inputK.addEventListener('input', () => {
+            updateParameterLabels();
+            if (state === 'idle' || state === 'ended') reset();
+        });
+        inputSpeed.addEventListener('input', updateParameterLabels);
+
+        btnStart.addEventListener('click', start);
+        btnPauseResume.addEventListener('click', () => {
+            if (state === 'running') pause();
+            else if (state === 'paused') resume();
+        });
+        btnReset.addEventListener('click', reset);
+        window.addEventListener('keydown', (e) => {
+            const ae = document.activeElement;
+            if (ae && (ae.tagName === 'INPUT' || ae.tagName === 'BUTTON' || ae.tagName === 'SELECT' || ae.tagName === 'TEXTAREA' || ae.isContentEditable)) return;
+            if (e.code === 'Space') {
+                e.preventDefault();
+                if (state === 'running') pause();
+                else if (state === 'paused') resume();
+                else start();
+            } else if (e.key === 'r' || e.key === 'R') {
+                reset();
+            }
+        });
+        window.addEventListener('resize', resizeAll);
+        if (typeof ResizeObserver !== 'undefined') {
+            const observer = new ResizeObserver(resizeAll);
+            observer.observe(sceneCanvas);
+            observer.observe(ftCanvas);
+            observer.observe(vtCanvas);
+        }
+
+        updateParameterLabels();
+        resizeAll();
+        reset();
+    </script>
+</body>
+</html>
