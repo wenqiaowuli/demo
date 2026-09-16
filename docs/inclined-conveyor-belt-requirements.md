@@ -1,6 +1,6 @@
 # 倾斜传送带演示 — 需求文件
 
-> 版本：v1.5（已确认待实施）
+> 版本：v1.5（已实施）
 > 参照模板：`horizontal-linear-motion.html` / `vertical-throw-demo.html`（系列标准布局）
 
 ## 变更记录
