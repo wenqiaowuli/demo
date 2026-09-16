@@ -230,6 +230,12 @@
                 <button id="btnStart" type="button">开始</button>
             <button id="btnPause" type="button" disabled>暂停</button>
             <button id="btnReset" type="button">重置</button>
+            <select id="speed" title="播放速度" aria-label="播放速度倍率">
+                <option value="0.5" selected>0.5×</option>
+                <option value="1">1×</option>
+                <option value="2">2×</option>
+                <option value="4">4×</option>
+            </select>
             </div>
         </div>
         <div class="charts-row">
@@ -313,6 +319,7 @@
         const btnStart = document.getElementById('btnStart');
         const btnPause = document.getElementById('btnPause');
         const btnReset = document.getElementById('btnReset');
+        const inputSpeed = document.getElementById('speed');
         const vtCanvas = document.getElementById('vtChart');
         const vtCtx = vtCanvas.getContext('2d');
         const stCanvas = document.getElementById('stChart');
@@ -334,6 +341,7 @@
         const view = { width: BASE_WIDTH, height: BASE_HEIGHT };
         const vtView = { width: 400, height: 180 };
         const stView = { width: 400, height: 180 };
+        function speedOf() { return Number(inputSpeed.value); }
         let state = STATE.IDLE;
         let t = 0;
         let lastTs = null;
@@ -775,7 +783,7 @@
         function frame(timestamp) {
             if (state !== STATE.RUNNING) return;
             if (lastTs === null) lastTs = timestamp;
-            const dt = Math.min((timestamp - lastTs) / 1000, 0.05);
+            const dt = Math.min((timestamp - lastTs) / 1000, 0.05) * speedOf();
             lastTs = timestamp;
             t = Math.min(t + dt, tEnd());
             const ended = t >= tEnd();
