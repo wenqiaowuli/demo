@@ -79,57 +79,33 @@
     <div class="container">
         <div class="header">
             <h1>PhySim Lab — 物理模拟演示</h1>
-            <p>高中物理交互式动画实验 · 调节参数，直观理解物理规律</p>
+            <p>高中物理交互式动画实验 · 按教材章节顺序排列 · 调节参数，直观理解物理规律</p>
         </div>
 
         <div class="grid">
             <div class="card">
                 <div class="icon-row">
-                    <div class="icon-circle" style="background:rgba(255,107,107,0.2);">&#x1F3AF;</div>
+                    <div class="icon-circle" style="background:rgba(120,220,160,0.2);">&#x2194;</div>
                     <div>
-                        <h3>动量守恒定律 — 两球碰撞演示</h3>
-                        <span class="badge">力学 · 中级</span>
-                    </div>
-                </div>
-                <p>调节两球质量与初速度，观察完全弹性碰撞与完全非弹性碰撞过程中的动量守恒与能量变化。实时显示动量条、动能对比和碰撞前后数据。</p>
-                <a href="momentum-collision.html" class="btn">打开演示</a>
-            </div>
-
-            <div class="card">
-                <div class="icon-row">
-                    <div class="icon-circle" style="background:rgba(78,205,196,0.2);">&#x1F4A8;</div>
-                    <div>
-                        <h3>平抛运动演示</h3>
+                        <h3>水平直线运动演示</h3>
                         <span class="badge">力学 · 初级</span>
                     </div>
                 </div>
-                <p>展示平抛运动在水平方向与竖直方向的运动分解，直观理解平抛轨迹的形成规律，可调节初速度和高度观察轨迹变化。</p>
-                <a href="projectile-motion.html" class="btn">打开演示</a>
+                <p>匀变速直线运动演示：单一加速度滑条切换加速、匀速、减速，支持正负初速度与减速反向的往返运动。实时绘制 v-t 与 s-t 图像，标注速度为零时刻与转向点位移等特征量。</p>
+                <a href="horizontal-linear-motion.html" class="btn">打开演示</a>
             </div>
-
             <div class="card">
                 <div class="icon-row">
-                    <div class="icon-circle" style="background:rgba(102,170,255,0.2);">&#x1F3C0;</div>
+                    <div class="icon-circle" style="background:rgba(251,146,60,0.2);">&#x1F3C3;</div>
                     <div>
-                        <h3>斜抛运动演示</h3>
+                        <h3>追及相遇模型演示</h3>
                         <span class="badge">力学 · 初级</span>
                     </div>
                 </div>
-                <p>展示斜抛运动水平方向匀速直线运动与竖直方向竖直上抛运动的合成。可调节初速度与抛射角，观察射程、最大高度与速度矢量的变化，理解 45° 抛射射程最大的规律。</p>
-                <a href="oblique-throw-motion.html" class="btn">打开演示</a>
+                <p>匀速直线运动下的追及与相遇：同向追及、相向相遇、背向远离，支持六种典型场景预设与出发时间差。动画、v-t 图、x-t 图、公式与实时数据五区联动，自动判定能否追上/相遇并给出时刻与位置，含同速临界与无解原因说明，可拖动时间轴回看任意时刻。</p>
+                <a href="chasing-meeting-model.html" class="btn">打开演示</a>
             </div>
 
-            <div class="card">
-                <div class="icon-row">
-                    <div class="icon-circle" style="background:rgba(255,217,61,0.2);">&#x2B06;</div>
-                    <div>
-                        <h3>竖直上抛运动演示</h3>
-                        <span class="badge">力学 · 初级</span>
-                    </div>
-                </div>
-                <p>模拟物体竖直上抛的完整过程，展示位移、速度随时间的变化规律，理解上升与下落阶段的对称性及加速度的恒定作用。</p>
-                <a href="vertical-throw-demo.html" class="btn">打开演示</a>
-            </div>
 
             <div class="card">
                 <div class="icon-row">
@@ -143,65 +119,19 @@
                 <a href="free-fall-motion.html" class="btn">打开演示</a>
             </div>
 
-            <div class="card">
-                <div class="icon-row">
-                    <div class="icon-circle" style="background:rgba(255,140,200,0.2);">&#x1F6DF;</div>
-                    <div>
-                        <h3>超重和失重演示</h3>
-                        <span class="badge">力学 · 中级</span>
-                    </div>
-                </div>
-                <p>电梯往返全程自动演示：加速上升、匀速、减速上升、停靠、加速下降、匀速、减速下降各阶段中体重计视重的变化；同步绘制 v-t 与视重 F-t 图像（带实重 G=mg 参考线），直观呈现超重与失重取决于加速度方向而非速度方向，a=g 时完全失重。</p>
-                <a href="apparent-weight-demo.html" class="btn">打开演示</a>
-            </div>
 
             <div class="card">
                 <div class="icon-row">
-                    <div class="icon-circle" style="background:rgba(0,210,255,0.2);">&#x1F6E1;</div>
+                    <div class="icon-circle" style="background:rgba(255,217,61,0.2);">&#x2B06;</div>
                     <div>
-                        <h3>水平传送带演示</h3>
-                        <span class="badge">力学 · 中级</span>
+                        <h3>竖直上抛运动演示</h3>
+                        <span class="badge">力学 · 初级</span>
                     </div>
                 </div>
-                <p>物体在水平传送带上的运动分析，研究摩擦力对物体速度的影响，观察物体与传送带达到共速前后的动力学过程。</p>
-                <a href="horizontal-conveyor-belt.html" class="btn">打开演示</a>
+                <p>模拟物体竖直上抛的完整过程，展示位移、速度随时间的变化规律，理解上升与下落阶段的对称性及加速度的恒定作用。</p>
+                <a href="vertical-throw-demo.html" class="btn">打开演示</a>
             </div>
 
-            <div class="card">
-                <div class="icon-row">
-                    <div class="icon-circle" style="background:rgba(255,160,100,0.2);">&#x1F4C9;</div>
-                    <div>
-                        <h3>倾斜传送带演示</h3>
-                        <span class="badge">力学 · 中级</span>
-                    </div>
-                </div>
-                <p>物体在倾斜传送带上的受力与运动状态分析，研究重力分量、摩擦力对物体运动的影响，观察不同摩擦因数下的运动差异。</p>
-                <a href="inclined-conveyor-belt.html" class="btn">打开演示</a>
-            </div>
-
-            <div class="card">
-                <div class="icon-row">
-                    <div class="icon-circle" style="background:rgba(160,255,140,0.2);">&#x1FAA4;</div>
-                    <div>
-                        <h3>板块运动演示（完整版）</h3>
-                        <span class="badge">力学 · 高级</span>
-                    </div>
-                </div>
-                <p>展示物块 A 在板块 B 上的相对滑动、共速、滑出及摩擦生热等完整过程。可调节 B 的初速度和动摩擦因数，实时显示 v-t 图、相对位移、摩擦生热等数据，支持物块滑出后继续运动。</p>
-                <a href="block-plate.html" class="btn">打开演示</a>
-            </div>
-
-            <div class="card">
-                <div class="icon-row">
-                    <div class="icon-circle" style="background:rgba(56,189,248,0.2);">&#x1F39B;&#xFE0F;</div>
-                    <div>
-                        <h3>弹簧 vs 绳子 · 哪个球先落地？</h3>
-                        <span class="badge">力学 · 中级</span>
-                    </div>
-                </div>
-                <p>对比弹性约束与不可伸长约束：弹簧下挂的球因形变不能突变而延迟下落，绳下挂的球剪断瞬间立即自由落体。结论：B 球先落地。可调节高度 h、刚度 k、质量 m、收缩时间 τ 与重力 g。</p>
-                <a href="spring-vs-rope-demo.html" class="btn">打开演示</a>
-            </div>
 
             <div class="card">
                 <div class="icon-row">
@@ -215,6 +145,7 @@
                 <a href="force-composition-demo.html" class="btn">打开演示</a>
             </div>
 
+
             <div class="card">
                 <div class="icon-row">
                     <div class="icon-circle" style="background:rgba(102,170,255,0.2);">&#x2696;</div>
@@ -227,29 +158,111 @@
                 <a href="force-equilibrium-demo.html" class="btn">打开演示</a>
             </div>
 
-            <div class="card">
-                <div class="icon-row">
-                    <div class="icon-circle" style="background:rgba(251,146,60,0.2);">&#x1F3C3;</div>
-                    <div>
-                        <h3>追及相遇模型演示</h3>
-                        <span class="badge">力学 · 初级</span>
-                    </div>
-                </div>
-                <p>匀速直线运动下的追及与相遇：同向追及、相向相遇、背向远离，支持六种典型场景预设与出发时间差。动画、v-t 图、x-t 图、公式与实时数据五区联动，自动判定能否追上/相遇并给出时刻与位置，含同速临界与无解原因说明，可拖动时间轴回看任意时刻。</p>
-                <a href="chasing-meeting-model.html" class="btn">打开演示</a>
-            </div>
 
             <div class="card">
                 <div class="icon-row">
-                    <div class="icon-circle" style="background:rgba(120,220,160,0.2);">&#x2194;</div>
+                    <div class="icon-circle" style="background:rgba(255,140,200,0.2);">&#x1F6DF;</div>
                     <div>
-                        <h3>水平直线运动演示</h3>
+                        <h3>超重和失重演示</h3>
+                        <span class="badge">力学 · 中级</span>
+                    </div>
+                </div>
+                <p>电梯往返全程自动演示：加速上升、匀速、减速上升、停靠、加速下降、匀速、减速下降各阶段中体重计视重的变化；同步绘制 v-t 与视重 F-t 图像（带实重 G=mg 参考线），直观呈现超重与失重取决于加速度方向而非速度方向，a=g 时完全失重。</p>
+                <a href="apparent-weight-demo.html" class="btn">打开演示</a>
+            </div>
+
+
+            <div class="card">
+                <div class="icon-row">
+                    <div class="icon-circle" style="background:rgba(0,210,255,0.2);">&#x1F6E1;</div>
+                    <div>
+                        <h3>水平传送带演示</h3>
+                        <span class="badge">力学 · 中级</span>
+                    </div>
+                </div>
+                <p>物体在水平传送带上的运动分析，研究摩擦力对物体速度的影响，观察物体与传送带达到共速前后的动力学过程。</p>
+                <a href="horizontal-conveyor-belt.html" class="btn">打开演示</a>
+            </div>
+
+
+            <div class="card">
+                <div class="icon-row">
+                    <div class="icon-circle" style="background:rgba(255,160,100,0.2);">&#x1F4C9;</div>
+                    <div>
+                        <h3>倾斜传送带演示</h3>
+                        <span class="badge">力学 · 中级</span>
+                    </div>
+                </div>
+                <p>物体在倾斜传送带上的受力与运动状态分析，研究重力分量、摩擦力对物体运动的影响，观察不同摩擦因数下的运动差异。</p>
+                <a href="inclined-conveyor-belt.html" class="btn">打开演示</a>
+            </div>
+
+
+            <div class="card">
+                <div class="icon-row">
+                    <div class="icon-circle" style="background:rgba(160,255,140,0.2);">&#x1FAA4;</div>
+                    <div>
+                        <h3>板块运动演示（完整版）</h3>
+                        <span class="badge">力学 · 高级</span>
+                    </div>
+                </div>
+                <p>展示物块 A 在板块 B 上的相对滑动、共速、滑出及摩擦生热等完整过程。可调节 B 的初速度和动摩擦因数，实时显示 v-t 图、相对位移、摩擦生热等数据，支持物块滑出后继续运动。</p>
+                <a href="block-plate.html" class="btn">打开演示</a>
+            </div>
+
+
+            <div class="card">
+                <div class="icon-row">
+                    <div class="icon-circle" style="background:rgba(56,189,248,0.2);">&#x1F39B;&#xFE0F;</div>
+                    <div>
+                        <h3>弹簧 vs 绳子 · 哪个球先落地？</h3>
+                        <span class="badge">力学 · 中级</span>
+                    </div>
+                </div>
+                <p>对比弹性约束与不可伸长约束：弹簧下挂的球因形变不能突变而延迟下落，绳下挂的球剪断瞬间立即自由落体。结论：B 球先落地。可调节高度 h、刚度 k、质量 m、收缩时间 τ 与重力 g。</p>
+                <a href="spring-vs-rope-demo.html" class="btn">打开演示</a>
+            </div>
+
+
+            <div class="card">
+                <div class="icon-row">
+                    <div class="icon-circle" style="background:rgba(78,205,196,0.2);">&#x1F4A8;</div>
+                    <div>
+                        <h3>平抛运动演示</h3>
                         <span class="badge">力学 · 初级</span>
                     </div>
                 </div>
-                <p>匀变速直线运动演示：单一加速度滑条切换加速、匀速、减速，支持正负初速度与减速反向的往返运动。实时绘制 v-t 与 s-t 图像，标注速度为零时刻与转向点位移等特征量。</p>
-                <a href="horizontal-linear-motion.html" class="btn">打开演示</a>
+                <p>展示平抛运动在水平方向与竖直方向的运动分解，直观理解平抛轨迹的形成规律，可调节初速度和高度观察轨迹变化。</p>
+                <a href="projectile-motion.html" class="btn">打开演示</a>
             </div>
+
+
+            <div class="card">
+                <div class="icon-row">
+                    <div class="icon-circle" style="background:rgba(102,170,255,0.2);">&#x1F3C0;</div>
+                    <div>
+                        <h3>斜抛运动演示</h3>
+                        <span class="badge">力学 · 初级</span>
+                    </div>
+                </div>
+                <p>展示斜抛运动水平方向匀速直线运动与竖直方向竖直上抛运动的合成。可调节初速度与抛射角，观察射程、最大高度与速度矢量的变化，理解 45° 抛射射程最大的规律。</p>
+                <a href="oblique-throw-motion.html" class="btn">打开演示</a>
+            </div>
+
+
+            <div class="card">
+                <div class="icon-row">
+                    <div class="icon-circle" style="background:rgba(255,107,107,0.2);">&#x1F3AF;</div>
+                    <div>
+                        <h3>动量守恒定律 — 两球碰撞演示</h3>
+                        <span class="badge">力学 · 中级</span>
+                    </div>
+                </div>
+                <p>调节两球质量与初速度，观察完全弹性碰撞与完全非弹性碰撞过程中的动量守恒与能量变化。实时显示动量条、动能对比和碰撞前后数据。</p>
+                <a href="momentum-collision.html" class="btn">打开演示</a>
+            </div>
+
+
         </div>
 
         <div class="footer">
