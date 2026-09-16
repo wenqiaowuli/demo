@@ -29,7 +29,8 @@
     v10 变更：物块 A 默认初速度 v₀A 由 12 m/s 调整为 10 m/s（范围 2–20 m/s 不变）。
     适用场景：高中物理"板块模型"教学，可调 v₀A、v₀B、m_A、m_B、双动摩擦因数与板长 L，
               实时显示 v-t 图、相对位移、摩擦生热等数据，支持物块滑出后继续运动的情景。
-    风格：与斜抛运动演示网页（oblique-throw-motion.html）统一的深色系列。
+    风格：与竖直上抛运动演示网页（vertical-throw-demo.html）统一的浅色系列。
+    页面布局：画布 → 图表 → 播放控制 → 实时数值 → 参数设定 → 推导与判断（参照竖直上抛运动演示页）。
     -->
     <title>板块运动演示｜高中物理</title>
     <meta name="description" content="高中物理板块模型教学演示：可调 v₀A、v₀B、m_A、m_B、双动摩擦因数及板长，实时显示 v-t 图、共速时刻、相对位移、是否滑出与总摩擦生热。支持反向运动。">
@@ -77,15 +78,18 @@
             .charts-row { grid-template-columns: 1fr; }
         }
         .chart-panel {
-            background: #ffffff;
-            border: 1px solid #e5e7eb;
-            box-shadow: 0 1px 2px rgba(15, 23, 42, .05);
-            border-radius: 10px;
-            padding: 14px 16px;
+            background: transparent;
+            border: none;
+            border-radius: 0;
+            padding: 0;
+        }
+        .chart-panel .group-title {
+            padding: 0 2px;
         }
         .chart-panel canvas {
+            display: block;
+            width: 100%;
             aspect-ratio: 20 / 9;
-            border-width: 2px;
         }
         .group-title {
             font-size: 12px;
@@ -94,14 +98,11 @@
             letter-spacing: 0.5px;
         }
         .control-panel {
-            margin-top: 14px;
+            margin-top: 16px;
             width: 100%;
             display: grid;
-            grid-template-columns: minmax(240px, 1fr) minmax(280px, 1.25fr);
-            gap: 14px;
-        }
-        @media (max-width: 720px) {
-            .control-panel { grid-template-columns: 1fr; }
+            grid-template-columns: 1fr;
+            gap: 0;
         }
         .param-group,
         .data-group {
@@ -110,6 +111,14 @@
             box-shadow: 0 1px 2px rgba(15, 23, 42, .05);
             border-radius: 10px;
             padding: 14px 16px;
+        }
+        .data-group {
+            width: 100%;
+            margin-top: 16px;
+        }
+        input[type=range]:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
         }
         .param-row {
             display: flex;
@@ -134,10 +143,10 @@
         }
         .data-grid {
             display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
+            grid-template-columns: repeat(5, minmax(0, 1fr));
             gap: 9px;
         }
-        @media (max-width: 560px) {
+        @media (max-width: 800px) {
             .data-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         }
         .data-item {
@@ -160,6 +169,7 @@
         }
         .play-bar {
             margin-top: 12px;
+            width: 100%;
             display: flex;
             align-items: center;
             gap: 10px;
@@ -223,17 +233,6 @@
         <h1>板块运动演示</h1>
         <div class="canvas-wrap">
             <canvas id="scene" role="img" aria-label="板块运动演示：物块 A 在板块 B 上相对滑动"></canvas>
-            <div class="play-bar">
-                <button id="btnStart" type="button">开始</button>
-                <button id="btnPause" type="button" disabled>暂停</button>
-                <button id="btnReset" type="button" disabled>重置</button>
-                <select id="ts" title="播放速度" aria-label="播放速度倍率">
-                    <option value="0.5">0.5×</option>
-                    <option value="1" selected>1×</option>
-                    <option value="2">2×</option>
-                    <option value="4">4×</option>
-                </select>
-            </div>
         </div>
         <div class="charts-row">
             <section class="chart-panel">
@@ -245,9 +244,32 @@
                 <canvas id="stChart" role="img" aria-label="物块 A 与板块 B 的位移-时间图像"></canvas>
             </section>
         </div>
-        <section class="formula-card">
-            <div class="group-title">公式与判定</div>
-            <div class="fixed-note">滑动阶段：物块受滑动摩擦 <b>f₁ = μ₁m<sub>A</sub>g</b>（方向与相对运动方向相反），<b>a<sub>A</sub> = μ₁g</b>；板块受 f₁ 的反作用力与地面摩擦 <b>f₂ = μ₂(m<sub>A</sub>+m<sub>B</sub>)g</b>，<b>a<sub>B</sub> = (f₁ − f₂)/m<sub>B</sub></b>（板块静止且 f₁ ≤ f₂max 时保持不动）。<br>共速判定：v-t 图两线相交（<b>v<sub>A</sub> = v<sub>B</sub></b>）时相对滑动结束——若 <b>μ₁ ≥ μ₂</b>，静摩擦足以锁死，两者一起运动（μ₂ &gt; 0 时以 <b>a = μ₂g</b> 匀减速至停；μ₂ = 0 时一起匀速）；若 <b>μ₁ &lt; μ₂</b>，静摩擦不足，随后再次相对滑动。<br>摩擦生热：<b>Q = f₁·s相对</b>（板间）＋ f₂·s<sub>B</sub>（板块对地滑动时），实时数据面板累计显示。<br>滑出判定：相对滑移 s<sub>相对</sub> 达到板缘时物块滑离板块（数据面板"是否滑出"），此后两者各自独立运动，μ₂ &gt; 0 时各自匀减速。</div>
+        <div class="play-bar">
+            <button id="btnStart" type="button">开始</button>
+            <button id="btnPause" type="button" disabled>暂停</button>
+            <button id="btnReset" type="button" disabled>重置</button>
+            <select id="ts" title="播放速度" aria-label="播放速度倍率">
+                <option value="0.5">0.5×</option>
+                <option value="1" selected>1×</option>
+                <option value="2">2×</option>
+                <option value="4">4×</option>
+            </select>
+        </div>
+        <section class="data-group" aria-labelledby="dataTitle" aria-live="polite">
+            <div class="group-title" id="dataTitle">实时数值</div>
+            <div class="data-grid">
+                <div class="data-item"><span>物块速度</span><b id="dVA">— m/s</b></div>
+                <div class="data-item"><span>板块速度</span><b id="dVB">— m/s</b></div>
+                <div class="data-item"><span>相对速度</span><b id="dVR">— m/s</b></div>
+                <div class="data-item"><span>运动状态</span><b id="dState">待开始</b></div>
+                <div class="data-item"><span>共速时刻</span><b id="dTEnd">—</b></div>
+                <div class="data-item"><span>共速后速度</span><b id="dVFinal">—</b></div>
+                <div class="data-item"><span>相对滑移</span><b id="dRelDisp">—</b></div>
+                <div class="data-item"><span>物块摩擦力 f</span><b id="dFric">— N</b></div>
+                <div class="data-item"><span>是否滑出</span><b id="dSlideOff">—</b></div>
+                <div class="data-item"><span>摩擦生热（总）</span><b id="dHeat">—</b></div>
+                <div class="data-item"><span>质量 (m<sub>A</sub>+m<sub>B</sub>)</span><b id="dMass">—</b></div>
+            </div>
         </section>
         <div class="control-panel">
             <section class="param-group" aria-labelledby="parameterTitle">
@@ -287,24 +309,19 @@
                     <input id="plateLen" type="range" min="2" max="40" value="22" step="1">
                     <div class="val" id="plateLenVal">22.0 m</div>
                 </div>
-                            </section>
-            <section class="data-group" aria-labelledby="dataTitle" aria-live="polite">
-                <div class="group-title" id="dataTitle">实时数据显示</div>
-                <div class="data-grid">
-                    <div class="data-item"><span>物块速度</span><b id="dVA">— m/s</b></div>
-                    <div class="data-item"><span>板块速度</span><b id="dVB">— m/s</b></div>
-                    <div class="data-item"><span>相对速度</span><b id="dVR">— m/s</b></div>
-                    <div class="data-item"><span>运动状态</span><b id="dState">待开始</b></div>
-                    <div class="data-item"><span>共速时刻</span><b id="dTEnd">—</b></div>
-                    <div class="data-item"><span>共速后速度</span><b id="dVFinal">—</b></div>
-                    <div class="data-item"><span>相对滑移</span><b id="dRelDisp">—</b></div>
-                    <div class="data-item"><span>物块摩擦力 f</span><b id="dFric">— N</b></div>
-                    <div class="data-item"><span>是否滑出</span><b id="dSlideOff">—</b></div>
-                    <div class="data-item"><span>摩擦生热（总）</span><b id="dHeat">—</b></div>
-                    <div class="data-item"><span>质量 (m<sub>A</sub>+m<sub>B</sub>)</span><b id="dMass">—</b></div>
-                </div>
             </section>
         </div>
+        <section class="formula-card">
+            <div class="group-title">推导与判断</div>
+            <div class="fixed-note">
+                重力加速度 <b>g = 10 m/s²</b>（固定值），以向右为正方向。<br>
+                滑动阶段：物块受滑动摩擦 <b>f₁ = μ₁m<sub>A</sub>g</b>（方向与相对运动方向相反），<b>a<sub>A</sub> = μ₁g</b>；板块受 f₁ 的反作用力与地面摩擦 <b>f₂ = μ₂(m<sub>A</sub>+m<sub>B</sub>)g</b>，<b>a<sub>B</sub> = (f₁ − f₂)/m<sub>B</sub></b>。<br>
+                判断：板块静止且 f₁ ≤ f₂max 时保持不动，物块在板上滑行减速。<br>
+                判断：共速（v<sub>A</sub> = v<sub>B</sub>，v-t 图两线相交）时相对滑动结束——<b>μ₁ ≥ μ₂</b> 时静摩擦足以锁死，两者一起运动（μ₂ &gt; 0 时以 a = μ₂g 匀减速至停；μ₂ = 0 时一起匀速）；<b>μ₁ &lt; μ₂</b> 时静摩擦不足，随后再次相对滑动。<br>
+                摩擦生热：<b>Q = f₁·s相对</b>（板间）＋ f₂·s<sub>B</sub>（板块对地滑动时），数据面板实时累计。<br>
+                判断：相对滑移 s相对 达到板长 L 时，物块从板块前缘或后缘滑出，此后两者各自独立运动（μ₂ &gt; 0 时各自匀减速）。
+            </div>
+        </section>
                 <div class="status" id="status"></div>
         <div class="legend">
             <span>🟦 物块</span>
