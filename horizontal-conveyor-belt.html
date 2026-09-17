@@ -12,11 +12,15 @@
           + 机架支腿与地面 + 带长刻度（0 / L m）/ 放上点 / 出料箭头；
           物块相对带滑动时带面留下红色擦痕（绘于物块后方外露区域，露出长度 = s相对，共速后停止增长）。
 图表：主画布下方 v-t 与 s-t 双图并排——
-      v-t：物块 v（橙）/ 带速 v带（青实线）/ 两线间阴影=相对位移 / 共速竖线；
-      s-t：物块位移（橙）/ 带位移 v带·t（青实线）/ 两线间距=相对位移 / 共速竖线 / 零线高亮。
+      v-t：物块 v（橙）/ 带速 v带（青实线）/ 两线间阴影=相对位移（至离带时刻定格）/ 共速、离带竖线；
+      s-t：物块位移（橙）/ 带位移 v带·t（青实线）/ 两线间距=相对位移（至离带时刻定格）/ 共速、离带竖线 / 零线高亮。
       正方向：以传送带初速度方向为正（带速始终显示为正值）。
 物理补充（v1.2）：物块滑出带端后做平抛运动（水平匀速 + 竖直自由落体），落到地面后受滑动摩擦匀减速滑行直至停止；
           带静止时物块在带上停止也直接结束演示。
+物理补充（v1.3）：离带判定精确到积分子步（匀加速段按 x(τ)=x0+v0τ+½aτ² 解析求带端穿越时刻，共速段按端点距离求穿越），
+          s相对/Q/擦痕在离带瞬间定格不再多算；落地滑行双向减速（向左落地同样滑行 μg 距离后停止）；
+          v-t/s-t 图阴影在离带时刻定格（红色虚线竖线标注"离带 t=…"），与 s相对/Q 定格保持一致；
+          暂停态点「重新开始」= 重置并重新运行。
 交互：物块直接出现（无落下动画）；暂停/继续；空格（开始/暂停/继续）与 R（重置）；
       传送带速度 v带（±6 m/s，正负表示方向）与初速度 v₀ 可调；播放速度（0.25–4×）与带长 L（5–40 m）可调；运行中滑条禁用；g 默认 10。
 页面布局：画布 → 图表 → 播放控制 → 实时数值 → 参数设定 → 推导与判断（参照竖直上抛运动演示页）。
@@ -246,11 +250,11 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 <div class="charts-row">
   <section class="chart-panel">
     <div class="group-title">速度-时间图 (v-t)</div>
-    <canvas id="vtCv" width="440" height="198" role="img" aria-label="物块速度与传送带速度随时间变化图像：两线间阴影为相对位移，竖线标注共速时刻"></canvas>
+    <canvas id="vtCv" width="440" height="198" role="img" aria-label="物块速度与传送带速度随时间变化图像：两线间阴影为相对位移（离带后定格），竖线标注共速与离带时刻"></canvas>
   </section>
   <section class="chart-panel">
     <div class="group-title">位移-时间图 (s-t)</div>
-    <canvas id="stCv" width="440" height="198" role="img" aria-label="物块位移与传送带位移随时间变化图像：两线间距等于相对滑动距离，竖线标注共速时刻"></canvas>
+    <canvas id="stCv" width="440" height="198" role="img" aria-label="物块位移与传送带位移随时间变化图像：两线间阴影为相对位移（离带后定格），竖线标注共速与离带时刻"></canvas>
   </section>
 </div>
 
@@ -329,7 +333,7 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
     摩擦生热 <b>Q = f·s相对 = μmg·s相对</b>：乘的是相对路程，而不是物块的对地位移。<br>
     判断：物块比带慢（v &lt; v带）→ 摩擦力向前，物块匀加速至共速；物块比带快（v &gt; v带）→ 摩擦力向后，物块匀减速至共速。<br>
     判断：共速后（v = v带）无相对滑动，f = 0、a = 0，物块随带匀速运动，s相对 与 Q 不再增长。<br>
-    判断：若未共速就滑出带端，物块离开传送带后不再受摩擦力，做匀速直线运动。
+    判断：物块滑出带端后不再受带面摩擦力：离带后做平抛运动（水平匀速 + 竖直自由落体），落地后受地面滑动摩擦（沿用 μ）匀减速滑行直至停止，s相对 与 Q 在离带时定格。
   </div>
 </section>
 
@@ -338,8 +342,8 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
   <span class="lg-vbelt">传送带速度 v带 / 位移</span>
   <span class="lg-f">摩擦力 f（动摩擦）</span>
   <span class="lg-rel">相对运动方向</span>
-  <span class="lg-shade">阴影/间距 = 相对位移</span>
-  <span>竖线：共速时刻</span>
+  <span class="lg-shade">阴影/间距 = 相对位移（离带后定格）</span>
+  <span>竖线：共速（绿）/ 离带（红）时刻</span>
   <span>⌨ 空格 = 播放/暂停　R = 重置　g = 10 m/s²</span>
 </div>
 </main>
@@ -398,6 +402,7 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
     slip: 0,          // 相对滑动距离 ∫|v-v带|dt
     tSync: null,      // 共速时刻
     offbelt: false,   // 已滑出带端
+    tExit: null,      // 离带时刻（图表阴影定格点）
     y: 0,             // 离地高度 m（在带上 = 带面高度；离带后平抛递减；落地为 0）
     vy: 0,            // 竖直速度 m/s（平抛阶段）
     landed: false,    // 已落地
@@ -453,46 +458,99 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
   }
 
   // ===== 物理：水平传送带只有动摩擦 =====
-  // vRel = v - v带；|vRel|>0 → 动摩擦与 vRel 反向；单步内可能跨共速点 → 分段积分
-  function step(dt) {
-    if (state.offbelt) {           // 已离带：平抛 → 落地滑行 → 停止
-      state.t += dt;
-      if (!state.landed) {
-        // 平抛：水平方向匀速，竖直方向自由落体
-        state.vy += state.g * dt;
-        state.y -= state.vy * dt;
-        state.x += state.v * dt;
-        if (state.y <= 0) {
-          state.y = 0;
-          state.vy = 0;
-          state.landed = true;
-        }
-      } else if (!state.stopped) {
-        // 落地滑行：地面滑动摩擦匀减速（物块与地面摩擦，沿用 μ）
-        state.x += state.v * dt;
-        const dv = state.mu * state.g * dt;
-        if (state.v <= dv) {
-          state.v = 0;
-          state.stopped = true;
-        } else {
-          state.v -= dv;
-        }
+  // vRel = v - v带；|vRel|>0 → 动摩擦与 vRel 反向；单步内可能跨共速点或跨带端 → 分段精确积分
+  // 匀加速段 x(τ)=x0+v0·τ+½a·τ² 首次到达带端 ±L/2 的最短正时间与端点；不可达返回 null
+  function beltEndCross(x0, v0, a) {
+    let best = null;
+    for (const endX of [state.L / 2, -state.L / 2]) {
+      const disc = v0 * v0 - 2 * a * (x0 - endX);   // ½a·τ² + v0·τ + (x0−endX) = 0
+      if (disc < 0) continue;
+      const sq = Math.sqrt(disc);
+      for (const tau of [(-v0 + sq) / a, (-v0 - sq) / a]) {
+        if (tau >= -1e-12 && (best === null || tau < best.t)) best = { t: Math.max(0, tau), x: endX };
       }
+    }
+    return best;
+  }
+
+  function leaveBelt() {
+    state.offbelt = true;
+    state.tExit = state.t;
+  }
+
+  // 离带后：平抛 → 落地滑行（双向减速）→ 停止
+  function stepOff(dt) {
+    state.t += dt;
+    if (!state.landed) {
+      // 平抛：水平方向匀速，竖直方向自由落体
+      state.vy += state.g * dt;
+      state.y -= state.vy * dt;
+      state.x += state.v * dt;
+      if (state.y <= 0) {
+        state.y = 0;
+        state.vy = 0;
+        state.landed = true;
+      }
+    } else if (!state.stopped) {
+      // 落地滑行：地面滑动摩擦匀减速（物块与地面摩擦，沿用 μ），向左向右同样减速至停止
+      state.x += state.v * dt;
+      const dv = state.mu * state.g * dt;
+      if (Math.abs(state.v) <= dv) {
+        state.v = 0;
+        state.stopped = true;
+      } else {
+        state.v -= Math.sign(state.v) * dv;
+      }
+    }
+  }
+
+  // 共速匀速段推进 dt，途中到达带端则离带并转入平抛
+  function rideSynced(dt) {
+    if (state.vBelt !== 0) {
+      const endX = state.vBelt > 0 ? state.L / 2 : -state.L / 2;
+      const tc = Math.max(0, (endX - state.x) / state.vBelt);
+      if (tc <= dt + 1e-12) {
+        state.t += tc;
+        state.x = endX;
+        leaveBelt();
+        stepOff(dt - tc);
+        return;
+      }
+    }
+    state.x += state.vBelt * dt;
+    state.t += dt;
+  }
+
+  function step(dt) {
+    if (state.offbelt) {
+      stepOff(dt);
       return;
     }
     const vR = state.v - state.vBelt;
     if (Math.abs(vR) <= 1e-6) {
       // 已共速，保持
       state.v = state.vBelt;
-      state.x += state.v * dt;
-      state.t += dt;
+      rideSynced(dt);
       return;
     }
     const aMag = state.mu * state.g;          // 加速度大小
     const aDir = -Math.sign(vR);              // 加速度方向 = -sign(vR)
     const tToSync = Math.abs(vR) / aMag;
+    const cross = beltEndCross(state.x, state.v, aDir * aMag);
+    if (cross && cross.t <= Math.min(dt, tToSync) + 1e-12) {
+      // 未共速先滑到带端：积分到端点后离带，剩余时间转平抛（不在带端外多算摩擦与 s相对）
+      const vBefore = state.v;
+      const vEnd = state.v + aDir * aMag * cross.t;
+      state.slip += (Math.abs(vR) + Math.abs(vEnd - state.vBelt)) / 2 * cross.t;
+      state.v = vEnd;
+      state.x = cross.x;
+      state.t += cross.t;
+      leaveBelt();
+      stepOff(dt - cross.t);
+      return;
+    }
     if (tToSync <= dt) {
-      // 这一步内共速：先走到共速点（相对滑动 = |vR|·dt1/2），再匀速走剩余
+      // 这一步内共速：先走到共速点（相对滑动 = |vR|·dt1/2），再匀速走剩余（途中可能离带）
       const dt1 = tToSync;
       const t0 = state.t;
       const vBefore = state.v;
@@ -500,18 +558,18 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
       state.slip += Math.abs(vR) * dt1 / 2;
       state.v = vSync;
       state.x += (vBefore + vSync) * dt1 / 2;
-      state.x += vSync * (dt - dt1);
-      state.t += dt;
+      state.t += dt1;
       if (state.tSync === null) state.tSync = t0 + dt1;
       if (Math.abs(state.v - state.vBelt) < 1e-4) state.v = state.vBelt;
-    } else {
-      // 本步未达共速（相对滑动取梯形积分）
-      const vBefore = state.v;
-      state.v += aDir * aMag * dt;
-      state.x += (vBefore + state.v) * dt / 2;
-      state.slip += (Math.abs(vR) + Math.abs(state.v - state.vBelt)) / 2 * dt;
-      state.t += dt;
+      rideSynced(dt - dt1);
+      return;
     }
+    // 本步未达共速（相对滑动取梯形积分）
+    const vBefore = state.v;
+    state.v += aDir * aMag * dt;
+    state.x += (vBefore + state.v) * dt / 2;
+    state.slip += (Math.abs(vR) + Math.abs(state.v - state.vBelt)) / 2 * dt;
+    state.t += dt;
   }
 
   // ===== 擦痕（带参考系）=====
@@ -941,10 +999,12 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
     ctx2.beginPath();
     ctx2.rect(padL, padT, gW, gH);
     ctx2.clip();
-    // 阴影：series[0] 与 shadePts 之间（面积/间距 = 相对位移，仅含已发生时间 [0, state.t]）
+    // 阴影：shadeA（默认 series[0]）与 shadePts 之间（面积/间距 = 相对位移，
+    // 只覆盖已发生时间且到离带时刻定格——离带后 s相对/Q 不再增长）
     const shadePts = cfg.shadePts;
-    if (shadePts && cfg.series[0].pts.length >= 2) {
-      const a = cfg.series[0].pts;
+    const shadeA = cfg.shadeA || cfg.series[0].pts;
+    if (shadePts && shadeA.length >= 2) {
+      const a = shadeA;
       ctx2.beginPath();
       a.forEach(([t, y], i) => {
         const X = px(t), Y = py(y);
@@ -1003,18 +1063,37 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
       ctx2.textAlign = 'center';
       ctx2.fillText(`共速 t=${state.tSync.toFixed(2)}s`, x, padT - 5);
     }
+
+    // 离带时刻标注（阴影定格点，红色短线区别于共速竖线）
+    if (state.tExit !== null && state.tExit >= tStart && state.tExit <= tAxEnd) {
+      const x = px(state.tExit);
+      ctx2.strokeStyle = 'rgba(220,38,38,0.5)';
+      ctx2.lineWidth = 1;
+      ctx2.setLineDash([2, 3]);
+      ctx2.beginPath();
+      ctx2.moveTo(x, padT);
+      ctx2.lineTo(x, padT + gH);
+      ctx2.stroke();
+      ctx2.setLineDash([]);
+      ctx2.fillStyle = '#dc2626';
+      ctx2.font = '10px system-ui';
+      ctx2.textAlign = 'center';
+      ctx2.fillText(`离带 t=${state.tExit.toFixed(2)}s`, x, padT + gH - 6);
+    }
   }
 
   function drawVT() {
     const sign = state.vBelt < 0 ? -1 : 1;
     const absV = Math.abs(state.vBelt);
     const tEnd = Math.max(10, state.t);
+    const tShade = state.tExit === null ? state.t : state.tExit;   // 阴影定格到离带时刻
     drawTimeChart(vtCv, vtCtx, {
       series: [
         { pts: state.trace.map(([t, v]) => [t, v * sign]), color: '#ea580c', width: 2 },
         { pts: [[0, absV], [tEnd, absV]], color: '#0d9488', width: 2 }
       ],
-      shadePts: [[state.t, absV], [0, absV]],
+      shadeA: state.trace.filter(([t]) => t <= tShade + 1e-9).map(([t, v]) => [t, v * sign]),
+      shadePts: [[tShade, absV], [0, absV]],
       yMin: -7, yMax: 7, yLabel: 'v/(m/s)', curY: state.v * sign
     });
   }
@@ -1033,12 +1112,14 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
     sMax = Math.max(sMax, absV * tEnd);
     const yMin = Math.min(0, sMin * 1.2);
     const yMax = Math.max(sMax * 1.2, yMin + 1);
+    const tShade = state.tExit === null ? state.t : state.tExit;   // 阴影定格到离带时刻
     drawTimeChart(stCv, stCtx, {
       series: [
         { pts: state.trace.map(([t, , x]) => [t, x * sign]), color: '#ea580c', width: 2 },
         { pts: [[0, 0], [tEnd, absV * tEnd]], color: '#0d9488', width: 2 }
       ],
-      shadePts: [[state.t, absV * state.t], [0, 0]],
+      shadeA: state.trace.filter(([t]) => t <= tShade + 1e-9).map(([t, , x]) => [t, x * sign]),
+      shadePts: [[tShade, absV * tShade], [0, 0]],
       yMin, yMax, yLabel: 's/m', curY: (state.x - state.x0) * sign
     });
   }
@@ -1104,24 +1185,27 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
     lastTs = ts;
     state.beltClock += dt;
     {
+      const onBelt = !state.offbelt;
       const vRbefore = state.v - state.vBelt;
       const sub = 4;
       for (let i = 0; i < sub; i++) step(dt / sub);
       state.trace.push([state.t, state.v, state.x - state.x0]);
       if (state.trace.length > 4000) state.trace.splice(0, state.trace.length - 3600);
-      // 擦痕扫掠（带参考系 q = x - v带·t；偏移到物块后方外露区域）
-      if (!state.offbelt) {
-        const q = state.x - state.vBelt * state.t;
+      // 擦痕扫掠（带参考系 q = x - v带·t；偏移到物块后方外露区域；离带帧只扫到带端）
+      if (onBelt) {
+        const q = state.offbelt
+          ? (state.x >= 0 ? state.L / 2 : -state.L / 2) - state.vBelt * state.tExit
+          : state.x - state.vBelt * state.t;
         if (Math.abs(vRbefore) > 1e-3) {
           const G = geom();
           const halfW = (40 / 2) / G.pix;
           const off = -Math.sign(vRbefore) * halfW;
           addScratch(Math.min(state.prevQ, q) + off, Math.max(state.prevQ, q) + off);
         }
-        state.prevQ = q;
+        if (!state.offbelt) state.prevQ = q;
       }
-      // 离带判定
-      if (!state.offbelt && (state.x > state.L / 2 || state.x < -state.L / 2)) state.offbelt = true;
+      // 离带兜底判定（正常路径已在 step() 内按子步精确触发）
+      if (!state.offbelt && (state.x > state.L / 2 || state.x < -state.L / 2)) leaveBelt();
       // 演示结束：物块飞出画面 / 落地滑行停止 / 带静止时物块在带上停止
       const beltStopped = !state.offbelt && Math.abs(state.vBelt) < 1e-6 && Math.abs(state.v) < 1e-6;
       const blockStopped = state.offbelt && state.landed && state.stopped;
@@ -1184,6 +1268,7 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
     state.slip = 0;
     state.tSync = null;
     state.offbelt = false;
+    state.tExit = null;
     state.y = (geom().ground - geom().topY) / geom().pix;  // 带面离地高度
     state.vy = 0;
     state.landed = false;
@@ -1206,8 +1291,8 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
   }
 
   function start() {
-    if (phase === 'run' || phase === 'pause') return;
-    if (phase === 'done') reset();
+    if (phase === 'run') return;
+    if (phase === 'pause' || phase === 'done') reset();
     phase = 'run';
     lastTs = 0;
     bStart.disabled = true;
