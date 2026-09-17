@@ -428,9 +428,9 @@
             // 小球运动轨迹（灰色虚线）
             if (trail.length > 1) {
                 sctx.save();
-                sctx.strokeStyle = 'rgba(120,120,120,0.6)';
-                sctx.lineWidth = 0.5;
-                sctx.setLineDash([4, 4]);
+                sctx.strokeStyle = 'rgba(100,100,100,0.7)';
+                sctx.lineWidth = 1.5;
+                sctx.setLineDash([6, 4]);
                 sctx.beginPath();
                 sctx.moveTo(trail[0].x, trail[0].y);
                 for (let i = 1; i < trail.length; i++) {
