@@ -250,8 +250,8 @@
                 <div class="group-title" id="parameterTitle">参数设定</div>
                 <div class="param-row">
                     <label for="pTheta">目标夹角 θ</label>
-                    <input id="pTheta" type="range" min="0" max="75" value="45" step="1" aria-label="目标夹角：自动演示结束时小球停下处绳与竖直方向的夹角">
-                    <div class="val" id="pThetaVal">45°</div>
+                    <input id="pTheta" type="range" min="0" max="80" value="60" step="1" aria-label="目标夹角：自动演示结束时小球停下处绳与竖直方向的夹角">
+                    <div class="val" id="pThetaVal">60°</div>
                 </div>
                 <div class="param-row">
                     <label for="pMass">质量 m</label>
@@ -277,7 +277,7 @@
             <span style="color:#ea580c">—— F 水平拉力（橙）</span>
             <span style="color:#2563eb">—— G 重力（蓝）</span>
             <span style="color:#6b7280">– – 辅助线（G+F = −T / 初始竖直位置）</span>
-            <span style="color:#2563eb">··· 运动轨迹</span>
+            <span style="color:#888">- - 运动轨迹</span>
             <span>◌ 幽灵球 = 初始竖直位置</span>
             <span>空格 = 演示/暂停 · R = 重置</span>
         </div>
@@ -289,7 +289,7 @@
         const BASE_HEIGHT = 520;
         const CHART_ASPECT = 20 / 9;
         const g = 10;                       // 系列惯例：固定值
-        const TH_MAX = 75;                  // 保证 G 箭头恒长时 T 箭头不出绳长（θ→90° 发散，见图表与说明）
+        const TH_MAX = 80;                  // 保证 G 箭头恒长时 T 箭头不出绳长（θ→90° 发散，见图表与说明）
         const G_PX = 100;                   // 重力箭头像素长度：G 大小恒定，图示线段长度保持不变
         const O = { x: 330, y: 70 };        // 悬点（画布逻辑坐标）
         const STR = 260;                    // 绳长（px）
@@ -300,7 +300,7 @@
         const C_REF = 'rgba(31,41,55,0.3)';
 
         // ---------- 参数状态 ----------
-        const eq = { target: 45, mass: 1 };   // target = 拉动结束时小球停下的目标夹角
+        const eq = { target: 60, mass: 1 };   // target = 拉动结束时小球停下的目标夹角
         let phase = 'idle';             // idle | running | paused | ended
         const scan = { active: false, value: 0 };
         let raf = null, lastTs = null, progress = 0, scanEnd = 0;
@@ -424,25 +424,20 @@
             sctx.fillStyle = '#6b7280';
             sctx.font = sceneFont(10.5);
             sctx.textAlign = 'left';
-            sctx.fillText('初始位置', O.x + 18, O.y + STR + 4);
 
-            // 小球运动轨迹
+            // 小球运动轨迹（灰色虚线）
             if (trail.length > 1) {
-                for (let i = 1; i < trail.length; i++) {
-                    const alpha = 0.15 + 0.55 * (i / trail.length);
-                    sctx.fillStyle = `rgba(37,99,235,${alpha})`;
-                    sctx.beginPath();
-                    sctx.arc(trail[i].x, trail[i].y, 2.5, 0, Math.PI * 2);
-                    sctx.fill();
-                }
-                sctx.strokeStyle = 'rgba(37,99,235,0.35)';
-                sctx.lineWidth = 1.5;
+                sctx.save();
+                sctx.strokeStyle = 'rgba(120,120,120,0.6)';
+                sctx.lineWidth = 0.5;
+                sctx.setLineDash([4, 4]);
                 sctx.beginPath();
                 sctx.moveTo(trail[0].x, trail[0].y);
                 for (let i = 1; i < trail.length; i++) {
                     sctx.lineTo(trail[i].x, trail[i].y);
                 }
                 sctx.stroke();
+                sctx.restore();
             }
 
             // θ 角弧（竖直虚线与绳之间，屏幕角度 90°−θ → 90°）
