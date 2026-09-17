@@ -19,7 +19,7 @@
       s-t：物块位移 s−s₀（橙实线）/ 带位移 v带·t（青实线）/ 两线间距=相对位移 / 共速竖线。
       纵轴非对称自适应（单向运动不浪费半幅），零线加粗，当前点圆点，滑动时间窗 10 s。
 交互：开始/暂停/继续/重置 + 空格/R；v₀ 与 v带 单滑条正负表方向；
-      初始位置（底端 1 m / 中部 / 顶端 L−1 m）；播放速度 0.25–4×；带长 L 4–20 m；g 5–15 默认 10；
+      初始位置（底端 1 m / 中部 / 顶端 L−1 m）；播放速度 0.25–4×；带长 L 4–20 m；g = 10 m/s²（固定值）；
       运行/暂停中滑条与位置按钮禁用，idle/done 修改即重置。
 -->
 <style>
@@ -497,12 +497,15 @@ footer {
     const gSin = state.g * sinT, gCos = state.g * cosT;
     const canHold = state.mu >= tanT - 1e-9;
     if (state.offbelt) {
-      state.fMag = 0; state.fType = '无（已离带）'; state.acc = 0;
+      state.fMag = 0; state.fType = '无（已离带）';
+      state.acc = -gSin;
     }
     const sub = 4, h = dt / sub;
     for (let i = 0; i < sub; i++) {
-      if (state.offbelt) {          // 离带：无摩擦匀速滑行
-        state.s += state.v * h;
+      if (state.offbelt) {          // 离带：仅受重力沿斜面分量
+        const vNew = state.v - gSin * h;
+        state.s += (state.v + vNew) / 2 * h;
+        state.v = vNew;
         state.t += h;
         continue;
       }
@@ -523,7 +526,7 @@ footer {
         state.fType = '滑动摩擦';
       }
       state.acc = a;
-      if (Math.abs(vrel) > 1e-6 && canHold &&
+      if (Math.abs(vrel) > 1e-6 && canHold && Math.abs(a) > 1e-12 &&
           (state.v - state.vBelt) * (state.v + a * h - state.vBelt) < 0) {
         // 本子步跨越共速且静摩擦可维持 → 解析走到共速点后锁定
         const h1 = (state.vBelt - state.v) / a;
@@ -552,13 +555,18 @@ footer {
   function addScratch(a, b) {
     if (a > b) { const tmp = a; a = b; b = tmp; }
     const arr = state.scratches;
+    const merged = [];
+    let lo = a, hi = b;
     for (let i = 0; i < arr.length; i++) {
-      if (b < arr[i][0] - 1e-9 || a > arr[i][1] + 1e-9) continue;
-      arr[i][0] = Math.min(arr[i][0], a);
-      arr[i][1] = Math.max(arr[i][1], b);
-      return;
+      if (b < arr[i][0] - 1e-9 || a > arr[i][1] + 1e-9) {
+        merged.push(arr[i]);
+      } else {
+        lo = Math.min(lo, arr[i][0]);
+        hi = Math.max(hi, arr[i][1]);
+      }
     }
-    arr.push([a, b]);
+    merged.push([lo, hi]);
+    state.scratches = merged;
   }
 
   // ===== 主画布绘制 =====
@@ -828,7 +836,7 @@ footer {
       ctx.fillStyle = '#6b7280';
       ctx.font = '11px system-ui';
       ctx.textAlign = 'center';
-      const tag = state.s > state.L ? '已从顶端离开（匀速）' : '已从底端离开（匀速）';
+      const tag = state.s > state.L ? '已从顶端离开（匀变速）' : '已从底端离开（匀变速）';
       ctx.fillText(tag, ccx + G.nx * (BLOCK + 30), ccy + G.ny * (BLOCK + 30));
       return;
     }
@@ -1074,8 +1082,8 @@ footer {
         const off = -Math.sign(vRel0) * halfW;
         addScratch(Math.min(state.prevQ, q) + off, Math.max(state.prevQ, q) + off);
       }
-      state.prevQ = q;
     }
+    state.prevQ = state.s - state.vBelt * state.t;
     drawAll();
     updateHud();
     if (phase === 'run') requestAnimationFrame(loop);
@@ -1121,14 +1129,7 @@ footer {
     state.scratches = [];
     state.prevQ = state.s0;
     state.trace = [[0, state.v0, 0]];
-    state.acc = 0;
-    state.fMag = Math.abs(state.v0 - state.vBelt) > 1e-6
-      ? state.mu * MASS * state.g * Math.cos(rad(state.theta)) : 0;
-    state.fType = '滑动摩擦';
-    if (Math.abs(state.v0 - state.vBelt) <= 1e-6 && state.mu >= Math.tan(rad(state.theta))) {
-      state.fMag = MASS * state.g * Math.sin(rad(state.theta));
-      state.fType = '静摩擦';
-    }
+    step(0);
     lastTs = 0;
     bStart.disabled = false;
     bStart.textContent = '▶ 开始';
@@ -1142,7 +1143,8 @@ footer {
     updateHud();
   }
   function start() {
-    if (phase === 'run' || phase === 'pause') return;
+    if (phase === 'run') return;
+    if (phase === 'pause') { reset(); }
     if (phase === 'done') reset();
     phase = 'run';
     lastTs = 0;

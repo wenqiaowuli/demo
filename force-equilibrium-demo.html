@@ -229,7 +229,7 @@
             <div class="group-title">公式与判定</div>
             <div class="fixed-note">
                     平衡条件：<b>ΣFx = 0，ΣFy = 0</b>（共点力合力为零）；"缓慢移动" = 准静态过程，每一时刻均为平衡态。<br>
-                    平衡方程：<b>F = mg·tanθ，T = mg/cosθ</b>（g = 10 m/s² 固定）；θ 增大 → F、T 都增大，<b>T = mg/cosθ ≥ mg 恒成立</b>；θ→90° 时 F、T → ∞（绳越接近水平越难拉；图示与曲线范围取 0~60°，其中重力箭头长度恒定不变）。<br>
+                    平衡方程：<b>F = mg·tanθ，T = mg/cosθ</b>（g = 10 m/s² 固定）；θ 增大 → F、T 都增大，<b>T = mg/cosθ ≥ mg 恒成立</b>；θ→90° 时 F、T → ∞（绳越接近水平越难拉；图示与曲线范围取 0~75°，其中重力箭头长度恒定不变）。<br>
                     三力平衡 ⇒ <b>任意两力的合力与第三力等大反向</b>：G 与 F 的合力 = −T（沿绳延长线）；三力首尾相接构成封闭三角形。<br>
                     正交分解：竖直分量 <b>Ty = T·cosθ = mg</b>（恒"托住"重力），水平分量 <b>Tx = T·sinθ = F</b>。（拓展：相似三角形法 T/L = mg/(L·cosθ)）
                 </div>
@@ -239,7 +239,7 @@
                 <div class="group-title" id="parameterTitle">参数设定</div>
                 <div class="param-row">
                     <label for="pTheta">目标夹角 θ</label>
-                    <input id="pTheta" type="range" min="0" max="60" value="45" step="1" aria-label="目标夹角：自动演示结束时小球停下处绳与竖直方向的夹角">
+                    <input id="pTheta" type="range" min="0" max="75" value="45" step="1" aria-label="目标夹角：自动演示结束时小球停下处绳与竖直方向的夹角">
                     <div class="val" id="pThetaVal">45°</div>
                 </div>
                 <div class="param-row">
@@ -268,6 +268,7 @@
             <span style="color:#ea580c">—— F 水平拉力（橙）</span>
             <span style="color:#2563eb">—— G 重力（蓝）</span>
             <span style="color:#6b7280">– – 辅助线（G+F = −T / 初始竖直位置）</span>
+            <span style="color:#2563eb">··· 运动轨迹</span>
             <span>◌ 幽灵球 = 初始竖直位置</span>
             <span>空格 = 演示/暂停 · R = 重置</span>
         </div>
@@ -279,7 +280,7 @@
         const BASE_HEIGHT = 520;
         const CHART_ASPECT = 20 / 9;
         const g = 10;                       // 系列惯例：固定值
-        const TH_MAX = 60;                  // 保证 G 箭头恒长时 T 箭头不出绳长（θ→90° 发散，见图表与说明）
+        const TH_MAX = 75;                  // 保证 G 箭头恒长时 T 箭头不出绳长（θ→90° 发散，见图表与说明）
         const G_PX = 100;                   // 重力箭头像素长度：G 大小恒定，图示线段长度保持不变
         const O = { x: 330, y: 70 };        // 悬点（画布逻辑坐标）
         const STR = 260;                    // 绳长（px）
@@ -294,6 +295,7 @@
         let phase = 'idle';             // idle | running | paused | ended
         const scan = { active: false, value: 0 };
         let raf = null, lastTs = null, progress = 0, scanEnd = 0;
+        let trail = [];                 // 小球运动轨迹 [{x, y}]
 
         // ---------- DOM ----------
         const $ = (id) => document.getElementById(id);
@@ -409,6 +411,25 @@
             sctx.font = '10.5px system-ui, sans-serif';
             sctx.textAlign = 'left';
             sctx.fillText('初始位置', O.x + 18, O.y + STR + 4);
+
+            // 小球运动轨迹
+            if (trail.length > 1) {
+                for (let i = 1; i < trail.length; i++) {
+                    const alpha = 0.15 + 0.55 * (i / trail.length);
+                    sctx.fillStyle = `rgba(37,99,235,${alpha})`;
+                    sctx.beginPath();
+                    sctx.arc(trail[i].x, trail[i].y, 2.5, 0, Math.PI * 2);
+                    sctx.fill();
+                }
+                sctx.strokeStyle = 'rgba(37,99,235,0.35)';
+                sctx.lineWidth = 1.5;
+                sctx.beginPath();
+                sctx.moveTo(trail[0].x, trail[0].y);
+                for (let i = 1; i < trail.length; i++) {
+                    sctx.lineTo(trail[i].x, trail[i].y);
+                }
+                sctx.stroke();
+            }
 
             // θ 角弧（竖直虚线与绳之间，屏幕角度 90°−θ → 90°）
             if (th > 0.5) {
@@ -739,6 +760,10 @@
             lastTs = ts;
             progress = Math.min(progress + dt / SCAN_DUR, 1);
             scan.value = scanEnd * progress;
+            // 记录轨迹点
+            const bp = ballPos(scan.value);
+            trail.push({ x: bp.x, y: bp.y });
+            if (trail.length > 500) trail.splice(0, trail.length - 500);
             if (progress >= 1) {
                 phase = 'ended';
                 scan.active = false;   // 小球停在目标夹角（dispTheta 回落至 eq.target）
@@ -753,6 +778,7 @@
             if (phase === 'running' || phase === 'paused') return;
             scanEnd = eq.target;
             progress = 0; scan.active = true; scan.value = 0;
+            trail = [ballPos(0)];  // 从初始位置开始记录轨迹
             lastTs = null; phase = 'running';
             setButtons(); setParamLocks(); updateReadouts(); renderAll();
             raf = requestAnimationFrame(frame);
@@ -766,12 +792,14 @@
         function resume() {
             if (phase !== 'paused') return;
             phase = 'running'; lastTs = null;
+            trail.push(ballPos(scan.value));  // 恢复时添加当前点
             setButtons();
             raf = requestAnimationFrame(frame);
         }
         function reset() {
             if (raf) cancelAnimationFrame(raf);
             phase = 'idle'; progress = 0; scan.active = false; lastTs = null;
+            trail = [];
             setButtons(); setParamLocks(); updateReadouts(); renderAll();
         }
 
