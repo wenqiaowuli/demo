@@ -371,6 +371,8 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
   // ===== Canvas =====
   const cv = document.getElementById('cv');
   const ctx = cv.getContext('2d');
+        // 场景字体：随画布宽度等比缩放，窄屏下限 10px（系列约定）
+        const sceneFont = (px, bold) => (bold ? 'bold ' : '') + Math.max(px * ((cv.clientWidth || 880) / 880), 10) + 'px system-ui, sans-serif';
   const vtCv = document.getElementById('vtCv');
   const vtCtx = vtCv.getContext('2d');
   const stCv = document.getElementById('stCv');
@@ -692,7 +694,7 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
     ctx.arc(Ax, Ay, 44, 0, -G.th, true);
     ctx.stroke();
     ctx.fillStyle = '#1f2937';
-    ctx.font = 'bold 11px system-ui';
+    ctx.font = sceneFont(11, true);
     ctx.textAlign = 'center';
     ctx.fillText('θ=' + state.theta + '°',
       Ax + 58 * Math.cos(-G.th / 2), Ay + 58 * Math.sin(-G.th / 2) + 4);
@@ -753,7 +755,7 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
       ctx.lineTo(hx + Math.cos(tang - Math.PI / 2) * 4.5, hy + Math.sin(tang - Math.PI / 2) * 4.5);
       ctx.closePath();
       ctx.fill();
-      ctx.font = 'bold 11px system-ui';
+      ctx.font = sceneFont(11, true);
       ctx.textAlign = 'center';
       ctx.fillText(cw ? '顺时针' : '逆时针', Bx, By - r - 8);
     }
@@ -761,7 +763,7 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
     const mx = Ax + ux * lenPx / 2 - nx * (band + 20);
     const my = Ay + uy * lenPx / 2 - ny * (band + 20);
     ctx.fillStyle = CYAN;
-    ctx.font = '12px system-ui';
+    ctx.font = sceneFont(12);
     ctx.textAlign = 'center';
     if (Math.abs(state.vBelt) > 0.01) {
       const sgn = Math.sign(state.vBelt);
@@ -823,14 +825,14 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
     ctx.lineWidth = 2;
     ctx.strokeRect(-halfW, -BLOCK, BLOCK, BLOCK);
     ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 13px system-ui';
+    ctx.font = sceneFont(13, true);
     ctx.textAlign = 'center';
     ctx.fillText('m', 0, -halfW + 4);
     ctx.restore();
 
     if (state.offbelt) {
       ctx.fillStyle = '#6b7280';
-      ctx.font = '11px system-ui';
+      ctx.font = sceneFont(11);
       ctx.textAlign = 'center';
       const tag = state.s > state.L ? '已从顶端离开（匀速）' : '已从底端离开（匀速）';
       ctx.fillText(tag, ccx + G.nx * (BLOCK + 30), ccy + G.ny * (BLOCK + 30));
@@ -841,7 +843,7 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
     const fg = state.g * MASS;
     arrow(ccx, ccy, 0, fg * FS, RED, 2.5);                                       // G 竖直向下
     ctx.fillStyle = RED;
-    ctx.font = 'bold 12px system-ui';
+    ctx.font = sceneFont(12, true);
     ctx.textAlign = 'left';
     ctx.fillText('G', ccx + 6, ccy + fg * FS + 12);
     const fn = state.g * MASS * Math.cos(G.th);
@@ -876,7 +878,7 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
       const lv = (10 + Math.abs(state.v) * 8) * sv;
       arrow(aVx - G.ux * lv / 2, aVy - G.uy * lv / 2, G.ux * lv, G.uy * lv, ORANGE, 2.5);
       ctx.fillStyle = ORANGE;
-      ctx.font = 'bold 11px system-ui';
+      ctx.font = sceneFont(11, true);
       ctx.textAlign = 'center';
       ctx.fillText('v', aVx + G.ux * lv / 2 + G.nx * 10, aVy + G.uy * lv / 2 + G.ny * 10 + 4);
     }
@@ -886,12 +888,12 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
       const bVx = aVx + G.nx * 14, bVy = aVy + G.ny * 14;
       arrow(bVx - G.ux * lb / 2, bVy - G.uy * lb / 2, G.ux * lb, G.uy * lb, CYAN, 2.5);
       ctx.fillStyle = CYAN;
-      ctx.font = 'bold 11px system-ui';
+      ctx.font = sceneFont(11, true);
       ctx.textAlign = 'center';
       ctx.fillText('v带', bVx + G.ux * lb / 2 + G.nx * 10, bVy + G.uy * lb / 2 + G.ny * 10 + 4);
     }
     // ---- v相对 文字 ----
-    ctx.font = '10px system-ui';
+    ctx.font = sceneFont(10);
     ctx.textAlign = 'center';
     if (Math.abs(vrel) > 1e-3) {
       ctx.fillStyle = GREEN;

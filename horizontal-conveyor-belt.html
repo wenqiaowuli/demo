@@ -349,6 +349,8 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
   // ===== Canvas setup =====
   const cv = document.getElementById('cv');
   const ctx = cv.getContext('2d');
+        // 场景字体：随画布宽度等比缩放，窄屏下限 10px（系列约定）
+        const sceneFont = (px, bold) => (bold ? 'bold ' : '') + Math.max(px * ((cv.clientWidth || 880) / 880), 10) + 'px system-ui, sans-serif';
   const vtCv = document.getElementById('vtCv');
   const vtCtx = vtCv.getContext('2d');
   const stCv = document.getElementById('stCv');
@@ -691,7 +693,7 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
     drawRoller(G, G.xR);
     // ---- 带速指示（环内居中）----
     const cx = (G.xL + G.xR) / 2;
-    ctx.font = '12px system-ui';
+    ctx.font = sceneFont(12);
     ctx.fillStyle = '#0d9488';
     ctx.textAlign = 'center';
     if (Math.abs(state.vBelt) > 0.01) {
@@ -712,7 +714,7 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
       ctx.fillText('v带 = 0（带静止）', cx, G.yC + 4);
     }
     // ---- 带长刻度 / 放上点 / 出料 ----
-    ctx.font = '10px system-ui';
+    ctx.font = sceneFont(10);
     ctx.fillStyle = '#6b7280';
     ctx.textAlign = 'center';
     ctx.fillText('0', G.xL, G.ground - 4);
@@ -774,7 +776,7 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
     ctx.strokeRect(drawX - blockW / 2, drawY, blockW, blockH);
     // m 标签
     ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 13px system-ui';
+    ctx.font = sceneFont(13, true);
     ctx.textAlign = 'center';
     ctx.fillText('m', drawX, drawY + blockH / 2 + 4);
 
@@ -797,12 +799,12 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
     const vR = state.v - state.vBelt;
     if (state.stopped) {
       ctx.fillStyle = '#6b7280';
-      ctx.font = '11px system-ui';
+      ctx.font = sceneFont(11);
       ctx.textAlign = 'center';
       ctx.fillText('已停止', drawX, drawY - 10);
     } else if (state.offbelt && state.landed) {
       ctx.fillStyle = '#6b7280';
-      ctx.font = '11px system-ui';
+      ctx.font = sceneFont(11);
       ctx.textAlign = 'center';
       ctx.fillText('落地滑行（减速）', drawX, drawY - 10);
       // 地面摩擦箭头（阻碍滑行方向）
@@ -821,12 +823,12 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
         ctx.lineTo(hx - fDir * 6, fy + 4);
         ctx.closePath(); ctx.fillStyle = '#e11d48'; ctx.fill();
         ctx.fillStyle = '#e11d48';
-        ctx.font = '11px system-ui';
+        ctx.font = sceneFont(11);
         ctx.fillText(`f=${fMag.toFixed(2)}N`, drawX + fDir * 30, fy + 14);
       }
     } else if (state.offbelt) {
       ctx.fillStyle = '#6b7280';
-      ctx.font = '11px system-ui';
+      ctx.font = sceneFont(11);
       ctx.textAlign = 'center';
       ctx.fillText('已离开传送带（平抛）', drawX, drawY - 10);
     } else if (Math.abs(vR) > 1e-3) {
@@ -846,7 +848,7 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
       ctx.lineTo(fx0 + len - fDir * 6, fy + 4);
       ctx.closePath(); ctx.fillStyle = '#e11d48'; ctx.fill();
       ctx.fillStyle = '#e11d48';
-      ctx.font = '11px system-ui';
+      ctx.font = sceneFont(11);
       ctx.textAlign = 'center';
       ctx.fillText(`f=${fMag.toFixed(2)}N`, fx0 + len / 2, fy + 16);
       // 相对运动方向（物块上方）
@@ -864,12 +866,12 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
       ctx.lineTo(rx0 + rlen / 2 - rDir * 5, ry + 3);
       ctx.closePath(); ctx.fillStyle = '#16a34a'; ctx.fill();
       ctx.fillStyle = '#16a34a';
-      ctx.font = '10px system-ui';
+      ctx.font = sceneFont(10);
       ctx.textAlign = 'center';
       ctx.fillText(`v相对 = ${vR.toFixed(2)} m/s`, rx0, ry - 4);
     } else {
       ctx.fillStyle = '#16a34a';
-      ctx.font = '10px system-ui';
+      ctx.font = sceneFont(10);
       ctx.textAlign = 'center';
       ctx.fillText('v相对 = 0  (共速)', drawX, drawY - 6);
     }

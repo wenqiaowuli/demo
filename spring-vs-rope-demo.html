@@ -314,6 +314,8 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 
   const cv = document.getElementById('cv');
   const ctx = cv.getContext('2d');
+        // 场景字体：随画布宽度等比缩放，窄屏下限 10px（系列约定）
+        const sceneFont = (px, bold) => (bold ? 'bold ' : '') + Math.max(px * ((cv.clientWidth || 880) / 880), 10) + 'px system-ui, sans-serif';
   const vtCv = document.getElementById('vtCv');
   const vtCtx = vtCv.getContext('2d');
   const stCv = document.getElementById('stCv');
@@ -522,7 +524,7 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
     ctx.beginPath(); ctx.arc(axA, ballAy, BALL_R, 0, Math.PI * 2); ctx.fill();
     ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
     ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 13px system-ui';
+    ctx.font = sceneFont(13, true);
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillText('A', axA, ballAy);
 
@@ -534,7 +536,7 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
     ctx.beginPath(); ctx.arc(axB, ballBy, BALL_R, 0, Math.PI * 2); ctx.fill();
     ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
     ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 13px system-ui';
+    ctx.font = sceneFont(13, true);
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillText('B', axB, ballBy);
 
@@ -545,7 +547,7 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
       ctx.beginPath(); ctx.moveTo(60, ballAy); ctx.lineTo(w - 60, ballAy); ctx.stroke();
       ctx.setLineDash([]);
       ctx.fillStyle = '#6b7280';
-      ctx.font = '10px system-ui';
+      ctx.font = sceneFont(10);
       ctx.textAlign = 'left';
       ctx.fillText('两球等高 h=' + params.h.toFixed(1) + 'm', 64, ballAy - 8);
     }
@@ -565,19 +567,19 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 
     if (sysA.landed) {
       ctx.fillStyle = '#16a34a';
-      ctx.font = '11px system-ui';
+      ctx.font = sceneFont(11);
       ctx.textAlign = 'center';
       ctx.fillText('A 落地 t=' + sysA.landTime.toFixed(2) + 's', axA, gY + 22);
     }
     if (sysB.landed) {
       ctx.fillStyle = '#16a34a';
-      ctx.font = '11px system-ui';
+      ctx.font = sceneFont(11);
       ctx.textAlign = 'center';
       ctx.fillText('B 落地 t=' + sysB.landTime.toFixed(2) + 's', axB, gY + 22);
     }
 
     ctx.fillStyle = '#6b7280';
-    ctx.font = '11px system-ui';
+    ctx.font = sceneFont(11);
     ctx.textAlign = 'center';
     ctx.fillText('A · 弹簧悬挂', axA, PIVOT_Y - 24);
     ctx.fillText('B · 绳子悬挂', axB, PIVOT_Y - 24);

@@ -297,6 +297,8 @@
     <script>
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
+        // 场景字体：随画布宽度等比缩放，窄屏下限 10px（系列约定）
+        const sceneFont = (px, bold) => (bold ? 'bold ' : '') + Math.max(px * ((canvas.clientWidth || 880) / 880), 10) + 'px system-ui, sans-serif';
         const inputH = document.getElementById('h');
         const inputV0 = document.getElementById('v0');
         const inputPreview = document.getElementById('showPreview');
@@ -437,7 +439,7 @@
             ctx.stroke();
 
             ctx.fillStyle = '#6b7280';
-            ctx.font = '11px system-ui, sans-serif';
+            ctx.font = sceneFont(11);
             ctx.textAlign = 'center';
             for (let i = 0; i <= xCount; i++) {
                 const x = i * xStep;
@@ -565,7 +567,7 @@
             ctx.arc(point.x, point.y, 7, 0, Math.PI * 2);
             ctx.fill();
             ctx.fillStyle = '#1f2937';
-            ctx.font = '12px system-ui, sans-serif';
+            ctx.font = sceneFont(12);
             ctx.textAlign = 'center';
             ctx.fillText('落地', point.x, point.y - 14);
         }

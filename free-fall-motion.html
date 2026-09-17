@@ -292,6 +292,8 @@
 
         const sceneCanvas = document.getElementById('scene');
         const sctx = sceneCanvas.getContext('2d');
+        // 场景字体：随画布宽度等比缩放，窄屏下限 10px（系列约定）
+        const sceneFont = (px, bold) => (bold ? 'bold ' : '') + Math.max(px * ((sceneCanvas.clientWidth || 880) / 880), 10) + 'px system-ui, sans-serif';
         const vtCanvas = document.getElementById('vtChart');
         const vtCtx = vtCanvas.getContext('2d');
         const stCanvas = document.getElementById('stChart');
@@ -396,7 +398,7 @@
             sctx.lineTo(geometry.originX, geometry.originY);
             sctx.stroke();
             sctx.fillStyle = '#6b7280';
-            sctx.font = '11px system-ui, sans-serif';
+            sctx.font = sceneFont(11);
             sctx.textAlign = 'right';
             for (let m = 0; m <= geometry.hMax + yStep * 0.001; m += yStep) {
                 const py = yToScreen(geometry, m);
@@ -426,7 +428,7 @@
             sctx.stroke();
             sctx.restore();
             sctx.fillStyle = '#0d9488';
-            sctx.font = '12px system-ui, sans-serif';
+            sctx.font = sceneFont(12);
             sctx.textAlign = 'right';
             sctx.fillText('释放高度 h = ' + hOf().toFixed(0) + ' m', sceneView.width - 20, py - 10);
         }
@@ -454,7 +456,7 @@
             sctx.stroke();
             sctx.restore();
             sctx.fillStyle = '#6b7280';
-            sctx.font = '11px system-ui, sans-serif';
+            sctx.font = sceneFont(11);
             sctx.textAlign = 'left';
             sctx.fillText('离地 ' + (hOf() - sOf(t)).toFixed(1) + ' m', geometry.originX + 8, by - 6);
         }
@@ -488,7 +490,7 @@
             const v = Math.min(vOf(t), vLand());
             const vX = bx - (radius + 16);
             const aX = bx + (radius + 16);
-            sctx.font = '12px system-ui, sans-serif';
+            sctx.font = sceneFont(12);
             sctx.textAlign = 'left';
             const vLen = Math.min(v * V_ARROW_SCALE, V_ARROW_MAX);
             if (vLen >= 2) {
@@ -527,7 +529,7 @@
             sctx.arc(geometry.ballX, geometry.originY, 10 + radius * 0.4, 0, Math.PI * 2);
             sctx.stroke();
             sctx.fillStyle = '#1f2937';
-            sctx.font = '12px system-ui, sans-serif';
+            sctx.font = sceneFont(12);
             sctx.textAlign = 'right';
             sctx.fillText('落地 t落 = ' + tEnd().toFixed(2) + ' s', geometry.ballX - radius - 26, geometry.originY - 8);
         }

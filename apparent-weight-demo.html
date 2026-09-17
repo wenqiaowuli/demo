@@ -304,6 +304,8 @@
 
         const sceneCanvas = document.getElementById('scene');
         const sctx = sceneCanvas.getContext('2d');
+        // 场景字体：随画布宽度等比缩放，窄屏下限 10px（系列约定）
+        const sceneFont = (px, bold) => (bold ? 'bold ' : '') + Math.max(px * ((sceneCanvas.clientWidth || 880) / 880), 10) + 'px system-ui, sans-serif';
         const vtCanvas = document.getElementById('vtChart');
         const vtCtx = vtCanvas.getContext('2d');
         const ftCanvas = document.getElementById('ftChart');
@@ -460,7 +462,7 @@
             sctx.lineTo(geometry.originX, geometry.originY);
             sctx.stroke();
             sctx.fillStyle = '#6b7280';
-            sctx.font = '11px system-ui, sans-serif';
+            sctx.font = sceneFont(11);
             sctx.textAlign = 'right';
             for (let m = 0; m <= geometry.hMax + yStep * 0.001; m += yStep) {
                 const py = yToScreen(geometry, m);
@@ -479,7 +481,7 @@
         }
 
         function drawFloors(geometry) {
-            sctx.font = '10px system-ui, sans-serif';
+            sctx.font = sceneFont(10);
             for (let k = 0; ; k++) {
                 const h = k * 3;
                 if (h > geometry.hMax + 1e-9) break;
@@ -508,7 +510,7 @@
             sctx.stroke();
             sctx.restore();
             sctx.fillStyle = '#0d9488';
-            sctx.font = '12px system-ui, sans-serif';
+            sctx.font = sceneFont(12);
             sctx.textAlign = 'right';
             sctx.fillText('上行高度 H = ' + heightOf().toFixed(1) + ' m', sceneView.width - 88, py - 10);
         }
@@ -611,7 +613,7 @@
             const ph = phaseAt(t);
             const aShow = state === 'idle' ? 0 : ph.a;
             const centerY = cabin.y + CABIN_H / 2;
-            sctx.font = 'bold 13px system-ui, sans-serif';
+            sctx.font = sceneFont(13, true);
             sctx.textAlign = 'right';
             sctx.fillStyle = '#ea580c';
             const aX = geometry.cabinX - CABIN_W / 2 - 18;
@@ -631,7 +633,7 @@
             const fShow = state === 'idle' ? gForceOf() : ph.F;
             const textX = Math.min(geometry.cabinX + CABIN_W / 2 + 28, sceneView.width - 112);
             sctx.textAlign = 'left';
-            sctx.font = 'bold 13px system-ui, sans-serif';
+            sctx.font = sceneFont(13, true);
             sctx.fillStyle = COLOR_NORMAL;
             sctx.fillText('视重 = ' + fShow.toFixed(0) + ' N', textX, readingLabelY(geometry, cabin));
         }
@@ -644,7 +646,7 @@
             sctx.arc(geometry.cabinX, geometry.originY, 12, 0, Math.PI * 2);
             sctx.stroke();
             sctx.fillStyle = '#1f2937';
-            sctx.font = '12px system-ui, sans-serif';
+            sctx.font = sceneFont(12);
             sctx.textAlign = 'center';
             sctx.fillText('已返回地面', geometry.cabinX - 90, geometry.originY - 10);
         }

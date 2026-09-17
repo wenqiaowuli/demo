@@ -560,6 +560,8 @@ function niceStep(range, n){
 
 function boot(){
   const el = id => document.getElementById(id);
+  // 场景字体：随画布宽度等比缩放，并设 10px 下限（窄屏下相对偏大，避免文字拥挤）
+  const sceneFont = (px, bold) => (bold ? 'bold ' : '') + Math.max(px * ((el('animCanvas').clientWidth || 880) / 880), 10) + 'px system-ui, sans-serif';
   const btnPlay = el('btnPlay'), btnPauseResume = el('btnPauseResume'), timeSlider = el('timeSlider'), timeLabel = el('timeLabel');
   const ckKey = el('ckKey'), ckDist = el('ckDist'), ckArea = el('ckArea'), ckBrake = el('ckBrake');
   const cA = getComputedStyle(document.documentElement).getPropertyValue('--cA').trim();
@@ -654,7 +656,7 @@ function boot(){
     const mL = 24, mR = 24;
     const y0 = Math.round(H * 2 / 3);
     const X = x => mL + (x - wlo) / (whi - wlo) * (W - mL - mR);
-    ctx.font = '11px system-ui, sans-serif';
+    ctx.font = sceneFont(11);
 
     ctx.strokeStyle = '#9ca3af'; ctx.lineWidth = 2;
     ctx.beginPath(); ctx.moveTo(mL - 8, y0); ctx.lineTo(W - mR + 8, y0); ctx.stroke();
@@ -710,11 +712,11 @@ function boot(){
 
     drawBall(ctx, cx, cy, R, 'A', cA, sa.w ? 'w' : sa.s ? 's' : 'r');
     if (sa.w){
-      ctx.fillStyle = '#9ca3af'; ctx.textAlign = 'center'; ctx.font = '11px system-ui, sans-serif';
+      ctx.fillStyle = '#9ca3af'; ctx.textAlign = 'center'; ctx.font = sceneFont(11);
       ctx.fillText('未出发', cx, cy - R - 8);
     }
     if (sa.s){
-      ctx.fillStyle = '#9ca3af'; ctx.textAlign = 'center'; ctx.font = '11px system-ui, sans-serif';
+      ctx.fillStyle = '#9ca3af'; ctx.textAlign = 'center'; ctx.font = sceneFont(11);
       ctx.fillText('已停', cx, cy + R + 12);
     }
     if (Math.abs(sa.v) > EPS){
@@ -726,21 +728,21 @@ function boot(){
     if (overlap){
       const coreR = sep < R ? R * 0.58 : R;
       drawBall(ctx, dx, cy, coreR, 'B', cB, sb.w ? 'w' : sb.s ? 's' : 'r');
-      ctx.fillStyle = cA; ctx.textAlign = 'center'; ctx.font = 'bold 11px system-ui, sans-serif';
+      ctx.fillStyle = cA; ctx.textAlign = 'center'; ctx.font = sceneFont(11, true);
       ctx.fillText('A', cx, cy - R - 5);
       ctx.fillStyle = '#fff';
       ctx.fillText('B', dx, cy + 4);
     } else {
       drawBall(ctx, dx, cy, R, 'B', cB, sb.w ? 'w' : sb.s ? 's' : 'r');
-      ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.font = 'bold 11px system-ui, sans-serif';
+      ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.font = sceneFont(11, true);
       ctx.fillText('B', dx, cy + 4);
     }
     if (sb.w){
-      ctx.fillStyle = '#9ca3af'; ctx.textAlign = 'center'; ctx.font = '11px system-ui, sans-serif';
+      ctx.fillStyle = '#9ca3af'; ctx.textAlign = 'center'; ctx.font = sceneFont(11);
       ctx.fillText('未出发', dx, cy - R - 8);
     }
     if (sb.s){
-      ctx.fillStyle = '#9ca3af'; ctx.textAlign = 'center'; ctx.font = '11px system-ui, sans-serif';
+      ctx.fillStyle = '#9ca3af'; ctx.textAlign = 'center'; ctx.font = sceneFont(11);
       ctx.fillText('已停', dx, cy + R + 12);
     }
     if (Math.abs(sb.v) > EPS){
@@ -756,13 +758,13 @@ function boot(){
           const p = dd / 0.8;
           ctx.strokeStyle = `rgba(220,38,38,${1 - p})`; ctx.lineWidth = 3;
           ctx.beginPath(); ctx.arc(X(m.x), cy - 6, 16 + 14 * p, 0, Math.PI * 2); ctx.stroke();
-          ctx.fillStyle = '#dc2626'; ctx.textAlign = 'center'; ctx.font = 'bold 13px system-ui, sans-serif';
+          ctx.fillStyle = '#dc2626'; ctx.textAlign = 'center'; ctx.font = sceneFont(13, true);
           const word = P.mode === 'same' ? (i === 0 ? '追上了！' : '再次相遇！') : '相遇！';
           ctx.fillText(word, X(m.x), y0 - 74);
         }
       });
     }
-    ctx.font = '12px system-ui, sans-serif'; ctx.fillStyle = '#6b7280'; ctx.textAlign = 'right';
+    ctx.font = sceneFont(12); ctx.fillStyle = '#6b7280'; ctx.textAlign = 'right';
     ctx.fillText(`t = ${f2(t)} s`, W - 10, 16);
   }
 

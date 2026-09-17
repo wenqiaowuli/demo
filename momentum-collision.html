@@ -353,6 +353,8 @@
         // ========== DOM ==========
         const canvas = document.getElementById('scene');
         const ctx = canvas.getContext('2d');
+        // 场景字体：随画布宽度等比缩放，窄屏下限 10px（系列约定）
+        const sceneFont = (px, bold) => (bold ? 'bold ' : '') + Math.max(px * ((canvas.clientWidth || 880) / 880), 10) + 'px system-ui, sans-serif';
         const vtCanvas = document.getElementById('vtChart');
         const vtctx = vtCanvas.getContext('2d');
         const ptCanvas = document.getElementById('ptChart');
@@ -540,11 +542,11 @@
             ctx.stroke();
 
             ctx.fillStyle = '#ffffff';
-            ctx.font = 'bold 13px system-ui';
+            ctx.font = sceneFont(13, true);
             ctx.textAlign = 'center';
             ctx.textBaseline = 'alphabetic';
             ctx.fillText(label, bx, by - 2);
-            ctx.font = '9px system-ui';
+            ctx.font = sceneFont(9);
             ctx.fillText(mass.toFixed(1) + 'kg', bx, by + 12);
 
             // 速度箭头（黄）
@@ -565,7 +567,7 @@
                 ctx.closePath();
                 ctx.fillStyle = '#d97706';
                 ctx.fill();
-                ctx.font = '10px system-ui';
+                ctx.font = sceneFont(10);
                 ctx.textAlign = 'center';
                 ctx.fillText(v.toFixed(1) + ' m/s', bx + len / 2, ay - 7);
             }
@@ -597,7 +599,7 @@
             ctx.strokeRect(px, py, panelW, panelH);
 
             ctx.fillStyle = '#6b7280';
-            ctx.font = '10px system-ui';
+            ctx.font = sceneFont(10);
             ctx.textAlign = 'left';
             ctx.textBaseline = 'alphabetic';
             ctx.fillText('p / (kg·m/s)', px + 12, py + 15);
@@ -620,7 +622,7 @@
             rows.forEach((row, i) => {
                 const y = py + 26 + i * 22;
                 ctx.fillStyle = row.color;
-                ctx.font = 'bold 11px system-ui';
+                ctx.font = sceneFont(11, true);
                 ctx.textAlign = 'left';
                 ctx.fillText(row.label, px + 14, y + 10);
                 let bw = (row.v / pScale) * half;
@@ -628,7 +630,7 @@
                 ctx.fillStyle = row.fill;
                 ctx.fillRect(zeroX + Math.min(0, bw), y, Math.abs(bw), 12);
                 ctx.fillStyle = row.color;
-                ctx.font = '11px system-ui';
+                ctx.font = sceneFont(11);
                 ctx.textAlign = 'right';
                 ctx.fillText(row.v.toFixed(2), valueX, y + 10);
             });
@@ -651,7 +653,7 @@
 
             // 正方向标注
             ctx.fillStyle = '#6b7280';
-            ctx.font = '11px system-ui';
+            ctx.font = sceneFont(11);
             ctx.textAlign = 'left';
             ctx.textBaseline = 'alphabetic';
             ctx.fillText('正方向 →', 12, 20);
@@ -666,7 +668,7 @@
 
             // 地面距离标注（米）
             ctx.fillStyle = '#6b7280';
-            ctx.font = '11px system-ui';
+            ctx.font = sceneFont(11);
             ctx.textAlign = 'center';
             for (let m = REGION_MIN; m <= REGION_MAX; m += 2) {
                 ctx.fillText(m + 'm', SX(m), groundY + 22);
@@ -710,7 +712,7 @@
                 ctx.fillStyle = 'rgba(15,23,42,0.06)';
                 ctx.fillRect(bx0, by0, bw, 24);
                 ctx.fillStyle = hit ? '#16a34a' : '#6b7280';
-                ctx.font = 'bold 12px system-ui';
+                ctx.font = sceneFont(12, true);
                 ctx.textAlign = 'center';
                 ctx.fillText(txt, view.width / 2, by0 + 16);
             }

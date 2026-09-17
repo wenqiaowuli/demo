@@ -302,6 +302,8 @@
 
         const sceneCanvas = document.getElementById('scene');
         const sctx = sceneCanvas.getContext('2d');
+        // 场景字体：随画布宽度等比缩放，窄屏下限 10px（系列约定）
+        const sceneFont = (px, bold) => (bold ? 'bold ' : '') + Math.max(px * ((sceneCanvas.clientWidth || 880) / 880), 10) + 'px system-ui, sans-serif';
         const ftCanvas = document.getElementById('ftChart');
         const ftCtx = ftCanvas.getContext('2d');
         const vtCanvas = document.getElementById('vtChart');
@@ -436,7 +438,7 @@
 
             // 方向说明
             sctx.fillStyle = '#6b7280';
-            sctx.font = '12px system-ui, sans-serif';
+            sctx.font = sceneFont(12);
             sctx.textAlign = 'left';
             sctx.fillText('F 向右 · 摩擦力与运动方向相反', 18, 22);
 
@@ -457,7 +459,7 @@
             sctx.stroke();
 
             // 米刻度（0–20 m）
-            sctx.font = '11px system-ui, sans-serif';
+            sctx.font = sceneFont(11);
             sctx.textAlign = 'center';
             for (let m = 0; m <= X_MAX; m += 2) {
                 const px = gm.xToScreen(m);
@@ -516,7 +518,7 @@
             const fLen = 16 + Math.min(f * 5, 100);
             const tipF = drawArrowH(bx + blockS / 2, by, 16 + Math.min(F * 5, 120), '#2563eb');
             const tipfric = drawArrowH(bx - blockS / 2, by, -fLen, '#ea580c');
-            sctx.font = 'bold 12px system-ui, sans-serif';
+            sctx.font = sceneFont(12, true);
             sctx.textAlign = 'center';
             if (tipF) {
                 sctx.fillStyle = '#2563eb';
@@ -537,11 +539,11 @@
             if (v > 0.05) {
                 const vTip = drawArrowH(bx, by - blockS / 2 - 18, 16 + Math.min(v * 8, 100), '#16a34a', 3.5);
                 sctx.fillStyle = '#16a34a';
-                sctx.font = 'bold 12px system-ui, sans-serif';
+                sctx.font = sceneFont(12, true);
                 if (vTip) sctx.fillText('v = ' + v.toFixed(2) + ' m/s', vTip.x + 8, vTip.y - 14);
                 // 滑动标记
                 sctx.fillStyle = '#6b7280';
-                sctx.font = '11px system-ui, sans-serif';
+                sctx.font = sceneFont(11);
                 sctx.fillText('滑动中', bx, gm.groundY + 36);
             }
 
@@ -550,7 +552,7 @@
             if (t >= tStar && t < tStar + 1.0 && state !== 'idle') {
                 const alpha = 1 - (t - tStar) / 1.0;
                 sctx.fillStyle = 'rgba(234, 88, 12, ' + (alpha * 0.9).toFixed(3) + ')';
-                sctx.font = 'bold 20px system-ui, sans-serif';
+                sctx.font = sceneFont(20, true);
                 sctx.textAlign = 'center';
                 sctx.fillText('发生突变！f：' + fMaxOf().toFixed(1) + ' N → ' + fKOf().toFixed(1) + ' N', w / 2, 58);
             }

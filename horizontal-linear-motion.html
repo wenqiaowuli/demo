@@ -283,6 +283,8 @@
 
         const sceneCanvas = document.getElementById('scene');
         const sctx = sceneCanvas.getContext('2d');
+        // 场景字体：随画布宽度等比缩放，窄屏下限 10px（系列约定）
+        const sceneFont = (px, bold) => (bold ? 'bold ' : '') + Math.max(px * ((sceneCanvas.clientWidth || 880) / 880), 10) + 'px system-ui, sans-serif';
         const vtCanvas = document.getElementById('vtChart');
         const vtCtx = vtCanvas.getContext('2d');
         const stCanvas = document.getElementById('stChart');
@@ -400,7 +402,7 @@
             sctx.lineTo(g.plotR + 6, g.axisY + 5);
             sctx.closePath();
             sctx.fill();
-            sctx.font = '12px system-ui, sans-serif';
+            sctx.font = sceneFont(12);
             sctx.fillStyle = '#6b7280';
             sctx.textAlign = 'right';
             sctx.fillText('x/m', g.plotR + 16, g.axisY - 12);
@@ -432,12 +434,12 @@
             }
             sctx.restore();
             sctx.fillStyle = 'rgba(37, 99, 235, 0.8)';
-            sctx.font = '11px system-ui, sans-serif';
+            sctx.font = sceneFont(11);
             sctx.textAlign = 'center';
             sctx.fillText('+20 m', g.xToScreen(X_HALF) - 6, g.axisY - 46);
             sctx.fillText('-20 m', g.xToScreen(-X_HALF) + 6, g.axisY - 46);
             sctx.fillStyle = '#6b7280';
-            sctx.font = '12px system-ui, sans-serif';
+            sctx.font = sceneFont(12);
             sctx.textAlign = 'left';
             sctx.fillText('x 轴 · 向右为正', 18, 22);
         }
@@ -477,7 +479,7 @@
 
         function drawVectors(g, bx, by) {
             const v = vOf(t), a = aOf();
-            sctx.font = '12px system-ui, sans-serif';
+            sctx.font = sceneFont(12);
             if (Math.abs(v) >= 0.05) {
                 let dx = v * 7;
                 dx = Math.sign(dx) * Math.min(Math.abs(dx), 90);
@@ -530,7 +532,7 @@
             drawVectors(g, bx, by);
             drawBall(bx, by);
             sctx.fillStyle = '#1f2937';
-            sctx.font = '12px system-ui, sans-serif';
+            sctx.font = sceneFont(12);
             sctx.textAlign = 'center';
             sctx.fillText('x = ' + s.toFixed(2) + ' m', bx, by - 48);
             if (state === 'ended') {

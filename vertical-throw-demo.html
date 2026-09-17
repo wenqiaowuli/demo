@@ -280,6 +280,8 @@
 
         const sceneCanvas = document.getElementById('scene');
         const sctx = sceneCanvas.getContext('2d');
+        // 场景字体：随画布宽度等比缩放，窄屏下限 10px（系列约定）
+        const sceneFont = (px, bold) => (bold ? 'bold ' : '') + Math.max(px * ((sceneCanvas.clientWidth || 880) / 880), 10) + 'px system-ui, sans-serif';
         const vtCanvas = document.getElementById('vtChart');
         const vtCtx = vtCanvas.getContext('2d');
         const stCanvas = document.getElementById('stChart');
@@ -373,7 +375,7 @@
             sctx.lineTo(geometry.originX, geometry.originY);
             sctx.stroke();
             sctx.fillStyle = '#6b7280';
-            sctx.font = '11px system-ui, sans-serif';
+            sctx.font = sceneFont(11);
             sctx.textAlign = 'right';
             for (let m = 0; m <= geometry.hMax + yStep * 0.001; m += yStep) {
                 const py = yToScreen(geometry, m);
@@ -414,7 +416,7 @@
             sctx.arc(geometry.ballX, apexY, 4, 0, Math.PI * 2);
             sctx.fill();
             sctx.fillStyle = '#0f766e';
-            sctx.font = '12px system-ui, sans-serif';
+            sctx.font = sceneFont(12);
             sctx.textAlign = 'center';
             sctx.fillText('最高点 H = ' + apexHeight().toFixed(1) + ' m', geometry.ballX + 4, apexY - 12);
         }
@@ -447,7 +449,7 @@
         function drawVectors(geometry, bx, by) {
             const v = vOf(t);
             const scale = Math.min(3.5, 130 / Math.max(v0Of(), g));
-            sctx.font = '12px system-ui, sans-serif';
+            sctx.font = sceneFont(12);
             sctx.textAlign = 'left';
             if (Math.abs(v) * scale >= 2) {
                 const tip = drawArrow(bx, by, bx, by - v * scale, '#dc2626');
@@ -485,7 +487,7 @@
             sctx.arc(geometry.ballX, geometry.originY, 10, 0, Math.PI * 2);
             sctx.stroke();
             sctx.fillStyle = '#1f2937';
-            sctx.font = '12px system-ui, sans-serif';
+            sctx.font = sceneFont(12);
             sctx.textAlign = 'center';
             sctx.fillText('落地 v = -v₀', geometry.ballX, geometry.originY + 28);
         }

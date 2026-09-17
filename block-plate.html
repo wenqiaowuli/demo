@@ -339,6 +339,8 @@
         // ========== DOM ==========
         const canvas = document.getElementById('scene');
         const ctx = canvas.getContext('2d');
+        // 场景字体：随画布宽度等比缩放，窄屏下限 10px（系列约定）
+        const sceneFont = (px, bold) => (bold ? 'bold ' : '') + Math.max(px * ((canvas.clientWidth || 880) / 880), 10) + 'px system-ui, sans-serif';
         const graphCanvas = document.getElementById('graphCanvas');
         const gctx = graphCanvas.getContext('2d');
         const stCanvas = document.getElementById('stChart');
@@ -759,7 +761,7 @@
             ctx.fill();
             if (label) {
                 // 需求一（v7）：符号与箭头同一水平线，位于尖端外侧不重合
-                ctx.font = 'bold 11px system-ui';
+                ctx.font = sceneFont(11, true);
                 ctx.textAlign = 'center';
                 ctx.fillText(label, tipX + dir * 22, cy + 4);
             }
@@ -860,7 +862,7 @@
 
             // 正方向标注（需求五）：左上角
             ctx.fillStyle = '#6b7280';
-            ctx.font = '11px system-ui';
+            ctx.font = sceneFont(11);
             ctx.textAlign = 'left';
             ctx.fillText('正方向 →', SX(REGION_MIN) + 6, 24);
 
@@ -875,7 +877,7 @@
             // 地面距离标注（世界坐标，覆盖整个运动区域含负半轴）
             const labelStep = s >= 90 ? 2 : (s >= 40 ? 5 : 10);
             ctx.fillStyle = '#6b7280';
-            ctx.font = '11px system-ui';
+            ctx.font = sceneFont(11);
             ctx.textAlign = 'center';
             for (let m = Math.ceil(REGION_MIN / labelStep) * labelStep; m <= REGION_MAX; m += labelStep) {
                 ctx.fillText(m + 'm', SX(m), groundY + 24);
