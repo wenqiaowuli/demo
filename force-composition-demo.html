@@ -413,7 +413,7 @@
         const sceneCanvas = $('scene'), sctx = sceneCanvas.getContext('2d');
         const chartL = $('chartL'), ctxL = chartL.getContext('2d');
         const chartR = $('chartR'), ctxR = chartR.getContext('2d');
-        const views = { scene: { width: BASE_WIDTH, height: BASE_HEIGHT }, L: { width: 400, height: 180 }, R: { width: 400, height: 180 } };
+        const views = { scene: { width: BASE_WIDTH, height: BASE_HEIGHT, fit: 1 }, L: { width: 400, height: 180 }, R: { width: 400, height: 180 } };
         const tabCompose = $('tabCompose'), tabResolve = $('tabResolve');
         const titleL = $('titleL'), titleR = $('titleR');
         const composeParams = $('composeParams'), resolveParams = $('resolveParams');
@@ -480,6 +480,11 @@
         const fmt = (v, d = 2) => v.toFixed(d);
 
         // ---------- 主画布：自适应坐标变换 ----------
+        // 字体可读下限：场景等比缩小后文字实际大小 = 设计字号 × fit，窄屏时补偿到不低于约 10px
+        const MIN_FONT_PX = 10;
+        const sceneFont = (size, bold) =>
+            (bold ? 'bold ' : '') + Math.max(size, MIN_FONT_PX / views.scene.fit).toFixed(1) + 'px system-ui, sans-serif';
+
         // pointsN: N 单位坐标点集 → 求 bbox → 缩放平移使 bbox 居中于可用区
         function makeTransform(pointsN, opts = {}) {
             const mTop = 46, mBottom = 66, mSide = 44;
@@ -545,7 +550,7 @@
             sctx.lineTo(x2 - hl * Math.cos(ang + Math.PI / 7), y2 - hl * Math.sin(ang + Math.PI / 7));
             sctx.closePath();
             sctx.fill();
-            sctx.font = '11px system-ui, sans-serif';
+            sctx.font = sceneFont(11);
             sctx.fillStyle = color;
             sctx.textAlign = ang < 0 || ang > Math.PI ? 'right' : 'left';
             sctx.fillText(label, x2 + (Math.cos(ang) < 0 ? -6 : 6), y2 + (Math.sin(ang) < 0 ? -6 : 12));
@@ -569,7 +574,7 @@
                 ly = tr.oy + Math.sin(mid) * (rPx + 16) + 4;
             }
             sctx.fillStyle = color;
-            sctx.font = '11.5px system-ui, sans-serif';
+            sctx.font = sceneFont(11.5);
             sctx.textAlign = 'center';
             sctx.fillText(label, lx, ly);
         }
@@ -607,7 +612,7 @@
             sctx.beginPath();
             sctx.arc(tr.ox, tr.oy, 4, 0, Math.PI * 2);
             sctx.fill();
-            sctx.font = 'bold 12px system-ui, sans-serif';
+            sctx.font = sceneFont(12, true);
             sctx.textAlign = 'right';
             sctx.fillText('O', tr.ox - 8, tr.oy + 14);
         }
@@ -629,7 +634,7 @@
             sctx.moveTo(x0 + len, y - 5); sctx.lineTo(x0 + len, y + 5);
             sctx.stroke();
             sctx.fillStyle = '#6b7280';
-            sctx.font = '11px system-ui, sans-serif';
+            sctx.font = sceneFont(11);
             sctx.textAlign = 'left';
             sctx.fillText(unit + ' N', x0 + len + 7, y + 4);
         }
@@ -647,9 +652,11 @@
         }
 
         function drawBanner(text) {
-            sctx.font = 'bold 13px system-ui, sans-serif';
+            sctx.font = sceneFont(13, true);
             const w = sctx.measureText(text).width + 28;
-            const x = (BASE_WIDTH - w) / 2, y = 12;
+            // 窄屏时避开顶部状态/提示两行文字
+            const y = views.scene.fit < 0.75 ? 62 : 12;
+            const x = (BASE_WIDTH - w) / 2;
             sctx.fillStyle = 'rgba(220,38,38,0.12)';
             sctx.strokeStyle = 'rgba(220,38,38,0.6)';
             sctx.lineWidth = 1;
@@ -710,7 +717,7 @@
             if (res.F > 0.05) drawArrow(sctx, tr.ox, tr.oy, tr.px(C[0]), tr.py(C[1]), C_F, 4, 12);
 
             // 标注
-            sctx.font = 'bold 13px system-ui, sans-serif';
+            sctx.font = sceneFont(13, true);
             const mid1 = { x: (tr.ox + tr.px(P1[0])) / 2, y: (tr.oy + tr.py(P1[1])) / 2 + 20 };
             sctx.fillStyle = C_F1; sctx.textAlign = 'center';
             sctx.fillText('F₁ = ' + F1.toFixed(1) + ' N', mid1.x, mid1.y);
@@ -737,14 +744,15 @@
 
             // 顶部状态与提示
             const cls = composeClass(th);
-            sctx.font = 'bold 13px system-ui, sans-serif';
+            sctx.font = sceneFont(13, true);
             sctx.fillStyle = cls.color;
             sctx.textAlign = 'left';
             sctx.fillText('当前情形：' + cls.label, 18, 24);
             sctx.fillStyle = '#6b7280';
-            sctx.font = '11.5px system-ui, sans-serif';
+            sctx.font = sceneFont(11.5);
             sctx.textAlign = 'right';
-            sctx.fillText('待机时可拖拽 F₁ / F₂ 箭头端点调整（吸附 0.5 N / 5°）', BASE_WIDTH - 16, 24);
+            // 窄屏等比缩小后文字下限补偿会变"相对更宽"，提示换行避让左上状态文字
+            sctx.fillText('待机时可拖拽 F₁ / F₂ 箭头端点调整（吸附 0.5 N / 5°）', BASE_WIDTH - 16, views.scene.fit < 0.75 ? 46 : 24);
             drawScaleBar(tr);
         }
         function drawHandle(x, y, color) {
@@ -815,7 +823,7 @@
                 drawArrow(sctx, tr.ox, tr.oy, tr.px(o.Fx), tr.py(0), C_F1);
                 if (Math.abs(o.Fy) > 0.05) drawArrow(sctx, tr.ox, tr.oy, tr.px(0), tr.py(o.Fy), C_F2);
                 drawArrow(sctx, tr.ox, tr.oy, tr.px(Ftip[0]), tr.py(Ftip[1]), C_F, 4, 12);
-                sctx.font = 'bold 13px system-ui, sans-serif';
+                sctx.font = sceneFont(13, true);
                 sctx.fillStyle = C_F1; sctx.textAlign = 'center';
                 sctx.fillText('Fx = ' + o.Fx.toFixed(2) + ' N', (tr.ox + tr.px(o.Fx)) / 2, tr.oy + 22);
                 sctx.fillStyle = C_F2; sctx.textAlign = 'left';
@@ -841,7 +849,7 @@
                 drawArrow(sctx, tr.ox, tr.oy, tr.px(Q1[0]), tr.py(Q1[1]), C_F1);
                 drawArrow(sctx, tr.ox, tr.oy, tr.px(Q2[0]), tr.py(Q2[1]), C_F2);
                 drawArrow(sctx, tr.ox, tr.oy, tr.px(Ftip[0]), tr.py(Ftip[1]), C_F, 4, 12);
-                sctx.font = 'bold 13px system-ui, sans-serif';
+                sctx.font = sceneFont(13, true);
                 const m1 = labelSide({ x: (tr.ox + tr.px(Q1[0])) / 2, y: (tr.oy + tr.py(Q1[1])) / 2 },
                     { x: tr.px(Q1[0]), y: tr.py(Q1[1]) }, { x: tr.ox, y: tr.oy });
                 sctx.fillStyle = C_F1; sctx.textAlign = 'center';
@@ -856,7 +864,7 @@
                 sctx.fillText('F = ' + F.toFixed(2) + ' N', mF.x, mF.y);
             } else {
                 drawArrow(sctx, tr.ox, tr.oy, tr.px(Ftip[0]), tr.py(Ftip[1]), C_F, 4, 12);
-                sctx.font = 'bold 13px system-ui, sans-serif';
+                sctx.font = sceneFont(13, true);
                 sctx.fillStyle = C_F; sctx.textAlign = 'center';
                 const mF = labelSide({ x: (tr.ox + tr.px(Ftip[0])) / 2, y: (tr.oy + tr.py(Ftip[1])) / 2 },
                     { x: tr.px(Ftip[0]), y: tr.py(Ftip[1]) }, { x: tr.ox, y: tr.oy });
@@ -871,7 +879,7 @@
             }
 
             // 顶部状态与提示
-            sctx.font = 'bold 13px system-ui, sans-serif';
+            sctx.font = sceneFont(13, true);
             sctx.textAlign = 'left';
             if (method === 'multi') {
                 sctx.fillStyle = '#ea580c';
@@ -881,9 +889,9 @@
                 sctx.fillText(method === 'ortho' ? '正交分解：沿水平 / 竖直方向分解' : '按两已知方向分解：平行四边形作图求唯一解', 18, 24);
             }
             sctx.fillStyle = '#6b7280';
-            sctx.font = '11.5px system-ui, sans-serif';
+            sctx.font = sceneFont(11.5);
             sctx.textAlign = 'right';
-            sctx.fillText(method === 'ortho' ? '调整 F 与 α 观察分量变化' : '待机时可拖拽方向线手柄（吸附 5°）', BASE_WIDTH - 16, 24);
+            sctx.fillText(method === 'ortho' ? '调整 F 与 α 观察分量变化' : '待机时可拖拽方向线手柄（吸附 5°）', BASE_WIDTH - 16, views.scene.fit < 0.75 ? 46 : 24);
             if (method !== 'ortho' && !td.feasible) {
                 drawBanner('合力不在两分力方向之间，无法按效果分解');
             }
@@ -891,7 +899,7 @@
         }
 
         function drawScene() {
-            sctx.clearRect(0, 0, views.scene.width, views.scene.height);
+            sctx.clearRect(-1, -1, BASE_WIDTH + 2, BASE_HEIGHT + 2);
             if (mode === 'compose') drawComposeScene(); else drawResolveScene();
         }
 
@@ -1187,18 +1195,29 @@
         }
 
         // ---------- 画布尺寸（DPR + ResizeObserver，系列约定） ----------
-        function setupCanvas(canvas, view, aspect) {
+        // scene 画布按设计坐标 880×520 绘制：叠加等比缩放 fit = cssWidth/BASE_WIDTH，
+        // 窄屏（手机）下场景整体缩小但构图完整；fit 同时用于文字可读下限补偿。
+        // 拖拽交互 scenePos 本就映射到 0..BASE_WIDTH 设计坐标，与新变换天然一致。
+        function setupCanvas(canvas, view, aspect, design) {
             const cssWidth = canvas.clientWidth || 400;
             const cssHeight = cssWidth / aspect;
             const dpr = window.devicePixelRatio || 1;
             canvas.width = Math.round(cssWidth * dpr);
             canvas.height = Math.round(cssHeight * dpr);
-            canvas.getContext('2d').setTransform(dpr, 0, 0, dpr, 0, 0);
-            view.width = cssWidth;
-            view.height = cssHeight;
+            if (design) {
+                const fit = cssWidth / design.width;
+                canvas.getContext('2d').setTransform(dpr * fit, 0, 0, dpr * fit, 0, 0);
+                view.fit = fit;
+                view.width = design.width;
+                view.height = design.height;
+            } else {
+                canvas.getContext('2d').setTransform(dpr, 0, 0, dpr, 0, 0);
+                view.width = cssWidth;
+                view.height = cssHeight;
+            }
         }
         function resizeAll() {
-            setupCanvas(sceneCanvas, views.scene, BASE_WIDTH / BASE_HEIGHT);
+            setupCanvas(sceneCanvas, views.scene, BASE_WIDTH / BASE_HEIGHT, { width: BASE_WIDTH, height: BASE_HEIGHT });
             setupCanvas(chartL, views.L, CHART_ASPECT);
             setupCanvas(chartR, views.R, CHART_ASPECT);
             renderAll();
