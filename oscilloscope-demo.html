@@ -299,8 +299,8 @@
                 </div>
                 <div class="param-row">
                     <label for="rY" id="lY">竖直幅度 Ay</label>
-                    <input type="range" id="rY" min="0" max="100" step="1" value="50" aria-label="竖直幅度 Ay，0 到 100 伏">
-                    <span class="val" id="vY">50 V</span>
+                    <input type="range" id="rY" min="0" max="100" step="1" value="80" aria-label="竖直幅度 Ay，0 到 100 伏">
+                    <span class="val" id="vY">80 V</span>
                 </div>
                 <div class="param-row">
                     <label for="rU1">加速电压 U₁</label>
@@ -407,14 +407,14 @@
             speed: 1,
             U1: 1000,
             Ux: { type: 'saw', A: 80, dc: 0 },     // 默认水平 = 锯齿
-            Uy: { type: 'sine', A: 50, dc: 0 },    // 默认竖直 = 正弦
+            Uy: { type: 'sine', A: 80, dc: 0 },    // 默认竖直 = 正弦（初始幅度与水平相等，用户裁定）
             aux: true,
             pts: []                                // 屏上轨迹缓冲 [{t,x,y}|null]，x/y 单位 cm
         };
         const DEFAULTS = () => ({
             U1: 1000, speed: 1,
             Ux: { type: 'saw', A: 80, dc: 0 },
-            Uy: { type: 'sine', A: 50, dc: 0 }
+            Uy: { type: 'sine', A: 80, dc: 0 }
         });
 
         // ---------- 瞬时电压 ----------
@@ -945,6 +945,10 @@
             btnPause.disabled = idle;                       // 待机无可暂停
             btnPause.textContent = run ? '暂停' : '继续';
             btnReset.disabled = false;                      // 用户裁定：重置随时可用
+            // 用户裁定：波形类型仅待机态可改，演示过程与暂停时锁定
+            for (const btn of document.querySelectorAll('#segX button, #segY button')) {
+                btn.disabled = !idle;
+            }
             btnStart.setAttribute('aria-label', btnStart.textContent);
             btnPause.setAttribute('aria-label', btnPause.textContent);
             btnReset.setAttribute('aria-label', btnReset.textContent);
@@ -1012,11 +1016,11 @@
             if (st.Uy.type === 'dc') st.Uy.dc = +rY.value; else st.Uy.A = +rY.value;
             afterParamChange();
         });
-        for (const [seg, w] of [[segX, st.Ux], [segY, st.Uy]]) {
+        for (const [seg, dir] of [[segX, 'Ux'], [segY, 'Uy']]) {
             seg.addEventListener('click', (e) => {
                 const btn = e.target.closest('button');
                 if (!btn) return;
-                w.type = btn.dataset.t;
+                st[dir].type = btn.dataset.t;   // 直引用 st.Ux/st.Uy，避免 resetAll 换对象后闭包失联
                 afterParamChange();
             });
         }
