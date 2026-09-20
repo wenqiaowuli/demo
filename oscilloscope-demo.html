@@ -1,0 +1,1539 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>示波器演示｜高中物理</title>
+    <meta name="description" content="示波管工作原理教学演示（人教必修第三册 10.5）：电子枪加速、正交偏转与荧光屏成像。可调加速电压 U1、竖直/水平偏转电压，实时观察亮点位置与灵敏度 ∝1/U1 的变化；波形扫描模式下呈现锯齿扫描 + 正弦信号展开波形、回扫熄灭与打极板临界。">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background-color: #eef2f6;
+            color: #1f2937;
+            font-family: system-ui, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 12px 32px;
+        }
+        main {
+            width: 100%;
+            max-width: 880px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1 {
+            font-size: 22px;
+            margin-bottom: 12px;
+            text-align: center;
+        }
+        .canvas-wrap { width: 100%; }
+        canvas#scene {
+            display: block;
+            width: 100%;
+            aspect-ratio: 880 / 520;
+            border: 2px solid #2563eb;
+            border-radius: 10px;
+            background-color: #ffffff;
+            touch-action: none;
+        }
+        .charts-row {
+            margin-top: 16px;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+        @media (max-width: 720px) {
+            .charts-row { grid-template-columns: 1fr; }
+        }
+        .chart-panel { min-width: 0; }
+        .chart-panel canvas {
+            display: block;
+            width: 100%;
+            aspect-ratio: 20 / 9;
+            background: #ffffff;
+            border: 2px solid #2563eb;
+            border-radius: 10px;
+        }
+        .chart-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        .group-title {
+            font-size: 12px;
+            color: #6b7280;
+            letter-spacing: 0.5px;
+        }
+        .seg {
+            display: flex;
+            gap: 6px;
+        }
+        .seg button {
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            color: #475569;
+            padding: 4px 10px;
+            border-radius: 7px;
+            font-size: 12px;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+        .seg button:hover { background: #eef2f7; }
+        .seg button.active {
+            background: #2563eb;
+            border-color: #2563eb;
+            color: #ffffff;
+        }
+        .seg button:disabled { opacity: 0.45; cursor: not-allowed; }
+        .panel-grid {
+            margin-top: 16px;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+        @media (max-width: 800px) {
+            .panel-grid { grid-template-columns: 1fr; }
+        }
+        .param-group,
+        .data-group {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            box-shadow: 0 1px 2px rgba(15,23,42,.05);
+            padding: 14px 16px;
+            min-width: 0;
+        }
+        .param-group .group-title,
+        .data-group .group-title { margin-bottom: 10px; }
+        input[type=range]:disabled { opacity: 0.45; cursor: not-allowed; }
+        .param-row {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            margin-bottom: 10px;
+        }
+        .param-row label {
+            font-size: 13px;
+            color: #1f2937;
+            white-space: nowrap;
+            min-width: 118px;
+        }
+        .param-row input[type=range] { flex: 1; min-width: 0; }
+        .param-row input[type=checkbox] { flex: 0 0 auto; width: 16px; height: 16px; }
+        .param-row .val {
+            min-width: 88px;
+            text-align: right;
+            font-size: 13px;
+            font-variant-numeric: tabular-nums;
+            color: #1f2937;
+        }
+        .seg-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .seg-row .seg-label {
+            font-size: 13px;
+            color: #1f2937;
+            min-width: 118px;
+        }
+        .seg-row .seg { flex: 1; }
+        .seg-row .seg button { flex: 1; padding: 6px 4px; font-size: 12.5px; }
+        .fixed-note {
+            margin-top: 8px;
+            font-size: 12px;
+            color: #6b7280;
+            line-height: 1.6;
+        }
+        .fixed-note b { color: #b45309; font-weight: 600; }
+        .data-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 9px;
+        }
+        @media (max-width: 640px) {
+            .data-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+        .data-item {
+            background: #f8fafc;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 8px 10px;
+            min-width: 0;
+        }
+        .data-item.span-full { grid-column: 1 / -1; }
+        .data-item span {
+            display: block;
+            font-size: 11px;
+            color: #6b7280;
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .data-item b {
+            display: block;
+            font-size: 12.5px;
+            color: #1f2937;
+            font-variant-numeric: tabular-nums;
+            white-space: normal;
+            line-height: 1.35;
+        }
+        .controls-row {
+            margin-top: 16px;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .controls-row .btn {
+            padding: 9px 26px;
+            border-radius: 8px;
+            font-size: 14px;
+            border: 1px solid #cbd5e1;
+            background: #f8fafc;
+            color: #334155;
+            cursor: pointer;
+            transition: background-color 0.15s ease;
+        }
+        .controls-row .btn:hover:not(:disabled) { background: #eef2f7; }
+        .controls-row .btn.primary {
+            background: #2563eb;
+            border-color: #2563eb;
+            color: #ffffff;
+        }
+        .controls-row .btn.primary:hover:not(:disabled) { background: #1d4ed8; }
+        .controls-row .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+        .legend {
+            margin-top: 12px;
+            width: 100%;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px 14px;
+            justify-content: center;
+            font-size: 11.5px;
+            color: #6b7280;
+        }
+        .legend span { display: inline-flex; align-items: center; gap: 5px; }
+        .legend i {
+            display: inline-block;
+            width: 18px;
+            height: 4px;
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <h1>示波器演示｜高中物理</h1>
+        <div class="canvas-wrap">
+            <canvas id="scene" aria-label="示波器演示主场景：示波管结构与荧光屏成像"></canvas>
+        </div>
+        <div class="charts-row">
+            <div class="chart-panel">
+                <div class="chart-head"><div class="group-title">出射速度 v₀ – 加速电压 U₁（v₀ ∝ √U₁）</div></div>
+                <canvas id="chartL" aria-label="出射速度随加速电压变化曲线"></canvas>
+            </div>
+            <div class="chart-panel">
+                <div class="chart-head">
+                    <div class="group-title">屏上偏移 – 偏转电压（灵敏度 ∝ 1/U₁）</div>
+                    <div class="seg" role="group" aria-label="偏转方向切换">
+                        <button id="dirY" class="active" type="button" aria-label="查看竖直方向 Y–Uy 曲线" aria-pressed="true">Y–Uy/Ay</button>
+                        <button id="dirX" type="button" aria-label="查看水平方向 X–Ux 曲线" aria-pressed="false">X–Ux/Ax</button>
+                    </div>
+                </div>
+                <canvas id="chartR" aria-label="屏上偏移随偏转电压变化直线族"></canvas>
+            </div>
+        </div>
+        <div class="panel-grid">
+            <section class="param-group">
+                <div class="group-title">参数设定</div>
+                <div class="seg-row">
+                    <span class="seg-label">演示模式</span>
+                    <div class="seg">
+                        <button id="mBtn1" class="active" type="button" aria-label="切换到模式一：偏转演示">偏转演示</button>
+                        <button id="mBtn2" type="button" aria-label="切换到模式二：波形扫描">波形扫描</button>
+                    </div>
+                </div>
+                <div class="param-row">
+                    <label for="rU1">加速电压 U₁</label>
+                    <input type="range" id="rU1" min="500" max="2000" step="10" value="1000" aria-label="加速电压 U1，500 到 2000 伏">
+                    <span class="val" id="vU1">1000 V</span>
+                </div>
+                <div class="param-row">
+                    <label for="rB" id="lB">竖直偏转电压 Uy</label>
+                    <input type="range" id="rB" min="-100" max="100" step="1" value="50" aria-label="竖直偏转电压 Uy，-100 到 +100 伏">
+                    <span class="val" id="vB">+50 V</span>
+                </div>
+                <div class="param-row">
+                    <label for="rC" id="lC">水平偏转电压 Ux</label>
+                    <input type="range" id="rC" min="-100" max="100" step="1" value="0" aria-label="水平偏转电压 Ux，-100 到 +100 伏">
+                    <span class="val" id="vC">0 V</span>
+                </div>
+                <div class="param-row">
+                    <label for="rSpd">播放速度</label>
+                    <input type="range" id="rSpd" min="0.1" max="2" step="0.1" value="1" aria-label="播放速度，0.1 到 2 倍">
+                    <span class="val" id="vSpd">1.0×</span>
+                </div>
+                <div class="param-row">
+                    <label for="auxChk">显示教学辅助</label>
+                    <input type="checkbox" id="auxChk" checked aria-label="显示教学辅助图层：速度箭头、临界线、侧移标注">
+                    <span class="val" id="vAux">箭头/临界线/标注</span>
+                </div>
+                <div class="fixed-note">
+                    <b>加速</b>：eU₁ = ½mv₀² ⇒ v₀ = √(2eU₁/m)。<b>正交偏转（两方向对称）</b>：板内侧移 y = UL²/(4dU₁)，出射角 tanθ = UL/(2dU₁)，屏上偏移 <b>X = 0.4·Ux/U₁、Y = 0.4·Uy/U₁</b>（cm 数 = 40·U/U₁）；<b>灵敏度 ∝ 1/U₁</b>，U₁ 增大 ⇒ 亮点/波形向屏中心收缩。<b>打极板临界</b>：|U偏| = 0.125·U₁（板内 5 mm、屏上 ±5 cm，超出即电子打在极板上）。<b>模式二</b>：Uy(t) = Ay·sin(4πq)、Ux(t) = −Ax + 2Ax·q（q 为正扫进度），T扫 = 2·T信（屏显 2 个完整周期），回扫阶段电子束熄灭。常量 e = 1.6×10⁻¹⁹ C、m = 9.1×10⁻³¹ kg；L = 4 cm、d = 1 cm、L′ = 18 cm、屏 ±6 cm。
+                </div>
+            </section>
+            <section class="data-group">
+                <div class="group-title" id="dataTitle">实时数值（模式一 · 偏转演示）</div>
+                <div class="data-grid" id="dataGrid" aria-live="polite"></div>
+            </section>
+        </div>
+        <div class="controls-row">
+            <button id="btnAuto" class="btn primary" type="button" aria-label="自动演示">▶ 自动演示</button>
+            <button id="btnPause" class="btn" type="button" aria-label="暂停" disabled>暂停</button>
+            <button id="btnReset" class="btn" type="button" aria-label="重置">重置</button>
+        </div>
+        <div class="legend">
+            <span><i style="background:#0d9488"></i>电子束</span>
+            <span><i style="background:#16a34a"></i>荧光亮点 / 波形</span>
+            <span><i style="background:#d97706"></i>加速电场</span>
+            <span><i style="background:#ea580c"></i>偏转电场 YY</span>
+            <span><i style="background:#7c3aed"></i>XX 极板（⊥纸面）</span>
+            <span><i style="background:#64748b"></i>电极 / 极板</span>
+            <span>待机（模式一）可拖拽屏上亮点</span>
+            <span>空格 = 播放/暂停 · R = 重置</span>
+        </div>
+    </main>
+    <script id="osc-physics">
+    (function (root) {
+        'use strict';
+        // ===== 物理核（纯函数，可脱离 DOM 验证） =====
+        var e = 1.6e-19, m = 9.1e-31;             // 电子电荷量大小 / 质量
+        var L = 0.04, d = 0.01, Lp = 0.18;        // 板长 / 板间距 / 板右端到屏
+        var K = L * (L + 2 * Lp) / (4 * d);       // 结构常量 = 0.4 m
+        var SCREEN_HALF_CM = 6;
+        var CRIT = 0.125;                          // 打极板临界系数：|U偏| = 0.125·U1
+        var CRIT_OFF_CM = K * CRIT * 100;          // = 5 cm（结构性，与 U1 无关）
+        var EPS = 1e-9;
+
+        function v0(U1) { return Math.sqrt(2 * e * U1 / m); }
+        function tNs(U1) { return L / v0(U1) * 1e9; }
+        function field(U) { return U / d; }
+        function accel(U) { return e * U / (m * d); }
+        function innerMm(U, U1) { return 40 * U / U1; }        // y = 0.04·U/U1 m = 40·U/U1 mm
+        function tanTheta(U, U1) { return 2 * U / U1; }
+        function offCm(U, U1) { return 40 * U / U1; }          // 屏上偏移 cm = 0.4·U/U1 ×100
+        function hitState(U, U1) {
+            var lim = CRIT * U1, a = Math.abs(U);
+            if (a > lim + EPS) return 'hit';
+            if (a >= lim - EPS) return 'critical';
+            return 'ok';
+        }
+        function dragLimitV(U1) { return Math.floor(Math.min(100, CRIT * U1) + EPS); }
+        function dragLimitCm(U1) { return 40 * dragLimitV(U1) / U1; }
+        function inverseV(cm, U1) { return Math.round(cm * U1 / 40); }
+
+        // ===== 模式二：锯齿扫描 + 正弦信号 =====
+        var CYCLE_S = 4;        // 1× 时一个完整扫描周期（正扫+回扫）秒数
+        var RETRACE = 0.10;     // 回扫占一个周期的比例（8%~12% 取中）
+        function phaseToQ(p) {  // p∈[0,1) → 正扫进度 q∈[0,1]；回扫返回 null（束流熄灭）
+            var fwd = 1 - RETRACE;
+            return p <= fwd ? p / fwd : null;
+        }
+        function wave(q, Ay, Ax) {
+            return { ux: -Ax + 2 * Ax * q, uy: Ay * Math.sin(4 * Math.PI * q) };
+        }
+        function sampleValid(ux, uy, U1) {
+            var lim = CRIT * U1;
+            return Math.abs(ux) <= lim + EPS && Math.abs(uy) <= lim + EPS;
+        }
+        function scanStatus(Ay, Ax, U1) {   // ok | yy | xx | both | none
+            var lim = CRIT * U1;
+            var cy = Ay > lim + EPS, cx = Ax > lim + EPS;
+            if (!cy && !cx) return 'ok';
+            var any = false;
+            for (var i = 0; i <= 400; i++) {
+                var w = wave(i / 400, Ay, Ax);
+                if (sampleValid(w.ux, w.uy, U1)) { any = true; break; }
+            }
+            if (!any) return 'none';
+            if (cy && cx) return 'both';
+            return cy ? 'yy' : 'xx';
+        }
+
+        // ===== 模式一自动演示时间线（10 s，四段） =====
+        function demoPose(t) {
+            t = Math.max(0, Math.min(10, t));
+            if (t < 3) {
+                var k = t / 3;
+                return { U1: 500 + 1500 * k, Uy: 50, Ux: 0 };
+            }
+            if (t < 6) {
+                if (t < 3.5) { var k2 = (t - 3) / 0.5; return { U1: 2000 - 1000 * k2, Uy: 50 - 150 * k2, Ux: 0 }; }
+                var k3 = (t - 3.5) / 2.5; return { U1: 1000, Uy: -100 + 200 * k3, Ux: 0 };
+            }
+            if (t < 9) {
+                if (t < 6.5) { var k4 = (t - 6) / 0.5; return { U1: 1000, Uy: 100 - 100 * k4, Ux: -100 * k4 }; }
+                var k5 = (t - 6.5) / 2.5; return { U1: 1000, Uy: 0, Ux: -100 + 200 * k5 };
+            }
+            var k6 = (t - 9);
+            return { U1: 1000, Uy: 50 * k6, Ux: 100 - 100 * k6 };
+        }
+
+        // ===== 侧视电子束几何（设计坐标 880×520） =====
+        var TUBE = {
+            AXIS: 268, X_K: 66, X_A: 125, X0: 214, X1: 334, X_END: 540,
+            HALF_GAP_PX: 30,      // 偏转区半间距 0.5 cm = 30 px（60 px/cm）
+            FACE_CX: 725, FACE_CY: 278, FACE_PX_PER_CM: 21
+        };
+        function beamPath(Uy, Ux, U1) {
+            var AXIS = TUBE.AXIS, X0 = TUBE.X0, X1 = TUBE.X1;
+            var pts = [];
+            var i;
+            for (i = 0; i <= 20; i++) pts.push({ x: TUBE.X_K + (X0 - TUBE.X_K) * i / 20, y: AXIS });
+            var yExitPx = -(4 * Uy / U1) * 60;           // 出区竖直偏移（60 px/cm，画布 y 向下）
+            var lim = CRIT * U1;
+            var hitY = Math.abs(Uy) > lim + EPS, hitX = Math.abs(Ux) > lim + EPS;
+            var sCut = 1, cutDir = null;
+            function sHit(U) { return Math.sqrt(TUBE.HALF_GAP_PX * U1 / (240 * Math.abs(U))); }
+            if (hitY && hitX) { sCut = Math.min(sHit(Uy), sHit(Ux)); cutDir = 'both'; }
+            else if (hitY) { sCut = sHit(Uy); cutDir = 'YY'; }
+            else if (hitX) { sCut = sHit(Ux); cutDir = 'XX'; }
+            var N = 40;
+            for (i = 1; i <= N; i++) {
+                var s = (i / N) * sCut;
+                pts.push({ x: X0 + (X1 - X0) * s, y: AXIS + yExitPx * s * s });
+            }
+            if (cutDir) {
+                var cp = pts[pts.length - 1];
+                return { pts: pts, spotValid: false, cutDir: cutDir, cutPt: cp, endX: cp.x, endY: cp.y };
+            }
+            var endY = AXIS - offCm(Uy, U1) * TUBE.FACE_PX_PER_CM;
+            for (i = 1; i <= 20; i++) {
+                var k = i / 20;
+                pts.push({ x: X1 + (TUBE.X_END - X1) * k, y: AXIS + yExitPx + (endY - AXIS - yExitPx) * k });
+            }
+            return { pts: pts, spotValid: true, cutDir: null, cutPt: null, endX: TUBE.X_END, endY: endY };
+        }
+
+        root.OSC = {
+            e: e, m: m, L: L, d: d, Lp: Lp, K: K,
+            SCREEN_HALF_CM: SCREEN_HALF_CM, CRIT: CRIT, CRIT_OFF_CM: CRIT_OFF_CM,
+            CYCLE_S: CYCLE_S, RETRACE: RETRACE, TUBE: TUBE,
+            v0: v0, tNs: tNs, field: field, accel: accel,
+            innerMm: innerMm, tanTheta: tanTheta, offCm: offCm,
+            hitState: hitState, dragLimitV: dragLimitV, dragLimitCm: dragLimitCm, inverseV: inverseV,
+            phaseToQ: phaseToQ, wave: wave, sampleValid: sampleValid, scanStatus: scanStatus,
+            demoPose: demoPose, beamPath: beamPath
+        };
+    })(typeof window !== 'undefined' ? window : globalThis);
+    </script>
+    <script id="osc-app">
+    (() => {
+        'use strict';
+        const OSC = window.OSC;
+        const $ = (id) => document.getElementById(id);
+        const T = OSC.TUBE;
+        const C = {
+            beam: '#0d9488', spot: '#16a34a', accelE: '#d97706', defE: '#ea580c',
+            xx: '#7c3aed', metal: '#64748b', shell: '#94a3b8', ink: '#1f2937',
+            mut: '#6b7280', line: '#e5e7eb', axis: '#94a3b8', blue: '#2563eb',
+            warn: '#b45309', bad: '#dc2626', dash: 'rgba(31,41,55,0.45)'
+        };
+
+        // ---------- 状态 ----------
+        const st = {
+            mode: 1,
+            U1: 1000,
+            p1: { Uy: 50, Ux: 0 },
+            p2: { Ay: 50, Ax: 80, init: false },
+            m1: { phase: 'idle', t: 0 },          // idle | running | paused | ended
+            m2: { phase: 'scan-running', p: 0, preview: false },
+            speed: 1,
+            aux: true,
+            dir: 'Y',
+            trail: [],                             // 模式一亮点拖尾 [{x,y,t}]（t 为 vclock 秒）
+            strokes: [],                           // 已完成的扫描笔画
+            cur: null,                             // 当前笔画 {pts:[{x,y}|null]}
+            clock: 0,                              // 全局动画时钟（秒，含速度）
+            beamClock: 0,
+            vclock: 0                              // 视觉时钟（秒）：暂停时冻结，驱动余辉衰减
+        };
+
+        // ---------- DOM ----------
+        const sceneCanvas = $('scene'), sctx = sceneCanvas.getContext('2d');
+        const chartL = $('chartL'), ctxL = chartL.getContext('2d');
+        const chartR = $('chartR'), ctxR = chartR.getContext('2d');
+        const views = { scene: { fit: 1 }, L: { width: 400, height: 180 }, R: { width: 400, height: 180 } };
+        const rU1 = $('rU1'), rB = $('rB'), rC = $('rC'), rSpd = $('rSpd'), auxChk = $('auxChk');
+        const btnAuto = $('btnAuto'), btnPause = $('btnPause'), btnReset = $('btnReset');
+        const mBtn1 = $('mBtn1'), mBtn2 = $('mBtn2'), dirY = $('dirY'), dirX = $('dirX');
+
+        // ---------- 工具 ----------
+        const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+        const fmtSigned = (v, dig) => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(dig);
+        const fmtAcc = (U) => (U > 0 ? '+' : U < 0 ? '−' : '') + Math.abs(OSC.accel(U) / 1e14).toFixed(2) + '×10¹⁴ m/s²';
+        const SUP = { '-': '⁻', 0: '⁰', 1: '¹', 2: '²', 3: '³', 4: '⁴', 5: '⁵', 6: '⁶', 7: '⁷', 8: '⁸', 9: '⁹' };
+        const sup = (n) => String(n).split('').map(ch => SUP[ch]).join('');
+        function fmtSci(v, dig) {
+            if (Math.abs(v) < 1e-12) return '0';
+            const sgn = v < 0 ? '−' : '+';
+            const exp = Math.floor(Math.log10(Math.abs(v)));
+            const mant = Math.abs(v) / Math.pow(10, exp);
+            return sgn + mant.toFixed(dig) + '×10' + sup(exp);
+        }
+        function drawArrow(ctx, x0, y0, x1, y1, color, width, headLen) {
+            const dx = x1 - x0, dy = y1 - y0, len = Math.hypot(dx, dy);
+            if (len < 2) return;
+            const ang = Math.atan2(dy, dx);
+            ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = width; ctx.lineCap = 'round';
+            ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x1 - headLen * Math.cos(ang - Math.PI / 6.5), y1 - headLen * Math.sin(ang - Math.PI / 6.5));
+            ctx.lineTo(x1 - headLen * Math.cos(ang + Math.PI / 6.5), y1 - headLen * Math.sin(ang + Math.PI / 6.5));
+            ctx.closePath(); ctx.fill(); ctx.lineCap = 'butt';
+        }
+        function roundRectPath(ctx, x, y, w, h, r) {
+            ctx.beginPath();
+            ctx.moveTo(x + r, y);
+            ctx.arcTo(x + w, y, x + w, y + h, r);
+            ctx.arcTo(x + w, y + h, x, y + h, r);
+            ctx.arcTo(x, y + h, x, y, r);
+            ctx.arcTo(x, y, x + w, y, r);
+            ctx.closePath();
+        }
+        const sceneFont = (size, bold) =>
+            (bold ? 'bold ' : '') + Math.max(size, 10 / views.scene.fit).toFixed(1) + 'px system-ui, sans-serif';
+
+        // ---------- 当前有效参数 ----------
+        function curB() { return st.mode === 1 ? st.p1.Uy : st.p2.Ay; }
+        function curC() { return st.mode === 1 ? st.p1.Ux : st.p2.Ax; }
+        function curQ() { return st.mode === 2 ? OSC.phaseToQ(st.m2.p) : null; }
+        function instUV() {           // 模式二瞬时电压；回扫返回 null
+            if (st.mode === 1) return { uy: st.p1.Uy, ux: st.p1.Ux };
+            const q = curQ();
+            if (q === null) return null;
+            const w = OSC.wave(q, st.p2.Ay, st.p2.Ax);
+            return { uy: w.uy, ux: w.ux };
+        }
+
+        // ---------- 主场景 ----------
+        function drawScene() {
+            const c = sctx;
+            c.clearRect(-2, -2, 884, 524);
+            c.lineCap = 'butt'; c.lineJoin = 'miter';
+
+            drawStageStrip(c);
+            drawShell(c);
+            drawGun(c);
+            drawDeflector(c);
+            drawFace(c);
+
+            const iu = instUV();
+            const scanOff = st.mode === 2 && iu === null;   // 回扫熄灭
+            const path = scanOff ? null : OSC.beamPath(iu.uy, iu.ux, st.U1);
+
+            if (path) drawBeam(c, path);
+
+            if (st.mode === 1) {
+                drawTrail(c);
+                const sy = OSC.hitState(st.p1.Uy, st.U1), sx = OSC.hitState(st.p1.Ux, st.U1);
+                if (sy !== 'hit' && sx !== 'hit') drawSpotAndLink(c, path);
+                drawStatus(c, statusMode1());
+            } else {
+                drawWaveform(c);
+                drawStatus(c, statusMode2());
+            }
+        }
+
+        function drawStatus(c, s) {
+            const compact = views.scene.fit < 0.62;
+            let leftTxt = s.left;
+            if (compact) {
+                // v1.2：窄屏压缩主标题，但保留“参数过渡”语义（18.4）
+                leftTxt = s.left.split('　')[0];
+                if (s.left.includes('参数过渡')) leftTxt += ' · 参数过渡';
+            }
+            c.font = sceneFont(12, true);
+            c.fillStyle = C.ink;
+            c.textAlign = 'left'; c.textBaseline = 'alphabetic';
+            c.fillText(leftTxt, 14, 30);
+            c.fillStyle = s.color;
+            c.textAlign = 'right';
+            c.fillText(s.right, 866, compact ? 54 : 30);
+            c.textAlign = 'left';
+        }
+        function statusMode1() {
+            const sy = OSC.hitState(st.p1.Uy, st.U1), sx = OSC.hitState(st.p1.Ux, st.U1);
+            let right, color;
+            if (sy === 'hit' && sx === 'hit') { right = '电子同时打在 XX、YY 偏转极板上，荧光屏无亮点'; color = C.bad; }
+            else if (sy === 'hit') { right = '电子打在 YY 极板上，荧光屏无亮点'; color = C.bad; }
+            else if (sx === 'hit') { right = '电子打在 XX 极板上，荧光屏无亮点'; color = C.bad; }
+            else if (sy === 'critical' || sx === 'critical') { right = '临界：恰沿极板边缘通过'; color = C.warn; }
+            else {
+                right = '正常成像 (X=' + fmtSigned(OSC.offCm(st.p1.Ux, st.U1), 2) +
+                    ', Y=' + fmtSigned(OSC.offCm(st.p1.Uy, st.U1), 2) + ' cm)';
+                color = C.spot;
+            }
+            return { left: statusLeft(), right, color };
+        }
+        function statusLeft() {
+            let left = '模式一 偏转演示　X = 0.4·Ux/U₁　Y = 0.4·Uy/U₁';
+            // v1.1：过渡段可辨识（3~3.5 s 回落/竖直准备、6~6.5 s 水平准备）
+            if (st.m1.phase === 'running' &&
+                ((st.m1.t >= 3 && st.m1.t < 3.5) || (st.m1.t >= 6 && st.m1.t < 6.5))) {
+                left += '　·　参数过渡';
+            }
+            return left;
+        }
+        function statusMode2() {
+            const s = OSC.scanStatus(st.p2.Ay, st.p2.Ax, st.U1);
+            let right, color;
+            if (s === 'ok') { right = '正常波形（屏显 2 个完整周期）'; color = C.spot; }
+            else if (s === 'yy') { right = '信号峰值过大：波形上下削顶（打在 YY 极板）'; color = C.warn; }
+            else if (s === 'xx') { right = '扫描幅度过大：波形两端截断（打在 XX 极板）'; color = C.warn; }
+            else if (s === 'both') { right = '双向局部缺失：峰值与幅度均超临界'; color = C.warn; }
+            else { right = '当前参数无有效成像'; color = C.bad; }
+            return { left: '模式二 波形扫描　XX 锯齿扫描 + YY 正弦信号 ⇒ 屏显波形', right, color };
+        }
+
+        function drawStageStrip(c) {
+            const compact = views.scene.fit < 0.62;
+            const items = [[90, '①', '发射与加速'], [280, '②', '正交偏转'], [455, '③', '匀速传播'], [672, '④', '荧光屏成像']];
+            for (const [x, num, txt] of items) {
+                c.beginPath(); c.arc(x, 496, 9, 0, Math.PI * 2);
+                c.strokeStyle = C.blue; c.lineWidth = 1.5; c.stroke();
+                c.fillStyle = C.blue; c.font = sceneFont(11, true);
+                c.textAlign = 'center'; c.textBaseline = 'middle';
+                c.fillText(num, x, 497);
+                if (!compact) {
+                    c.fillStyle = '#334155'; c.font = sceneFont(11);
+                    c.textAlign = 'left';
+                    c.fillText(txt, x + 14, 497);
+                }
+            }
+            c.textBaseline = 'alphabetic';
+            c.textAlign = 'left';
+        }
+
+        function drawShell(c) {
+            const compact = views.scene.fit < 0.62;
+            c.strokeStyle = C.shell; c.lineWidth = 1.5;
+            c.beginPath();
+            c.moveTo(90, 222); c.lineTo(390, 222);
+            c.moveTo(90, 314); c.lineTo(390, 314);
+            c.moveTo(90, 222); c.lineTo(90, 314);
+            c.moveTo(390, 222); c.lineTo(556, 152);
+            c.moveTo(390, 314); c.lineTo(556, 384);
+            c.stroke();
+            c.setLineDash([5, 4]);
+            c.beginPath(); c.moveTo(556, 140); c.lineTo(556, 396); c.stroke();
+            c.setLineDash([]);
+            c.textAlign = 'center';
+            if (!compact) {
+                c.fillStyle = C.mut; c.font = sceneFont(10.5);
+                c.fillText('荧光屏（侧视）', 556, 132);
+            }
+            if (st.aux) {
+                c.fillStyle = C.mut; c.font = sceneFont(10);
+                c.fillText('L′ = 18 cm（示意，未按比例）', 445, 344);
+                c.setLineDash([3, 3]);
+                c.strokeStyle = 'rgba(31,41,55,0.3)'; c.lineWidth = 1;
+                c.beginPath(); c.moveTo(334, 326); c.lineTo(556, 326); c.stroke();
+                c.setLineDash([]);
+            }
+            c.textAlign = 'left';
+        }
+
+        function drawGun(c) {
+            const compact = views.scene.fit < 0.62;
+            // 灯丝
+            c.strokeStyle = C.accelE; c.lineWidth = 1.8;
+            c.beginPath();
+            c.moveTo(40, 274); c.lineTo(44, 262); c.lineTo(48, 274); c.lineTo(52, 262); c.lineTo(56, 274);
+            c.stroke();
+            c.fillStyle = C.mut; c.font = sceneFont(10); c.textAlign = 'center';
+            if (!compact) c.fillText('灯丝', 48, 290);
+            // 阴极 K
+            c.fillStyle = C.metal;
+            c.fillRect(66, 240, 6, 56);
+            c.fillText(compact ? 'K' : 'K 阴极', 69, 310);
+            // 阳极 A（带小孔）
+            c.fillRect(122, 240, 6, 18);
+            c.fillRect(122, 278, 6, 18);
+            c.fillText(compact ? 'A' : 'A 加速', 125, 310);
+            // 加速电场线：A(+) → K(−)，方向向左
+            for (const y of [246, 257, 279, 290]) drawArrow(c, 118, y, 80, y, C.accelE, 1.5, 6);
+            c.fillStyle = C.accelE; c.font = sceneFont(11.5, true);
+            c.fillText('U1 = ' + st.U1 + ' V', 97, 230);
+            c.textAlign = 'left';
+        }
+
+        function drawDeflector(c) {
+            const compact = views.scene.fit < 0.62;
+            const iu = instUV();
+            const uyShow = st.mode === 1 ? st.p1.Uy : st.p2.Ay;
+            const uxShow = st.mode === 1 ? st.p1.Ux : st.p2.Ax;
+            // YY 上下极板
+            c.fillStyle = 'rgba(234,88,12,0.10)'; c.strokeStyle = C.defE; c.lineWidth = 1.6;
+            c.fillRect(214, 224, 120, 14); c.strokeRect(214, 224, 120, 14);
+            c.fillRect(214, 298, 120, 14); c.strokeRect(214, 298, 120, 14);
+            c.fillStyle = C.defE; c.font = sceneFont(11.5, true); c.textAlign = 'center';
+            if (!compact) c.fillText('YY 竖直偏转', 274, 218);
+            c.fillStyle = C.ink; c.font = sceneFont(11);
+            c.fillText((st.mode === 1 ? 'Uy = ' : '信号峰值 Ay = ') + fmtSigned(uyShow, 0) + ' V', 274, 202);
+            // Ey 电场箭头（方向：+Uy → 上板正 → 场向下）
+            const uyInst = st.mode === 1 ? st.p1.Uy : (iu ? iu.uy : 0);
+            if (Math.abs(uyInst) >= 3) {
+                const len = 8 + 18 * Math.min(1, Math.abs(uyInst) / 100);
+                for (const x of [234, 274, 314]) {
+                    if (uyInst > 0) drawArrow(c, x, 242, x, 242 + len, C.defE, 1.6, 6);
+                    else drawArrow(c, x, 294, x, 294 - len, C.defE, 1.6, 6);
+                }
+            }
+            // XX 极板（⊥纸面，透视窄条）
+            c.fillStyle = 'rgba(124,58,237,0.55)';
+            c.fillRect(214, 244, 120, 3);
+            c.fillRect(214, 289, 120, 3);
+            c.strokeStyle = 'rgba(124,58,237,0.6)'; c.lineWidth = 1;
+            c.beginPath();
+            c.moveTo(214, 245); c.lineTo(207, 238); c.moveTo(334, 245); c.lineTo(341, 238);
+            c.moveTo(214, 290); c.lineTo(207, 297); c.moveTo(334, 290); c.lineTo(341, 297);
+            c.stroke();
+            c.fillStyle = C.xx; c.font = sceneFont(10.5);
+            if (!compact) c.fillText('XX 水平偏转（板面⊥纸面）', 274, 332);
+            c.fillStyle = C.ink; c.font = sceneFont(11);
+            c.fillText((st.mode === 1 ? 'Ux = ' : '扫描幅度 Ax = ') + fmtSigned(uxShow, 0) + ' V', 274, 348);
+            // Ux 方向标记：+Ux → 偏出纸面 → 屏右
+            const uxInst = st.mode === 1 ? st.p1.Ux : (iu ? iu.ux : 0);
+            if (Math.abs(uxInst) >= 3) {
+                c.strokeStyle = C.xx; c.lineWidth = 1.6;
+                c.beginPath(); c.arc(352, 268, 8, 0, Math.PI * 2); c.stroke();
+                if (uxInst > 0) { c.fillStyle = C.xx; c.beginPath(); c.arc(352, 268, 2.6, 0, Math.PI * 2); c.fill(); }
+                else {
+                    c.beginPath();
+                    c.moveTo(352 - 4, 268 - 4); c.lineTo(352 + 4, 268 + 4);
+                    c.moveTo(352 + 4, 268 - 4); c.lineTo(352 - 4, 268 + 4);
+                    c.stroke();
+                }
+                c.fillStyle = C.xx; c.font = sceneFont(9.5);
+                c.fillText(uxInst > 0 ? '出纸面（屏右）' : '入纸面（屏左）', 352, 290);
+            }
+            c.textAlign = 'left';
+        }
+
+        function drawFace(c) {
+            // 面板
+            c.strokeStyle = C.blue; c.lineWidth = 2;
+            roundRectPath(c, 584, 92, 282, 378, 10); c.stroke();
+            c.fillStyle = C.ink; c.font = sceneFont(12.5, true); c.textAlign = 'left';
+            c.fillText('荧光屏正面（±6 cm）', 600, 116);
+            // 网格区
+            const gx = 599, gy = 152, gw = 252, gh = 252, cx = T.FACE_CX, cy = T.FACE_CY, px = T.FACE_PX_PER_CM;
+            c.fillStyle = 'rgba(22,163,74,0.04)';
+            c.fillRect(gx, gy, gw, gh);
+            c.lineWidth = 1;
+            for (let i = 0; i <= 12; i++) {
+                const major = i % 2 === 0;
+                c.strokeStyle = major ? 'rgba(22,163,74,0.30)' : 'rgba(22,163,74,0.13)';
+                c.beginPath(); c.moveTo(gx + i * px, gy); c.lineTo(gx + i * px, gy + gh); c.stroke();
+                c.beginPath(); c.moveTo(gx, gy + i * px); c.lineTo(gx + gw, gy + i * px); c.stroke();
+            }
+            c.strokeStyle = 'rgba(22,163,74,0.55)';
+            c.beginPath(); c.moveTo(cx, gy); c.lineTo(cx, gy + gh); c.stroke();
+            c.beginPath(); c.moveTo(gx, cy); c.lineTo(gx + gw, cy); c.stroke();
+            c.strokeStyle = C.axis; c.lineWidth = 1.5;
+            c.strokeRect(gx, gy, gw, gh);
+            // 刻度数字
+            c.fillStyle = C.mut; c.font = sceneFont(9.5); c.textAlign = 'center';
+            c.fillText('−6', gx, gy + gh + 14);
+            c.fillText('0', cx, gy + gh + 14);
+            c.fillText('+6', gx + gw, gy + gh + 14);
+            c.fillText('X/cm', cx, gy + gh + 28);
+            c.textAlign = 'right';
+            c.fillText('+6', gx - 5, gy + 4);
+            c.fillText('0', gx - 5, cy + 3);
+            c.fillText('−6', gx - 5, gy + gh);
+            c.fillText('Y/cm', gx - 5, gy - 6);
+            c.textAlign = 'left';
+            if (st.aux) {
+                // 打极板临界 ±5 cm
+                c.strokeStyle = C.defE; c.lineWidth = 1.2; c.setLineDash([5, 4]);
+                for (const yy of [cy - 5 * px, cy + 5 * px]) {
+                    c.beginPath(); c.moveTo(gx, yy); c.lineTo(gx + gw, yy); c.stroke();
+                }
+                c.setLineDash([]);
+                c.fillStyle = C.defE; c.font = sceneFont(9.5); c.textAlign = 'right';
+                c.fillText('打极板临界 ±5 cm', gx + gw - 4, cy - 5 * px - 4);
+                c.textAlign = 'left';
+            }
+        }
+
+        function drawBeam(c, path) {
+            // 辉光 + 束流核心
+            c.lineJoin = 'round';
+            c.strokeStyle = 'rgba(13,148,136,0.18)'; c.lineWidth = 5;
+            c.beginPath();
+            path.pts.forEach((p, i) => i ? c.lineTo(p.x, p.y) : c.moveTo(p.x, p.y));
+            c.stroke();
+            c.strokeStyle = 'rgba(13,148,136,0.9)'; c.lineWidth = 1.8;
+            c.beginPath();
+            path.pts.forEach((p, i) => i ? c.lineTo(p.x, p.y) : c.moveTo(p.x, p.y));
+            c.stroke();
+            c.lineJoin = 'miter';
+            // 电子（等时间间隔 → 加速区自然拉开）
+            const pts = path.pts, n = pts.length;
+            if (n > 2) {
+                const vf = (x) => x < T.X_A ? 0.35 + 0.65 * Math.max(0, x - T.X_K) / (T.X_A - T.X_K) : 1;
+                const tm = [0]; let acc = 0;
+                for (let i = 1; i < n; i++) {
+                    const len = Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y);
+                    acc += len / Math.max((vf(pts[i - 1].x) + vf(pts[i].x)) / 2, 0.2);
+                    tm.push(acc);
+                }
+                const tot = tm[n - 1];
+                for (let k = 0; k < 10; k++) {
+                    let tau = ((st.beamClock + k / 10) % 1) * tot;
+                    let i = 1;
+                    while (i < n - 1 && tm[i] < tau) i++;
+                    const f = (tau - tm[i - 1]) / Math.max(tm[i] - tm[i - 1], 1e-6);
+                    const x = pts[i - 1].x + (pts[i].x - pts[i - 1].x) * f;
+                    const y = pts[i - 1].y + (pts[i].y - pts[i - 1].y) * f;
+                    c.fillStyle = 'rgba(13,148,136,0.25)';
+                    c.beginPath(); c.arc(x, y, 5, 0, Math.PI * 2); c.fill();
+                    c.fillStyle = C.beam;
+                    c.beginPath(); c.arc(x, y, 2.6, 0, Math.PI * 2); c.fill();
+                }
+            }
+            // 撞击极板
+            if (path.cutDir) {
+                const cp = path.cutPt;
+                c.strokeStyle = C.bad; c.lineWidth = 1.6;
+                for (let a = 0; a < 4; a++) {
+                    const ang = a * Math.PI / 2 + Math.PI / 4;
+                    c.beginPath();
+                    c.moveTo(cp.x + Math.cos(ang) * 3, cp.y + Math.sin(ang) * 3);
+                    c.lineTo(cp.x + Math.cos(ang) * 9, cp.y + Math.sin(ang) * 9);
+                    c.stroke();
+                }
+                if (path.cutDir === 'XX' || path.cutDir === 'both') {
+                    c.strokeStyle = C.xx; c.lineWidth = 1.6;
+                    c.beginPath(); c.arc(cp.x, cp.y, 12, 0, Math.PI * 2); c.stroke();
+                    c.beginPath();
+                    c.moveTo(cp.x - 5, cp.y - 5); c.lineTo(cp.x + 5, cp.y + 5);
+                    c.moveTo(cp.x + 5, cp.y - 5); c.lineTo(cp.x - 5, cp.y + 5);
+                    c.stroke();
+                }
+            }
+            if (st.aux && path.spotValid) {
+                // v₀ 速度箭头
+                const v0n = OSC.v0(st.U1) / 1e7;
+                const len = 26 + 30 * (v0n - 1.2) / 1.5;
+                drawArrow(c, 134, 244, 134 + len, 244, C.beam, 2.2, 7);
+                c.fillStyle = C.beam; c.font = sceneFont(10);
+                c.fillText('v₀ = ' + v0n.toFixed(2) + '×10⁷ m/s', 134, 260);
+                // 板内侧移标注
+                if (Math.abs(path.endY - T.AXIS) > 4) {
+                    c.strokeStyle = C.dash; c.lineWidth = 1; c.setLineDash([3, 3]);
+                    c.beginPath(); c.moveTo(338, T.AXIS); c.lineTo(338, path.endY); c.stroke();
+                    c.setLineDash([]);
+                    c.fillStyle = C.mut; c.font = sceneFont(9.5); c.textAlign = 'left';
+                    const ycm = 4 * (st.mode === 1 ? st.p1.Uy : (instUV() ? instUV().uy : 0)) / st.U1;
+                    c.fillText('y=' + fmtSigned(ycm * 10, 1) + ' mm', 342, (T.AXIS + path.endY) / 2 + 3);
+                }
+            }
+        }
+
+        function spotPx() {
+            const iu = instUV();
+            if (!iu) return null;
+            const Xcm = OSC.offCm(iu.ux, st.U1), Ycm = OSC.offCm(iu.uy, st.U1);
+            return { x: T.FACE_CX + Xcm * T.FACE_PX_PER_CM, y: T.FACE_CY - Ycm * T.FACE_PX_PER_CM, Xcm, Ycm };
+        }
+
+        function drawSpotAndLink(c, path) {
+            const sp = spotPx();
+            if (!sp || !path.spotValid) return;
+            c.setLineDash([4, 4]); c.strokeStyle = 'rgba(31,41,55,0.3)'; c.lineWidth = 1;
+            c.beginPath(); c.moveTo(T.X_END, path.endY); c.lineTo(sp.x, sp.y); c.stroke();
+            c.setLineDash([]);
+            const g = c.createRadialGradient(sp.x, sp.y, 1, sp.x, sp.y, 16);
+            g.addColorStop(0, 'rgba(22,163,74,0.5)');
+            g.addColorStop(1, 'rgba(22,163,74,0)');
+            c.fillStyle = g;
+            c.beginPath(); c.arc(sp.x, sp.y, 16, 0, Math.PI * 2); c.fill();
+            c.fillStyle = C.spot;
+            c.beginPath(); c.arc(sp.x, sp.y, 4.5, 0, Math.PI * 2); c.fill();
+        }
+
+        function drawTrail(c) {
+            st.trail = st.trail.filter(p => st.vclock - p.t <= 1);
+            for (const p of st.trail) {
+                const a = (1 - (st.vclock - p.t) / 1) * 0.55;
+                c.fillStyle = 'rgba(22,163,74,' + a.toFixed(3) + ')';
+                c.beginPath(); c.arc(p.x, p.y, 2.4, 0, Math.PI * 2); c.fill();
+            }
+        }
+
+        function strokePath(c, pts, alpha, width) {
+            c.strokeStyle = 'rgba(22,163,74,' + (alpha * 0.18).toFixed(3) + ')';
+            c.lineWidth = width + 3;
+            beginStroke(c, pts); c.stroke();
+            c.strokeStyle = 'rgba(22,163,74,' + alpha.toFixed(3) + ')';
+            c.lineWidth = width;
+            beginStroke(c, pts); c.stroke();
+        }
+        function beginStroke(c, pts) {
+            c.beginPath();
+            let pen = false;
+            for (const p of pts) {
+                if (!p) { pen = false; continue; }
+                const x = T.FACE_CX + p.x * T.FACE_PX_PER_CM, y = T.FACE_CY - p.y * T.FACE_PX_PER_CM;
+                if (!pen) { c.moveTo(x, y); pen = true; } else c.lineTo(x, y);
+            }
+        }
+
+        function drawWaveform(c) {
+            const n0 = st.strokes.length;
+            st.strokes.forEach((s, i) => strokePath(c, s.pts, i === n0 - 1 ? 0.5 : 0.3, 2));
+            if (st.cur) strokePath(c, st.cur.pts, 0.95, 2.2);
+            if (st.m2.phase === 'scan-paused' && st.m2.preview) {
+                // 暂停后调参：解析预览（虚线）
+                c.setLineDash([6, 4]);
+                c.strokeStyle = 'rgba(22,163,74,0.45)'; c.lineWidth = 1.8;
+                c.beginPath();
+                let pen = false;
+                for (let i = 0; i <= 240; i++) {
+                    const w = OSC.wave(i / 240, st.p2.Ay, st.p2.Ax);
+                    if (!OSC.sampleValid(w.ux, w.uy, st.U1)) { pen = false; continue; }
+                    const x = T.FACE_CX + OSC.offCm(w.ux, st.U1) * T.FACE_PX_PER_CM;
+                    const y = T.FACE_CY - OSC.offCm(w.uy, st.U1) * T.FACE_PX_PER_CM;
+                    if (!pen) { c.moveTo(x, y); pen = true; } else c.lineTo(x, y);
+                }
+                c.stroke();
+                c.setLineDash([]);
+            }
+            const iu2 = instUV();
+            const sp = (iu2 && OSC.sampleValid(iu2.ux, iu2.uy, st.U1)) ? spotPx() : null;
+            if (sp) {
+                c.fillStyle = C.spot;
+                c.beginPath(); c.arc(sp.x, sp.y, 3.6, 0, Math.PI * 2); c.fill();
+            }
+        }
+
+        // ---------- 图表 ----------
+        function chartFrame(c, W, H, M, xmin, xmax, ymin, ymax, xticks, yticks, xFmt, yFmt, xTitle, yTitle) {
+            const px = (v) => M.l + (v - xmin) / (xmax - xmin) * (W - M.l - M.r);
+            const py = (v) => H - M.b - (v - ymin) / (ymax - ymin) * (H - M.t - M.b);
+            c.fillStyle = '#ffffff'; c.fillRect(0, 0, W, H);
+            c.strokeStyle = C.line; c.lineWidth = 1;
+            c.font = '10px system-ui, sans-serif';
+            for (const tv of xticks) {
+                c.strokeStyle = C.line;
+                c.beginPath(); c.moveTo(px(tv), M.t); c.lineTo(px(tv), H - M.b); c.stroke();
+                c.fillStyle = C.mut; c.textAlign = 'center';
+                c.fillText(xFmt(tv), px(tv), H - M.b + 13);
+            }
+            for (const tv of yticks) {
+                c.strokeStyle = C.line;
+                c.beginPath(); c.moveTo(M.l, py(tv)); c.lineTo(W - M.r, py(tv)); c.stroke();
+                c.fillStyle = C.mut; c.textAlign = 'right';
+                c.fillText(yFmt(tv), M.l - 5, py(tv) + 3);
+            }
+            c.strokeStyle = C.axis; c.lineWidth = 1.4;
+            c.strokeRect(M.l, M.t, W - M.l - M.r, H - M.t - M.b);
+            c.fillStyle = C.mut; c.font = '10.5px system-ui, sans-serif';
+            c.textAlign = 'right'; c.fillText(xTitle, W - M.r, H - 4);
+            c.textAlign = 'left'; c.fillText(yTitle, M.l, M.t - 3);
+            c.textAlign = 'left';
+            return { px, py };
+        }
+        function bubble(c, x, y, lines, color, W, H) {
+            c.font = '10.5px system-ui, sans-serif';
+            let w = 0;
+            for (const s of lines) w = Math.max(w, c.measureText(s).width);
+            const bw = w + 14, bh = lines.length * 15 + 8;
+            // v1.2：按实际图表画布尺寸定位，右侧放不下翻到锚点左侧，四向钳制不裁切
+            let bx = x + 10;
+            if (W && bx + bw > W - 2) bx = x - bw - 10;
+            bx = clamp(bx, 2, Math.max(2, (W || 400) - bw - 2));
+            let by = y - bh - 8;
+            if (by < 2) by = y + 12;
+            by = clamp(by, 2, Math.max(2, (H || 200) - bh - 2));
+            c.fillStyle = 'rgba(255,255,255,0.93)';
+            c.strokeStyle = '#cbd5e1'; c.lineWidth = 1;
+            roundRectPath(c, bx, by, bw, bh, 5); c.fill(); c.stroke();
+            c.fillStyle = color || C.ink; c.textAlign = 'left';
+            lines.forEach((s, i) => c.fillText(s, bx + 7, by + 17 + i * 15));
+        }
+
+        function drawChartL() {
+            const c = ctxL, W = views.L.width, H = views.L.height;
+            const M = { l: 46, r: 14, t: 18, b: 28 };
+            const { px, py } = chartFrame(c, W, H, M, 500, 2000, 1.2, 2.8,
+                [500, 1000, 1500, 2000], [1.5, 2.0, 2.5],
+                v => v, v => v.toFixed(1), 'U1/V', 'v₀/(10⁷ m/s)');
+            c.strokeStyle = C.beam; c.lineWidth = 2;
+            c.beginPath();
+            for (let i = 0; i <= 120; i++) {
+                const U1 = 500 + 1500 * i / 120;
+                const v = OSC.v0(U1) / 1e7;
+                if (i === 0) c.moveTo(px(U1), py(v)); else c.lineTo(px(U1), py(v));
+            }
+            c.stroke();
+            const cu = st.U1, cv = OSC.v0(cu) / 1e7;
+            c.setLineDash([4, 4]); c.strokeStyle = 'rgba(37,99,235,0.55)'; c.lineWidth = 1;
+            c.beginPath(); c.moveTo(px(cu), M.t); c.lineTo(px(cu), H - M.b); c.stroke();
+            c.setLineDash([]);
+            c.fillStyle = C.blue;
+            c.beginPath(); c.arc(px(cu), py(cv), 3.5, 0, Math.PI * 2); c.fill();
+            bubble(c, px(cu), py(cv), ['U1 = ' + cu + ' V', 'v₀ = ' + cv.toFixed(2) + '×10⁷ m/s'], C.ink, W, H);
+        }
+
+        function drawChartR() {
+            const c = ctxR, W = views.R.width, H = views.R.height;
+            const M = { l: 40, r: 14, t: 18, b: 28 };
+            const isM1 = st.mode === 1;
+            const xmin = isM1 ? -100 : 0, xmax = 100;
+            const yticks = [-6, -3, 0, 3, 6];
+            const xticks = isM1 ? [-100, -50, 0, 50, 100] : [0, 25, 50, 75, 100];
+            const xTitle = st.dir === 'Y' ? (isM1 ? 'Uy/V' : 'Ay/V（峰值）') : (isM1 ? 'Ux/V' : 'Ax/V（幅度）');
+            const yTitle = st.dir === 'Y' ? 'Y/cm' : 'X/cm';
+            const { px, py } = chartFrame(c, W, H, M, xmin, xmax, -6, 6, xticks, yticks,
+                v => v, v => v, xTitle, yTitle);
+            // 模型不可达带（±5 ~ ±6 cm）
+            c.fillStyle = 'rgba(234,88,12,0.05)';
+            c.fillRect(M.l, M.t, W - M.l - M.r, py(5) - M.t);
+            c.fillRect(M.l, py(-5), W - M.l - M.r, H - M.b - py(-5));
+            // 三条固定参考线 + 当前 U1 动态直线（裁剪到图框内）
+            c.save();
+            c.beginPath();
+            c.rect(M.l, M.t, W - M.l - M.r, H - M.t - M.b);
+            c.clip();
+            c.lineWidth = 1.2;
+            for (const U1i of [500, 1000, 2000]) {
+                c.strokeStyle = '#cbd5e1';
+                c.beginPath();
+                c.moveTo(px(xmin), py(OSC.offCm(xmin, U1i)));
+                c.lineTo(px(xmax), py(OSC.offCm(xmax, U1i)));
+                c.stroke();
+            }
+            c.strokeStyle = C.spot; c.lineWidth = 2.2;
+            c.beginPath();
+            c.moveTo(px(xmin), py(OSC.offCm(xmin, st.U1)));
+            c.lineTo(px(xmax), py(OSC.offCm(xmax, st.U1)));
+            c.stroke();
+            c.restore();
+            c.fillStyle = C.spot; c.font = '9.5px system-ui, sans-serif'; c.textAlign = 'right';
+            c.fillText('当前 U1=' + st.U1 + ' V', W - M.r - 8, clamp(py(OSC.offCm(xmax * 0.98, st.U1)), M.t + 10, H - M.b - 4));
+            // 打极板临界线
+            c.strokeStyle = C.defE; c.lineWidth = 1.2; c.setLineDash([5, 4]);
+            for (const yy of [5, -5]) {
+                c.beginPath(); c.moveTo(M.l, py(yy)); c.lineTo(W - M.r, py(yy)); c.stroke();
+            }
+            c.setLineDash([]);
+            c.fillStyle = C.defE; c.textAlign = 'left'; c.font = '9.5px system-ui, sans-serif';
+            c.fillText('打极板临界 ±5 cm（之外不可达）', M.l + 6, py(5) - 4);
+            // 参考线标签
+            c.fillStyle = C.axis; c.textAlign = 'right'; c.font = '9.5px system-ui, sans-serif';
+            for (const U1i of [500, 1000, 2000]) {
+                c.fillText('U1=' + U1i, W - M.r - 8, clamp(py(OSC.offCm(xmax, U1i)), M.t + 22, H - M.b - 16));
+            }
+            // 当前点（v1.2：任一方向碰板即整体无有效成像，两个方向都不得显示普通点）
+            const u = st.dir === 'Y' ? curB() : curC();
+            const off = OSC.offCm(u, st.U1);
+            const nameU = st.dir === 'Y' ? (isM1 ? 'Uy' : 'Ay') : (isM1 ? 'Ux' : 'Ax');
+            const nameY = st.dir === 'Y' ? 'Y' : 'X';
+            if (isM1) {
+                const hitX = OSC.hitState(st.p1.Ux, st.U1) === 'hit';
+                const hitY = OSC.hitState(st.p1.Uy, st.U1) === 'hit';
+                const anyHit = hitX || hitY;
+                const hsSel = OSC.hitState(u, st.U1);
+                if (anyHit) {
+                    const hitDir = hitX && hitY ? 'XX、YY' : (hitX ? 'XX' : 'YY');
+                    const yb = py(5 * Math.sign(off || 1));
+                    c.strokeStyle = C.bad; c.lineWidth = 1.8;
+                    c.beginPath();
+                    c.moveTo(px(u) - 5, yb - 5); c.lineTo(px(u) + 5, yb + 5);
+                    c.moveTo(px(u) + 5, yb - 5); c.lineTo(px(u) - 5, yb + 5);
+                    c.stroke();
+                    bubble(c, px(u), yb, [nameU + ' = ' + fmtSigned(u, 0) + ' V',
+                        nameY + '理论 = ' + fmtSigned(off, 2) + ' cm',
+                        hitDir + ' 方向碰板：屏无亮点'], C.bad, W, H);
+                } else if (hsSel === 'critical') {
+                    c.fillStyle = C.warn;
+                    c.beginPath(); c.arc(px(u), py(off), 3.5, 0, Math.PI * 2); c.fill();
+                    bubble(c, px(u), py(off), [nameU + ' = ' + fmtSigned(u, 0) + ' V', nameY + ' = ' + fmtSigned(off, 2) + ' cm（临界通过）'], C.warn, W, H);
+                } else {
+                    c.fillStyle = C.blue;
+                    c.beginPath(); c.arc(px(u), py(off), 3.5, 0, Math.PI * 2); c.fill();
+                    bubble(c, px(u), py(off), [nameU + ' = ' + fmtSigned(u, 0) + ' V', nameY + ' = ' + fmtSigned(off, 2) + ' cm'], C.ink, W, H);
+                }
+            } else {
+                // 模式二：显示峰值理论包络；任一方向峰值超临界或本方向超 ±5 cm 时用空心点区分“理论值、屏上不可达”
+                const anyOver = st.p2.Ay > OSC.CRIT * st.U1 + 1e-9 || st.p2.Ax > OSC.CRIT * st.U1 + 1e-9;
+                const hollow = Math.abs(off) > 5 + 1e-9 || anyOver;
+                const cyc = clamp(off, -6, 6);
+                if (hollow) {
+                    c.fillStyle = '#ffffff';
+                    c.beginPath(); c.arc(px(u), py(cyc), 3.5, 0, Math.PI * 2); c.fill();
+                    c.strokeStyle = C.blue; c.lineWidth = 1.6; c.stroke();
+                } else {
+                    c.fillStyle = C.blue;
+                    c.beginPath(); c.arc(px(u), py(cyc), 3.5, 0, Math.PI * 2); c.fill();
+                }
+                bubble(c, px(u), py(cyc), [nameU + ' = ' + fmtSigned(u, 0) + ' V',
+                    nameY + 'max = ±' + Math.abs(off).toFixed(2) + ' cm（理论包络' + (anyOver ? '·含无效段' : '') + '）'], C.ink, W, H);
+            }
+        }
+
+        // ---------- 数值面板 ----------
+        let dataCells = [];
+        function buildDataCells() {
+            const grid = $('dataGrid');
+            grid.innerHTML = '';
+            dataCells = [];
+            const isM1 = st.mode === 1;
+            $('dataTitle').textContent = isM1 ? '实时数值（模式一 · 偏转演示）' : '实时数值（模式二 · 波形扫描，按峰值/幅度）';
+            const defs = isM1 ? [
+                ['加速电压 U1', () => st.U1 + ' V'],
+                ['竖直偏转电压 Uy', () => fmtSigned(st.p1.Uy, 0) + ' V'],
+                ['水平偏转电压 Ux', () => fmtSigned(st.p1.Ux, 0) + ' V'],
+                ['出射速度 v₀', () => (OSC.v0(st.U1) / 1e7).toFixed(2) + '×10⁷ m/s'],
+                ['竖直场强 Ey', () => fmtSci(OSC.field(st.p1.Uy), 2) + ' V/m'],
+                ['水平场强 Ex', () => fmtSci(OSC.field(st.p1.Ux), 2) + ' V/m'],
+                ['竖直加速度 ay', () => fmtAcc(st.p1.Uy)],
+                ['水平加速度 ax', () => fmtAcc(st.p1.Ux)],
+                ['通过偏转区时间 t', () => OSC.tNs(st.U1).toFixed(2) + ' ns'],
+                ['板内竖直侧移 y', () => fmtSigned(OSC.innerMm(st.p1.Uy, st.U1), 2) + ' mm'],
+                ['板内水平侧移 x', () => fmtSigned(OSC.innerMm(st.p1.Ux, st.U1), 2) + ' mm'],
+                ['竖直出射角 tanθy', () => fmtSigned(OSC.tanTheta(st.p1.Uy, st.U1), 3)],
+                ['水平出射角 tanθx', () => fmtSigned(OSC.tanTheta(st.p1.Ux, st.U1), 3)],
+                ['屏上水平偏移 X', () => fmtSigned(OSC.offCm(st.p1.Ux, st.U1), 2) + ' cm'],
+                ['屏上竖直偏移 Y', () => fmtSigned(OSC.offCm(st.p1.Uy, st.U1), 2) + ' cm'],
+            ] : [
+                ['加速电压 U1', () => st.U1 + ' V'],
+                ['竖直信号峰值 Ay', () => st.p2.Ay + ' V'],
+                ['水平扫描幅度 Ax', () => st.p2.Ax + ' V'],
+                ['出射速度 v₀', () => (OSC.v0(st.U1) / 1e7).toFixed(2) + '×10⁷ m/s'],
+                ['峰值场强 Ey', () => fmtSci(OSC.field(st.p2.Ay), 2) + ' V/m'],
+                ['峰值场强 Ex', () => fmtSci(OSC.field(st.p2.Ax), 2) + ' V/m'],
+                ['峰值加速度 ay', () => Math.abs(OSC.accel(st.p2.Ay) / 1e14).toFixed(2) + '×10¹⁴ m/s²'],
+                ['峰值加速度 ax', () => Math.abs(OSC.accel(st.p2.Ax) / 1e14).toFixed(2) + '×10¹⁴ m/s²'],
+                ['通过偏转区时间 t', () => OSC.tNs(st.U1).toFixed(2) + ' ns'],
+                ['板内竖直侧移 ymax', () => OSC.innerMm(st.p2.Ay, st.U1).toFixed(2) + ' mm'],
+                ['板内水平侧移 xmax', () => OSC.innerMm(st.p2.Ax, st.U1).toFixed(2) + ' mm'],
+                ['竖直出射角 tanθy', () => OSC.tanTheta(st.p2.Ay, st.U1).toFixed(3)],
+                ['水平出射角 tanθx', () => OSC.tanTheta(st.p2.Ax, st.U1).toFixed(3)],
+                ['波形水平包络 Xmax', () => '±' + OSC.offCm(st.p2.Ax, st.U1).toFixed(2) + ' cm'],
+                ['波形竖直包络 Ymax', () => '±' + OSC.offCm(st.p2.Ay, st.U1).toFixed(2) + ' cm'],
+            ];
+            for (const [label, fn] of defs) {
+                const div = document.createElement('div');
+                div.className = 'data-item';
+                const sp = document.createElement('span');
+                sp.textContent = label;
+                const b = document.createElement('b');
+                div.appendChild(sp); div.appendChild(b);
+                grid.appendChild(div);
+                dataCells.push({ b, fn });
+            }
+            const div = document.createElement('div');
+            div.className = 'data-item span-full';
+            const sp = document.createElement('span');
+            sp.textContent = '成像状态';
+            const b = document.createElement('b');
+            div.appendChild(sp); div.appendChild(b);
+            grid.appendChild(div);
+            dataCells.push({ b, fn: () => isM1 ? statusMode1() : statusMode2(), status: true });
+        }
+        function updateReadouts() {
+            // v1.2：仅在内容变化时写 DOM，避免 aria-live 每帧重复播报
+            for (const cell of dataCells) {
+                const v = cell.fn();
+                if (cell.status) {
+                    if (cell.b.textContent !== v.right) {
+                        cell.b.textContent = v.right;
+                        cell.b.style.color = v.color;
+                    }
+                } else if (cell.b.textContent !== v) cell.b.textContent = v;
+            }
+        }
+
+        // ---------- 参数联动 ----------
+        function updateParamLabels() {
+            $('vU1').textContent = st.U1 + ' V';
+            if (st.mode === 1) {
+                $('vB').textContent = fmtSigned(st.p1.Uy, 0) + ' V';
+                $('vC').textContent = fmtSigned(st.p1.Ux, 0) + ' V';
+            } else {
+                $('vB').textContent = st.p2.Ay + ' V';
+                $('vC').textContent = st.p2.Ax + ' V';
+            }
+            $('vSpd').textContent = st.speed.toFixed(1) + '×';
+            // v1.2：滑条同步 aria-valuetext（带单位可读值）
+            rU1.setAttribute('aria-valuetext', '加速电压 ' + st.U1 + ' 伏');
+            if (st.mode === 1) {
+                rB.setAttribute('aria-valuetext', '竖直偏转电压 ' + st.p1.Uy + ' 伏');
+                rC.setAttribute('aria-valuetext', '水平偏转电压 ' + st.p1.Ux + ' 伏');
+            } else {
+                rB.setAttribute('aria-valuetext', '竖直信号峰值 ' + st.p2.Ay + ' 伏');
+                rC.setAttribute('aria-valuetext', '水平扫描幅度 ' + st.p2.Ax + ' 伏');
+            }
+            rSpd.setAttribute('aria-valuetext', '播放速度 ' + st.speed.toFixed(1) + ' 倍');
+        }
+        function syncSliders() {
+            rU1.value = st.U1;
+            if (st.mode === 1) { rB.value = st.p1.Uy; rC.value = st.p1.Ux; }
+            else { rB.value = st.p2.Ay; rC.value = st.p2.Ax; }
+            rSpd.value = st.speed;
+            updateParamLabels();
+        }
+        function applyModeToUI() {
+            mBtn1.classList.toggle('active', st.mode === 1);
+            mBtn2.classList.toggle('active', st.mode === 2);
+            mBtn1.setAttribute('aria-pressed', String(st.mode === 1));
+            mBtn2.setAttribute('aria-pressed', String(st.mode === 2));
+            if (st.mode === 1) {
+                $('lB').textContent = '竖直偏转电压 Uy';
+                $('lC').textContent = '水平偏转电压 Ux';
+                rB.min = -100; rB.max = 100; rB.step = 1; rB.value = st.p1.Uy;
+                rC.min = -100; rC.max = 100; rC.step = 1; rC.value = st.p1.Ux;
+                rB.setAttribute('aria-label', '竖直偏转电压 Uy，-100 到 +100 伏');
+                rC.setAttribute('aria-label', '水平偏转电压 Ux，-100 到 +100 伏');
+            } else {
+                $('lB').textContent = '竖直信号峰值 Ay';
+                $('lC').textContent = '水平扫描幅度 Ax';
+                rB.min = 0; rB.max = 100; rB.step = 1; rB.value = st.p2.Ay;
+                rC.min = 0; rC.max = 100; rC.step = 1; rC.value = st.p2.Ax;
+                rB.setAttribute('aria-label', '竖直正弦信号峰值 Ay，0 到 100 伏');
+                rC.setAttribute('aria-label', '水平锯齿扫描幅度 Ax，0 到 100 伏');
+            }
+        }
+        function afterParamChange() {
+            if (st.mode === 1 && st.m1.phase === 'paused') { st.m1.phase = 'idle'; st.m1.t = 0; setButtons(); }
+            if (st.mode === 2 && st.m2.phase === 'scan-paused' && !st.m2.preview) {
+                st.strokes = []; st.cur = null; st.m2.preview = true;
+            }
+            updateParamLabels();
+        }
+
+        // ---------- 按钮状态机 ----------
+        function setButtons() {
+            if (st.mode === 1) {
+                const ph = st.m1.phase;
+                if (ph === 'running') {
+                    btnAuto.disabled = true; btnAuto.textContent = '演示中…';
+                    btnPause.disabled = false; btnPause.textContent = '暂停';
+                    btnReset.disabled = true;
+                } else if (ph === 'paused') {
+                    btnAuto.disabled = false; btnAuto.textContent = '▶ 重新演示';
+                    btnPause.disabled = false; btnPause.textContent = '继续';
+                    btnReset.disabled = false;
+                } else if (ph === 'ended') {
+                    btnAuto.disabled = false; btnAuto.textContent = '▶ 再来一次';
+                    btnPause.disabled = true; btnPause.textContent = '暂停';
+                    btnReset.disabled = false;
+                } else {
+                    btnAuto.disabled = false; btnAuto.textContent = '▶ 自动演示';
+                    btnPause.disabled = true; btnPause.textContent = '暂停';
+                    btnReset.disabled = false;
+                }
+                mBtn1.disabled = ph === 'running';
+                mBtn2.disabled = ph === 'running';
+            } else {
+                const run = st.m2.phase === 'scan-running';
+                btnAuto.disabled = true; btnAuto.textContent = run ? '扫描中' : '扫描模式';
+                btnPause.disabled = false; btnPause.textContent = run ? '暂停' : '继续';
+                btnReset.disabled = false;
+                mBtn1.disabled = run;
+                mBtn2.disabled = run;
+            }
+            // v1.2：动态按钮文本变化时同步 aria-label
+            btnAuto.setAttribute('aria-label', btnAuto.textContent);
+            btnPause.setAttribute('aria-label', btnPause.textContent);
+            btnReset.setAttribute('aria-label', btnReset.textContent);
+        }
+        function setParamLocks() {
+            const lock = st.mode === 1 && st.m1.phase === 'running';
+            rU1.disabled = lock; rB.disabled = lock; rC.disabled = lock;
+        }
+
+        // ---------- 模式一动画 ----------
+        function startDemo() {
+            if (st.mode !== 1 || st.m1.phase === 'running') return;
+            st.m1.phase = 'running'; st.m1.t = 0;
+            setButtons(); setParamLocks();
+        }
+        function pauseDemo() {
+            if (st.mode === 1 && st.m1.phase === 'running') { st.m1.phase = 'paused'; setButtons(); setParamLocks(); }
+            else if (st.mode === 2 && st.m2.phase === 'scan-running') { st.m2.phase = 'scan-paused'; setButtons(); }
+        }
+        function resumeDemo() {
+            if (st.mode === 1 && st.m1.phase === 'paused') { st.m1.phase = 'running'; setButtons(); setParamLocks(); }
+            else if (st.mode === 2 && st.m2.phase === 'scan-paused') { st.m2.phase = 'scan-running'; st.m2.preview = false; setButtons(); }
+        }
+        function resetCurrent() {
+            if (st.mode === 1) {
+                st.U1 = 1000; st.p1.Uy = 50; st.p1.Ux = 0;
+                st.speed = 1;                       // v1.1：模式一重置同步恢复播放速度
+                st.m1.phase = 'idle'; st.m1.t = 0;
+                st.trail = [];
+            } else {
+                st.U1 = 1000; st.p2.Ay = 50; st.p2.Ax = 80; st.speed = 1;
+                st.strokes = []; st.cur = null; st.m2.preview = false;
+                st.m2.phase = 'scan-running'; st.m2.p = 0;
+            }
+            syncSliders(); setButtons(); setParamLocks();
+        }
+        function togglePlay() {
+            if (st.mode === 1) {
+                if (st.m1.phase === 'running') pauseDemo();
+                else if (st.m1.phase === 'paused') resumeDemo();
+                else startDemo();
+            } else {
+                if (st.m2.phase === 'scan-running') pauseDemo(); else resumeDemo();
+            }
+        }
+
+        // ---------- 模式切换 ----------
+        function setMode(m) {
+            if (m === st.mode) return;
+            if (st.mode === 1 && st.m1.phase === 'running') return;
+            if (st.mode === 2 && st.m2.phase === 'scan-running') return;
+            st.mode = m;
+            st.trail = []; st.strokes = []; st.cur = null;
+            if (m === 2) {
+                if (!st.p2.init) { st.p2.Ay = 50; st.p2.Ax = 80; st.p2.init = true; }
+                st.m2.phase = 'scan-running'; st.m2.p = 0; st.m2.preview = false;
+            } else {
+                st.m1.phase = 'idle'; st.m1.t = 0;
+            }
+            applyModeToUI(); buildDataCells(); syncSliders(); setButtons(); setParamLocks();
+        }
+
+        // ---------- 模式二笔画管理 ----------
+        function pushWavePoint() {
+            const q = curQ();
+            if (q === null) return;
+            const w = OSC.wave(q, st.p2.Ay, st.p2.Ax);
+            if (!st.cur) st.cur = { pts: [] };
+            if (!OSC.sampleValid(w.ux, w.uy, st.U1)) {
+                if (st.cur.pts.length && st.cur.pts[st.cur.pts.length - 1] !== null) st.cur.pts.push(null);
+                return;
+            }
+            const Xcm = OSC.offCm(w.ux, st.U1), Ycm = OSC.offCm(w.uy, st.U1);
+            const last = st.cur.pts[st.cur.pts.length - 1];
+            if (last && last !== null && Math.hypot(last.x - Xcm, last.y - Ycm) < 0.04) return;
+            st.cur.pts.push({ x: Xcm, y: Ycm });
+            if (st.cur.pts.length > 2600) st.cur.pts.splice(0, st.cur.pts.length - 2600);
+        }
+        function closeStroke() {
+            if (st.cur && st.cur.pts.length) {
+                st.strokes.push(st.cur);
+                while (st.strokes.length > 2) st.strokes.shift();
+            }
+            st.cur = null;
+        }
+
+        // ---------- 主循环 ----------
+        let lastTs = null;
+        function loop(ts) {
+            if (lastTs === null) lastTs = ts;
+            const dt = Math.min((ts - lastTs) / 1000, 0.05);
+            lastTs = ts;
+            // v1.2：暂停（paused/scan-paused）冻结全部动画；仅运行态推进教学时间线与波形
+            const paused = (st.mode === 1 && st.m1.phase === 'paused') ||
+                           (st.mode === 2 && st.m2.phase === 'scan-paused');
+            const animating = (st.mode === 1 && st.m1.phase === 'running') ||
+                              (st.mode === 2 && st.m2.phase === 'scan-running');
+            if (!paused) {
+                st.vclock += dt;
+                st.beamClock = (st.beamClock + dt * st.speed / clamp(0.9 * Math.sqrt(1000 / st.U1), 0.5, 1.8)) % 1;
+            }
+            if (animating) {
+                const ds = dt * st.speed;
+                st.clock += ds;
+                if (st.mode === 1) {
+                    st.m1.t += ds;
+                    if (st.m1.t >= 10) {
+                        st.m1.t = 10;
+                        st.U1 = 1000; st.p1.Uy = 50; st.p1.Ux = 0;
+                        st.m1.phase = 'ended';
+                        syncSliders(); setButtons(); setParamLocks();
+                    } else {
+                        const pose = OSC.demoPose(st.m1.t);
+                        st.U1 = Math.round(pose.U1 / 10) * 10;
+                        st.p1.Uy = Math.round(pose.Uy);
+                        st.p1.Ux = Math.round(pose.Ux);
+                        syncSliders();
+                    }
+                } else {
+                    const p0 = st.m2.p;
+                    st.m2.p = (st.m2.p + ds / OSC.CYCLE_S) % 1;
+                    const p1 = st.m2.p;
+                    const fwd = 1 - OSC.RETRACE;
+                    // v1.1：跨过正扫/回扫边界（或跨周期回绕）立即结束当前笔画
+                    if (st.cur && ((p0 <= fwd && p1 > fwd) || p1 < p0)) closeStroke();
+                    if (curQ() !== null) pushWavePoint();
+                }
+            }
+            // 模式一拖尾记录：暂停时不新增；时间戳用 vclock，暂停时余辉一并冻结
+            if (st.mode === 1 && st.m1.phase !== 'paused') {
+                const sy = OSC.hitState(st.p1.Uy, st.U1), sx = OSC.hitState(st.p1.Ux, st.U1);
+                if (sy !== 'hit' && sx !== 'hit') {
+                    const Xcm = OSC.offCm(st.p1.Ux, st.U1), Ycm = OSC.offCm(st.p1.Uy, st.U1);
+                    st.trail.push({ x: T.FACE_CX + Xcm * T.FACE_PX_PER_CM, y: T.FACE_CY - Ycm * T.FACE_PX_PER_CM, t: st.vclock });
+                    if (st.trail.length > 240) st.trail.splice(0, st.trail.length - 240);
+                }
+            }
+            drawScene();
+            drawChartL();
+            drawChartR();
+            updateReadouts();
+            requestAnimationFrame(loop);
+        }
+
+        // ---------- 交互 ----------
+        rU1.addEventListener('input', () => { st.U1 = +rU1.value; afterParamChange(); });
+        rB.addEventListener('input', () => {
+            if (st.mode === 1) st.p1.Uy = +rB.value; else st.p2.Ay = +rB.value;
+            afterParamChange();
+        });
+        rC.addEventListener('input', () => {
+            if (st.mode === 1) st.p1.Ux = +rC.value; else st.p2.Ax = +rC.value;
+            afterParamChange();
+        });
+        rSpd.addEventListener('input', () => { st.speed = +rSpd.value; updateParamLabels(); });
+        auxChk.addEventListener('change', () => { st.aux = auxChk.checked; });
+        btnAuto.addEventListener('click', () => { if (st.mode === 1) startDemo(); });
+        btnPause.addEventListener('click', togglePlay);
+        btnReset.addEventListener('click', resetCurrent);
+        mBtn1.addEventListener('click', () => setMode(1));
+        mBtn2.addEventListener('click', () => setMode(2));
+        dirY.addEventListener('click', () => {
+            st.dir = 'Y'; dirY.classList.add('active'); dirX.classList.remove('active');
+            dirY.setAttribute('aria-pressed', 'true'); dirX.setAttribute('aria-pressed', 'false');
+        });
+        dirX.addEventListener('click', () => {
+            st.dir = 'X'; dirX.classList.add('active'); dirY.classList.remove('active');
+            dirX.setAttribute('aria-pressed', 'true'); dirY.setAttribute('aria-pressed', 'false');
+        });
+
+        window.addEventListener('keydown', (e) => {
+            const t = e.target;
+            if (t && (t.tagName === 'INPUT' || t.tagName === 'BUTTON' || t.tagName === 'SELECT' || t.tagName === 'TEXTAREA')) return;
+            if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
+            else if (e.key === 'r' || e.key === 'R') resetCurrent();
+        });
+
+        // 拖拽亮点（v1.1：仅模式一 idle/paused；必须命中当前亮点；碰板无亮点时不可拖）
+        let dragging = false;
+        const face = { x: 599, y: 152, w: 252, h: 252 };
+        const DRAG_HIT_R = 15;                 // 命中半径（设计像素，12~18 取中）
+        function toDesign(e) {
+            const rect = sceneCanvas.getBoundingClientRect();
+            const fit = views.scene.fit;
+            return { x: (e.clientX - rect.left) / fit, y: (e.clientY - rect.top) / fit };
+        }
+        const inFace = (p) => p.x >= face.x && p.x <= face.x + face.w && p.y >= face.y && p.y <= face.y + face.h;
+        const dragAllowed = () => st.mode === 1 && (st.m1.phase === 'idle' || st.m1.phase === 'paused');
+        function spotDesignPos() {
+            if (st.mode !== 1) return null;
+            if (OSC.hitState(st.p1.Uy, st.U1) === 'hit' || OSC.hitState(st.p1.Ux, st.U1) === 'hit') return null;
+            return { x: T.FACE_CX + OSC.offCm(st.p1.Ux, st.U1) * T.FACE_PX_PER_CM,
+                     y: T.FACE_CY - OSC.offCm(st.p1.Uy, st.U1) * T.FACE_PX_PER_CM };
+        }
+        const nearSpot = (pt) => {
+            const sp = spotDesignPos();
+            return !!sp && Math.hypot(pt.x - sp.x, pt.y - sp.y) <= DRAG_HIT_R;
+        };
+        function applyDrag(pt) {
+            const limCm = OSC.dragLimitCm(st.U1);
+            let Xc = clamp((pt.x - T.FACE_CX) / T.FACE_PX_PER_CM, -limCm, limCm);
+            let Yc = clamp((T.FACE_CY - pt.y) / T.FACE_PX_PER_CM, -limCm, limCm);
+            st.p1.Ux = OSC.inverseV(Xc, st.U1);
+            st.p1.Uy = OSC.inverseV(Yc, st.U1);
+            if (st.m1.phase !== 'idle') { st.m1.phase = 'idle'; st.m1.t = 0; setButtons(); setParamLocks(); }
+            syncSliders();
+        }
+        sceneCanvas.addEventListener('pointerdown', (e) => {
+            if (!dragAllowed()) return;
+            const pt = toDesign(e);
+            if (!nearSpot(pt)) return;      // 空白网格按下不瞬移亮点
+            dragging = true;
+            sceneCanvas.setPointerCapture(e.pointerId);
+            sceneCanvas.style.cursor = 'grabbing';
+            applyDrag(pt);
+            e.preventDefault();
+        });
+        sceneCanvas.addEventListener('pointermove', (e) => {
+            const pt = toDesign(e);
+            if (dragging) { applyDrag(pt); return; }
+            sceneCanvas.style.cursor = dragAllowed() && nearSpot(pt) ? 'grab' : 'default';
+        });
+        const endDrag = () => { dragging = false; sceneCanvas.style.cursor = 'default'; };
+        sceneCanvas.addEventListener('pointerup', endDrag);
+        sceneCanvas.addEventListener('pointercancel', endDrag);
+
+        // ---------- 画布尺寸（DPR + ResizeObserver，系列约定） ----------
+        function setupCanvas(canvas, view, aspect, design) {
+            const cssWidth = canvas.clientWidth || 400;
+            const cssHeight = cssWidth / aspect;
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = Math.round(cssWidth * dpr);
+            canvas.height = Math.round(cssHeight * dpr);
+            if (design) {
+                const fit = cssWidth / design.width;
+                canvas.getContext('2d').setTransform(dpr * fit, 0, 0, dpr * fit, 0, 0);
+                view.fit = fit;
+            } else {
+                canvas.getContext('2d').setTransform(dpr, 0, 0, dpr, 0, 0);
+                view.width = cssWidth;
+                view.height = cssHeight;
+            }
+        }
+        function resizeAll() {
+            setupCanvas(sceneCanvas, views.scene, 880 / 520, { width: 880, height: 520 });
+            setupCanvas(chartL, views.L, 20 / 9);
+            setupCanvas(chartR, views.R, 20 / 9);
+        }
+        const ro = new ResizeObserver(() => { resizeAll(); });
+        ro.observe(sceneCanvas);
+        ro.observe(chartL);
+        ro.observe(chartR);
+
+        // ---------- 初始化 ----------
+        st.aux = window.innerWidth >= 720;
+        auxChk.checked = st.aux;
+        applyModeToUI();
+        buildDataCells();
+        syncSliders();
+        setButtons();
+        setParamLocks();
+        resizeAll();
+        // v1.1/v1.2 验证钩子：只读暴露关键内部状态，仅供本地端到端测试使用（18.6），
+        // 页面行为不依赖它；如需对外发布可整体移除，不影响任何功能。
+        window.getOscDebug = () => ({
+            mode: st.mode, m1phase: st.m1.phase, m1t: st.m1.t, m2phase: st.m2.phase,
+            p: st.m2.p, strokes: st.strokes.length, curPts: st.cur ? st.cur.pts.length : 0,
+            curHasGap: st.cur ? st.cur.pts.some(q => q === null) : false,
+            speed: st.speed, U1: st.U1, Uy: st.p1.Uy, Ux: st.p1.Ux, Ay: st.p2.Ay, Ax: st.p2.Ax,
+            beamClock: st.beamClock, vclock: st.vclock, trailLen: st.trail.length
+        });
+        requestAnimationFrame(loop);
+    })();
+    </script>
+</body>
+</html>
