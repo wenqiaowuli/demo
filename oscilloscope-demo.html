@@ -41,7 +41,7 @@
         .top-row {
             width: 100%;
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 45fr 55fr;
             gap: 14px;
             align-items: start;
         }
@@ -54,9 +54,8 @@
         }
         .chart-panel { min-width: 0; }
         .chart-panel canvas { aspect-ratio: 20 / 9; }
-        /* 用户裁定：顶排两图画框同尺寸（同为 560×360 比例），荧光屏去除外侧边框 */
-        #tubeCanvas { aspect-ratio: 560 / 360; border: none; }
-        #scopeCanvas { aspect-ratio: 560 / 360; border: none; }
+        #tubeCanvas { aspect-ratio: 560 / 360; }
+        #scopeCanvas { aspect-ratio: 400 / 360; }
         @media (max-width: 720px) {
             .top-row, .charts-row { grid-template-columns: 1fr; }
         }
@@ -653,12 +652,12 @@
         }
 
         // ---------- 示波器荧光屏（动态合成，设计坐标 400×360） ----------
-        const GX = 160, GY = 80, GW = 240, GH = 240, PX = 20;   // 560 宽画布居中
+        const GX = 74, GY = 80, GW = 240, GH = 240, PX = 20;
         const SCX = GX + GW / 2, SCY = GY + GH / 2;
         function drawScope(c) {
             const view = views.scope, compact = view.fit < 0.62;
             const f = (s, b) => font(view, s, b);
-            c.clearRect(-2, -2, 564, 364);
+            c.clearRect(-2, -2, 404, 364);
             c.lineCap = 'butt'; c.lineJoin = 'miter';
             c.fillStyle = C.ink; c.font = f(12.5, true); c.textAlign = 'left';
             c.fillText(compact ? '荧光屏正面' : '荧光屏正面（从右向左看，±6 cm）', GX, 66);
@@ -1056,7 +1055,7 @@
         }
         function resizeAll() {
             setupCanvas(tubeCanvas, views.tube, 560 / 360, { width: 560, height: 360 });
-            setupCanvas(scopeCanvas, views.scope, 560 / 360, { width: 560, height: 360 });
+            setupCanvas(scopeCanvas, views.scope, 400 / 360, { width: 400, height: 360 });
             setupCanvas(chartX, views.X, 20 / 9);
             setupCanvas(chartY, views.Y, 20 / 9);
         }
