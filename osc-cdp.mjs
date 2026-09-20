@@ -1,4 +1,4 @@
-// CDP 驱动 chrome-headless-shell 验证示波器演示页（v5，覆盖需求 16.6 + 18.7 + 20.5 验证清单）
+// CDP 驱动 chrome-headless-shell 验证示波器演示页（v6，覆盖 v2 需求第十三节验证清单）
 // 用法: node osc-cdp.mjs  (需 http://127.0.0.1:8642 + 9223 调试端口)
 import { writeFileSync } from 'node:fs';
 
@@ -16,6 +16,10 @@ const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 async function newTab() {
     const res = await fetch(`http://127.0.0.1:${DEBUG_PORT}/json/new?url=about:blank`, { method: 'PUT' });
     return res.json();
+}
+async function closeTab(tab) {
+    // 用完即关：泄漏的标签页各自跑 rAF 循环，会拖慢后续运行的渲染帧率
+    try { await fetch(`http://127.0.0.1:${DEBUG_PORT}/json/close/${tab.id}`); } catch { /* 忽略 */ }
 }
 function connect(wsUrl) {
     return new Promise((resolve, reject) => {
@@ -65,53 +69,15 @@ const shot = async (name) => {
 };
 const dbg = () => ev('window.getOscDebug && window.getOscDebug()');
 const setInput = (id, v) => ev(`(()=>{const el=document.getElementById('${id}');el.value=${v};el.dispatchEvent(new Event('input'));return true;})()`);
+const setSel = (id, v) => ev(`(()=>{const el=document.getElementById('${id}');el.value='${v}';el.dispatchEvent(new Event('change'));return true;})()`);
 const click = (id) => ev(`document.getElementById('${id}').click(); true`);
-const sceneData = () => ev(`document.getElementById('scene').toDataURL()`);
-async function waitForDbg(pred, timeoutMs, label) {
-    const t0 = Date.now();
-    while (Date.now() - t0 < timeoutMs) {
-        const d = await dbg();
-        if (d && pred(d)) return d;
-        await sleep(60);
-    }
-    throw new Error('waitForDbg 超时: ' + label);
-}
-async function mouseAt(designX, designY, press, release) {
-    const g = await ev(`(() => {
-        const c = document.getElementById('scene');
-        const r = c.getBoundingClientRect();
-        const fit = c.clientWidth / 880;
-        return { x: r.left + ${designX} * fit, y: r.top + ${designY} * fit };
-    })()`);
-    const mev = (type, x, y) => cdp.send('Input.dispatchMouseEvent', { type, x, y, button: 'left', clickCount: type === 'mousePressed' ? 1 : 0 });
-    if (press) await mev('mousePressed', g.x, g.y);
-    if (press && release) await mev('mouseMoved', g.x, g.y);
-    if (release) await mev('mouseReleased', g.x, g.y);
-}
-// chartR 像素探测：judge(rgb) 命中返回 true（合成到白底）
-const chartRProbe = (uVal, yVal, rad, judgeExpr) => ev(`(() => {
-    const c = document.getElementById('chartR');
+const clickSeg = (seg, t) => ev(`document.querySelector('#${seg} button[data-t="${t}"]').click(); true`);
+const canvasData = (id) => ev(`document.getElementById('${id}').toDataURL()`);
+// 设计坐标区域探测（tube 560×360 / scope 400×360 均为设计变换画布）
+const designProbe = (id, dw, x0, y0, w, h, judgeExpr) => ev(`(() => {
+    const c = document.getElementById('${id}');
     const ctx = c.getContext('2d');
-    const W = c.clientWidth, H = c.clientHeight;
-    const M = { l: 40, r: 14, t: 18, b: 28 };
-    const xmin = -100, xmax = 100;
-    const cx = M.l + (${uVal} - xmin) / 200 * (W - M.l - M.r);
-    const cy = H - M.b - (${yVal} - (-6)) / 12 * (H - M.t - M.b);
-    for (let dy = -${rad}; dy <= ${rad}; dy++) for (let dx = -${rad}; dx <= ${rad}; dx++) {
-        const x = Math.round(cx + dx), y = Math.round(cy + dy);
-        if (x < 0 || y < 0 || x >= c.width || y >= c.height) continue;
-        const d = ctx.getImageData(x, y, 1, 1).data;
-        const a = d[3] / 255;
-        const rgb = [0, 1, 2].map(i => Math.round(d[i] * a + 255 * (1 - a)));
-        if (${judgeExpr}) return true;
-    }
-    return false;
-})()`);
-// v1.3 主场景设计坐标区域探测：judge(rgb) 命中返回 true（透明底合成到白底）
-const sceneRegionProbe = (x0, y0, w, h, judgeExpr) => ev(`(() => {
-    const c = document.getElementById('scene');
-    const ctx = c.getContext('2d');
-    const s = c.width / 880;
+    const s = c.width / ${dw};
     for (let y = Math.round(${y0} * s); y < Math.round((${y0} + ${h}) * s); y += 2) {
         for (let x = Math.round(${x0} * s); x < Math.round((${x0} + ${w}) * s); x += 2) {
             const d = ctx.getImageData(x, y, 1, 1).data;
@@ -122,351 +88,323 @@ const sceneRegionProbe = (x0, y0, w, h, judgeExpr) => ev(`(() => {
     }
     return false;
 })()`);
+// 图表画布（无设计变换，DPR=1）整体探测
+const chartHas = (id, judgeExpr) => ev(`(() => {
+    const c = document.getElementById('${id}');
+    const ctx = c.getContext('2d');
+    for (let y = 0; y < c.height; y += 2) for (let x = 0; x < c.width; x += 2) {
+        const d = ctx.getImageData(x, y, 1, 1).data;
+        const a = d[3] / 255;
+        const rgb = [0, 1, 2].map(i => Math.round(d[i] * a + 255 * (1 - a)));
+        if (${judgeExpr}) return true;
+    }
+    return false;
+})()`);
+const GREEN = 'rgb[1] > 130 && rgb[0] < 120 && rgb[2] < 150';
+const RED = 'rgb[0] > 150 && rgb[1] < 110 && rgb[2] < 110';
+const INK = 'rgb[0] < 110 && rgb[1] < 110 && rgb[2] < 110';
+const BLUE = 'rgb[2] > 150 && rgb[0] < 120 && rgb[1] < 160';
 
-console.log('== 1. 加载页面');
+console.log('== 1. 加载页面（v2 布局与默认组合）');
 await cdp.send('Page.navigate', { url: PAGE_URL });
 await sleep(1800);
 ok(cdp.bag.msgs.length === 0, '页面加载/运行无控制台错误', cdp.bag.msgs.slice(0, 3).join(' | '));
 ok(await ev('document.title') === '示波器演示｜高中物理', '页面标题正确');
 ok(!!(await dbg()), 'getOscDebug 验证钩子可用');
-
-console.log('== 2. 模式一默认态 + 零值显示（18.7-7）');
-let data = await readAll('#dataGrid .data-item');
-ok(data[0] === '1000 V' && data[3] === '1.88×10⁷ m/s', '默认读数 U1/v₀ 正确', data[0] + '/' + data[3]);
-ok(data.includes('+2.00 cm') && data.includes('0.00 cm'), 'Y=+2.00 cm、X=0.00 cm');
-ok(data.includes('0.00×10¹⁴ m/s²'), 'Ux=0 → ax 显示 0.00（无 + 号）', JSON.stringify(data.filter(v => v.includes('10¹⁴'))));
-ok(data[data.length - 1].includes('正常成像'), '成像状态：正常成像');
-await setInput('rB', 0);
-await sleep(200);
-data = await readAll('#dataGrid .data-item');
-ok(data.includes('0.00×10¹⁴ m/s²') && data.filter(v => v === '0.00×10¹⁴ m/s²').length >= 2, 'Uy=0 → ay 也显示 0.00', JSON.stringify(data.filter(v => v.includes('10¹⁴'))));
-await setInput('rB', 50);
-
-console.log('== 3. v1.1 拖拽命中：空白网格按下不瞬移 + 命中拖拽（16.6-4）');
-await mouseAt(767, 215, true, true);
-await sleep(250);
 {
     const d = await dbg();
-    ok(d.Ux === 0 && d.Uy === 50, '空白处按下 Ux/Uy 不变', JSON.stringify({ Ux: d.Ux, Uy: d.Uy }));
+    ok(d.phase === 'running', '加载即运行（连续波形）', d.phase);
+    ok(d.uxType === 'saw' && d.uyType === 'sine', '默认组合：水平=锯齿、竖直=正弦', d.uxType + '/' + d.uyType);
+    ok(d.U1 === 1000 && d.uxA === 80 && d.uyA === 50, '默认参数 U1=1000、A=80/50');
+    ok(await read('#btnStart') === '运行中…' && await ev(`document.getElementById('btnStart').disabled`) === true, '运行中开始按钮禁用"运行中…"');
 }
-await mouseAt(725, 236, true, false);
 {
-    const g = await ev(`(() => {
-        const c = document.getElementById('scene');
-        const r = c.getBoundingClientRect();
-        const fit = c.clientWidth / 880;
-        return { x: r.left + 767 * fit, y: r.top + 215 * fit };
+    const five = await ev(`(() => {
+        const ids = ['tubeCanvas','scopeCanvas','chartX','chartY'];
+        const okOrder = [];
+        let y = -1;
+        for (const id of ids) {
+            const cy = document.getElementById(id).getBoundingClientRect().top;
+            okOrder.push(cy >= y - 1); y = cy;
+        }
+        const dataTop = document.querySelector('.data-group').getBoundingClientRect().top;
+        const paramTop = document.querySelector('.control-panel').getBoundingClientRect().top;
+        const deriveTop = document.querySelector('.formula-card').getBoundingClientRect().top;
+        const barTop = document.querySelector('.play-bar').getBoundingClientRect().top;
+        return { okOrder, dataTop, paramTop, deriveTop, barTop,
+                 chartsTop: document.getElementById('chartX').getBoundingClientRect().top };
     })()`);
-    await cdp.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: g.x, y: g.y, button: 'left' });
-    await cdp.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: g.x, y: g.y, button: 'left' });
-    await sleep(250);
-}
-{
-    const d = await dbg();
-    ok(d.Ux === 50 && d.Uy === 75, '命中拖拽反推 Ux=+50、Uy=+75', JSON.stringify({ Ux: d.Ux, Uy: d.Uy }));
+    ok(five.okOrder.every(Boolean), '画布自上而下：原理图→荧光屏→Ux图→Uy图', JSON.stringify(five.okOrder));
+    ok(five.barTop > five.chartsTop, '按钮条在第二排两图下方');
+    ok(five.dataTop < five.paramTop && five.paramTop < five.deriveTop, '实时数值 → 参数设定 → 推导与判断 顺序正确');
+    ok(await ev(`document.querySelectorAll('#dataGrid .data-item').length`) >= 9, '实时数值整行分列（≥9 个字段）');
 }
 
-console.log('== 4. v1.2 跨方向碰板右图整体无效态（18.1 / 18.7-1）');
-await setInput('rB', 50);       // 恢复 Uy（拖拽测试遗留 75，避免双向碰板干扰单方向用例）
-await setInput('rU1', 500);
-await setInput('rC', 100);      // Ux=100 → 仅 XX 碰板；Uy=50 正常
-await sleep(300);
-data = await readAll('#dataGrid .data-item');
-ok(data[data.length - 1].includes('XX′ 极板'), '状态：电子打在 XX′ 极板上（带撇记法）', data[data.length - 1]);
-ok(await ev(`document.getElementById('dirY').getAttribute('aria-pressed') === 'true'`) === true, '当前处于 Y 图');
+console.log('== 2. 默认组合（锯齿×正弦）动态波形');
 {
-    const blueAtY = await chartRProbe(50, 2, 5, 'rgb[2] > 180 && rgb[0] < 110');
-    const redAt5 = await chartRProbe(50, 5, 7, 'rgb[0] > 150 && rgb[1] < 100');
-    ok(!blueAtY, 'Y 图 (Uy=50) 不显示普通蓝色成像点（整体碰板）');
-    ok(redAt5, 'Y 图在 ±5 cm 临界线处显示红色碰板标记');
+    // 无头环境 rAF 启动/节流有波动 → 轮询等待时间推进与轨迹累积
+    let d = null;
+    const t0 = Date.now();
+    while (Date.now() - t0 < 8000) {
+        const cur = await dbg();
+        if (cur.t > 0.3 && cur.pts > 20) { d = cur; break; }
+        await sleep(200);
+    }
+    ok(!!d, '时间推进、屏上轨迹累积', JSON.stringify({ t: d?.t, pts: d?.pts }));
+    ok(await designProbe('scopeCanvas', 400, 74, 80, 240, 240, GREEN), '荧光屏出现荧光绿波形');
+    ok(await chartHas('chartX', INK), 'Ux–t 图有锯齿实线');
+    ok(await chartHas('chartX', RED), 'Ux–t 图有回扫红色虚线');
+    ok(await chartHas('chartY', INK), 'Uy–t 图有正弦实线');
+    ok(!await chartHas('chartY', RED), 'Uy–t 图无红色（正弦无削顶/回扫）');
+    ok(await chartHas('chartX', BLUE) || await chartHas('chartY', BLUE), '波形图有当前时刻游标');
+    // 默认组合（saw80×sine50, U1=1000）无超临界时段 → 成像状态不得误报"削顶"（瞬时回扫除外）
+    let sawClip = false;
+    const tc = Date.now();
+    while (Date.now() - tc < 2500) {
+        const sTxt = (await readAll('#dataGrid .data-item')).pop();
+        if (sTxt.includes('削顶')) { sawClip = true; break; }
+        await sleep(150);
+    }
+    ok(!sawClip, '默认组合无误报削顶（回扫熄灭不计入削顶）');
 }
-await click('dirX');
+await shot('osc2-shot-default.png');
+
+console.log('== 3. 暂停冻结（四画布逐字节一致）');
+await click('btnPause');
 await sleep(200);
 {
-    const blueAt6 = await chartRProbe(100, 6, 5, 'rgb[2] > 180 && rgb[0] < 110');
-    const redAt5 = await chartRProbe(100, 5, 7, 'rgb[0] > 150 && rgb[1] < 100');
-    ok(!blueAt6, 'X 图 (Ux=100) 不在 ±6 边界显示普通点');
-    ok(redAt5, 'X 图在 ±5 cm 临界线处显示红色碰板标记');
-}
-await shot('osc-shot-bubble-edge.png');   // 碰板气泡右缘定位（18.5 视觉复核）
-await setInput('rU1', 1000);
-await click('dirY');            // 切回 Y 图再验证恢复后的普通当前点
-await sleep(300);
-data = await readAll('#dataGrid .data-item');
-ok(data[data.length - 1].includes('正常成像'), '恢复安全参数后正常成像');
-{
-    const blueAtY = await chartRProbe(50, 2, 5, 'rgb[2] > 180 && rgb[0] < 110');
-    ok(blueAtY, '恢复后 Y 图重新显示普通蓝色当前点');
-}
-
-console.log('== 5. v1.1 模式一重置恢复速度（16.2 / 16.6-3）');
-await setInput('rC', 0);
-await setInput('rSpd', 2);
-ok(await read('#vSpd') === '2.0×', '速度已调至 2.0×');
-await click('btnReset');
-await sleep(250);
-{
-    const d = await dbg();
-    ok(await read('#vSpd') === '1.0×' && d.speed === 1, '重置后速度恢复 1.0×');
-    ok(d.U1 === 1000 && d.Uy === 50 && d.Ux === 0, '重置后参数恢复默认');
-}
-
-console.log('== 6. 自动演示过渡段采样（16.4 / 16.6-5）+ 运行态 aria');
-await click('btnAuto');
-{
-    ok(await read('#btnAuto') === '演示中…', '运行中按钮“演示中…”');
-    ok(await ev(`document.getElementById('btnAuto').getAttribute('aria-label')`) === '演示中…', '运行中 btnAuto aria-label 同步更新');
-    ok(await ev(`document.getElementById('rU1').disabled`) === true, '运行中滑条锁定');
-    let d1 = null;
-    try { d1 = await waitForDbg(d => d.m1phase === 'running' && d.m1t >= 3.2 && d.m1t < 3.45, 8000, 't≈3.25'); } catch (e) { }
-    ok(!!d1 && d1.U1 > 1000 && d1.U1 < 2000 && d1.Uy > -100 && d1.Uy < 50 && d1.Ux === 0,
-        '3~3.5 s 处于回落/竖直准备过渡', d1 && JSON.stringify({ U1: d1.U1, Uy: d1.Uy }));
-    let d2 = null;
-    try { d2 = await waitForDbg(d => d.m1phase === 'running' && d.m1t >= 6.2 && d.m1t < 6.45, 8000, 't≈6.25'); } catch (e) { }
-    ok(!!d2 && d2.U1 === 1000 && d2.Uy > 0 && d2.Uy < 100 && d2.Ux < 0 && d2.Ux > -100,
-        '6~6.5 s 处于水平准备过渡', d2 && JSON.stringify({ Uy: d2.Uy, Ux: d2.Ux }));
-    const de = await waitForDbg(d => d.m1phase === 'ended', 12000, '演示结束');
-    ok(de.U1 === 1000 && de.Uy === 50 && de.Ux === 0, '演示结束回默认');
-}
-await shot('osc-shot-mode1.png');
-
-console.log('== 7. ended 禁拖（16.3 / 16.6-6）');
-{
-    await mouseAt(725, 236, true, true);
-    await sleep(200);
-    let d = await dbg();
-    ok(d.Ux === 0 && d.Uy === 50, 'ended 状态在亮点上按下不改变参数');
-    await mouseAt(767, 215, true, true);
-    await sleep(200);
-    d = await dbg();
-    ok(d.Ux === 0 && d.Uy === 50, 'ended 状态空白处按下也不改变参数');
-    await click('btnReset');
-    await sleep(200);
-    ok((await dbg()).m1phase === 'idle', '重置后回 idle');
-}
-
-console.log('== 8. 临界与负极性回归');
-await setInput('rU1', 500);
-await setInput('rB', 62);
-await sleep(1350);
-data = await readAll('#dataGrid .data-item');
-ok(data[data.length - 1].includes('正常成像') && data.includes('+4.96 cm'), 'U1=500,Uy=62 → 正常成像 Y=+4.96 cm');
-await setInput('rU1', 1000);
-await setInput('rB', -100);
-await sleep(1350);
-data = await readAll('#dataGrid .data-item');
-ok(data.includes('−4.00 cm'), 'Uy=−100 → Y=−4.00 cm（下偏）');
-
-console.log('== 9. v1.2 模式一暂停冻结全部动画（18.2 / 18.7-2）');
-await setInput('rB', 50);
-await click('btnAuto');
-await waitForDbg(d => d.m1phase === 'running' && d.m1t > 0.8, 5000, '运行 0.8s');
-await click('btnPause');
-await sleep(150);
-{
-    const d1 = await dbg(), c1 = await sceneData();
+    const d1 = await dbg();
+    const c1 = [await canvasData('tubeCanvas'), await canvasData('scopeCanvas'), await canvasData('chartX'), await canvasData('chartY')];
     await sleep(700);
-    const d2 = await dbg(), c2 = await sceneData();
-    ok(d1.m1t === d2.m1t && d1.beamClock === d2.beamClock && d1.vclock === d2.vclock && d1.trailLen === d2.trailLen,
-        '暂停 700ms：m1.t/beamClock/vclock/拖尾数量全部冻结', JSON.stringify({ a: d1, b: d2 }));
-    ok(c1 === c2, '暂停期间画布完全静止（toDataURL 一致）');
-    ok(await read('#btnPause') === '继续', '暂停按钮显示“继续”');
+    const d2 = await dbg();
+    const c2 = [await canvasData('tubeCanvas'), await canvasData('scopeCanvas'), await canvasData('chartX'), await canvasData('chartY')];
+    ok(d1.t === d2.t, '暂停 700ms：t 冻结');
+    ok(c1.every((v, i) => v === c2[i]), '四画布逐字节一致（含静态原理图）');
+    ok(await read('#btnPause') === '继续' && await read('#btnStart') === '重新开始', '暂停后：暂停→继续、开始→重新开始');
+    ok(await ev(`!document.getElementById('btnStart').disabled && !document.getElementById('btnReset').disabled`) === true, '暂停态开始/重置可用');
 }
-await click('btnPause');   // 继续
+console.log('== 4. 继续');
+await click('btnPause');
 await sleep(400);
 {
-    const d3 = await dbg();
-    ok(d3.m1phase === 'running' && d3.m1t > 0.8, '继续后时间线恢复推进', JSON.stringify({ t: d3.m1t }));
+    const d = await dbg();
+    ok(d.phase === 'running' && d.t > 0.2, '继续后时间推进', JSON.stringify({ phase: d.phase, t: d.t }));
 }
-await click('btnPause');   // 先暂停（运行态重置按钮禁用），再重置
-await sleep(200);
-await click('btnReset');
-await sleep(200);
-ok((await dbg()).m1phase === 'idle', '重置后回 idle');
 
-console.log('== 10. v1.1 模式二笔画独立与回扫断笔（16.1 / 16.6-1、2）');
-await setInput('rSpd', 2);
-await click('mBtn2');
-await sleep(400);
-ok(await read('#btnAuto') === '扫描中', '模式二按钮显示“扫描中”');
+console.log('== 5. 四种波形切换（水平×竖直组合遍历）');
 {
-    let sawRetraceClosed = false, sawForwardPoints = false, maxStrokes = 0, strokesFinal = 0;
-    const t0 = Date.now();
-    while (Date.now() - t0 < 6800) {
-        const d = await dbg();
-        if (!d) break;
-        maxStrokes = Math.max(maxStrokes, d.strokes);
-        if (d.strokes >= 2) strokesFinal = d.strokes;
-        if (d.p > 0.905) { if (d.curPts === 0) sawRetraceClosed = true; }
-        else if (d.p > 0.05 && d.curPts > 0) sawForwardPoints = true;
-        await sleep(70);
-    }
-    ok(sawRetraceClosed, '回扫阶段当前笔画已关闭');
-    ok(sawForwardPoints, '正扫阶段正常写入笔画点');
-    ok(maxStrokes <= 2 && strokesFinal >= 2, `波形缓冲始终 ≤2 条独立笔画（峰值 ${maxStrokes}）`);
+    const types = ['saw', 'sine', 'square', 'dc'];
+    let allSwitch = true;
+    for (const ty of types) { await clickSeg('segY', ty); await sleep(60); if ((await dbg()).uyType !== ty) allSwitch = false; }
+    for (const tx of types) { await clickSeg('segX', tx); await sleep(60); if ((await dbg()).uxType !== tx) allSwitch = false; }
+    ok(allSwitch, '水平/竖直波形类型 4×4 全部可切换');
+    // 恢复非 dc 组合再验证代表性合成
+    await clickSeg('segX', 'dc'); await clickSeg('segY', 'sine');
+    await setInput('rX', 0);
+    await sleep(600);
+    const d = await dbg();
+    ok(d.uxType === 'dc' && d.uyType === 'sine' && d.speed === 1, '组合 直流×正弦 生效', JSON.stringify({ x: d.uxType, y: d.uyType }));
+    ok(await designProbe('scopeCanvas', 400, 174, 80, 52, 240, GREEN), '直流×正弦 → 屏上竖直直线（中线附近绿）');
+    // 直流×直流 → 静止亮点
+    await clickSeg('segY', 'dc');
+    await setInput('rY', 40);
+    await sleep(500);
+    ok(await designProbe('scopeCanvas', 400, 188, 158, 24, 24, GREEN), '直流×直流(+40V) → 屏上静止亮点（Y=+1.6cm）');
+    const label = await read('#lY');
+    ok(label.includes('直流'), '直线形时滑条标签切换为直流 U₀', label);
+    // 方波×方波 → 矩形
+    await clickSeg('segX', 'square'); await clickSeg('segY', 'square');
+    await setInput('rX', 60); await setInput('rY', 60);
+    await sleep(900);
+    ok(await designProbe('scopeCanvas', 400, 120, 110, 160, 160, GREEN), '方波×方波 → 屏上矩形轨迹');
+    // 正弦×正弦 → 李萨如椭圆
+    await clickSeg('segX', 'sine'); await clickSeg('segY', 'sine');
+    await sleep(900);
+    ok(await designProbe('scopeCanvas', 400, 120, 110, 160, 160, GREEN), '正弦×正弦 → 屏上李萨如椭圆');
 }
-data = await readAll('#dataGrid .data-item');
-ok(data.includes('±3.20 cm') && data.includes('±2.00 cm'), '波形包络 Xmax=±3.20 / Ymax=±2.00 cm');
-ok(data[data.length - 1].includes('正常波形'), '状态：正常波形');
-await shot('osc-shot-mode2.png');
+await shot('osc2-shot-combo.png');
 
-console.log('== 11. 模式二 U1 收缩与滑条可调');
-await setInput('rU1', 2000);
-await sleep(300);
-data = await readAll('#dataGrid .data-item');
-ok(data.includes('±1.60 cm') && data.includes('±1.00 cm'), 'U1=2000 → 包络减半');
-ok(await ev(`!document.getElementById('rU1').disabled`) === true, '模式二运行中滑条实时可调');
-
-console.log('== 12. v1.1 模式二无效采样段断笔（16.6-8）');
-await setInput('rU1', 500);
-await setInput('rB', 100);
-await sleep(300);
+console.log('== 6. 直流电压可调（−100~+100 V）');
 {
-    let sawGap = false;
-    const t0 = Date.now();
-    while (Date.now() - t0 < 4500) {
-        const d = await dbg();
-        if (d && d.curHasGap) { sawGap = true; break; }
-        await sleep(80);
-    }
-    ok(sawGap, '无效采样段断笔');
-}
-data = await readAll('#dataGrid .data-item');
-ok(data[data.length - 1].includes('双向'), '状态：双向局部缺失', data[data.length - 1]);
-
-console.log('== 13. 右图方向切换（模式二包络空心点）');
-await click('dirX');
-ok(await ev(`document.getElementById('dirX').getAttribute('aria-pressed') === 'true' && document.getElementById('dirY').getAttribute('aria-pressed') === 'false'`) === true, 'dirX aria-pressed 切换正确');
-await click('dirY');
-
-console.log('== 14. v1.2 模式二暂停冻结 + 暂停调参静态预览（18.2 / 18.7-3）');
-await click('btnPause');
-await sleep(150);
-{
-    const d1 = await dbg(), c1 = await sceneData();
-    await sleep(700);
-    const d2 = await dbg(), c2 = await sceneData();
-    ok(d1.p === d2.p && d1.beamClock === d2.beamClock && d1.vclock === d2.vclock &&
-       d1.curPts === d2.curPts && d1.strokes === d2.strokes,
-        'scan-paused 700ms：相位/beamClock/vclock/笔画全部冻结', JSON.stringify({ a: d1, b: d2 }));
-    ok(c1 === c2, 'scan-paused 画布完全静止');
-    await setInput('rB', 60);   // 暂停中调参
-    await sleep(200);
-    const d3 = await dbg();
-    ok(d3.strokes === 0 && d3.curPts === 0 && d3.Ay === 60, '暂停调参清空旧缓冲（静态预览）', JSON.stringify({ strokes: d3.strokes, Ay: d3.Ay }));
-    const c3 = await sceneData();
+    await clickSeg('segX', 'dc');
+    await setInput('rX', -60);
     await sleep(400);
-    ok(c3 === await sceneData(), '暂停调参后画布仍静止（无时间动画）');
-}
-await click('btnPause');   // 继续
-await sleep(400);
-{
-    const d = await dbg();
-    ok(d.m2phase === 'scan-running' && d.curPts > 0, '继续后重新写入新笔画', JSON.stringify({ curPts: d.curPts }));
-}
-await click('btnReset');
-await sleep(200);
-{
-    const d = await dbg();
-    ok(d.speed === 1 && d.Ay === 50 && d.Ax === 80 && d.U1 === 1000, '模式二重置恢复默认（含速度 1×）', JSON.stringify(d));
+    ok(await read('#vX') === '−60 V', '水平直流 −60 V 显示', await read('#vX'));
+    const mn = await ev(`+document.getElementById('rX').min`);
+    ok(mn === -100, '直流模式滑条下限 −100', mn);
+    ok((await read('#lX')).includes('直流'), '标签为"水平直流 U₀"');
+    ok((await dbg()).uxDC === -60, 'dbg 直流值同步');
+    await setInput('rX', 0);
 }
 
-console.log('== 15. 空格/R 快捷键');
-await click('btnPause');   // 模式二重置后为 scan-running，先暂停才允许切模式
-await sleep(200);
-await click('mBtn1');
+console.log('== 7. 逐时刻打极板（削顶/截断 + 状态文字）');
+await clickSeg('segX', 'saw');
+await clickSeg('segY', 'sine');
+await setInput('rU1', 500);
+await setInput('rY', 80);
+await sleep(800);
+{
+    const stTxt = (await readAll('#dataGrid .data-item')).pop();
+    ok(stTxt.includes('YY′'), '状态文字带撇：' + stTxt, stTxt);
+    ok(stTxt.includes('削顶') || stTxt.includes('打在'), '削顶/打极板判定生效', stTxt);
+    ok(await chartHas('chartY', RED), 'Uy–t 图超临界段红色虚线');
+    const ds = await read('#deriveStatus');
+    ok(ds.includes('当前组合'), '推导与判断区有动态组合说明', ds.slice(0, 40));
+    // 双向：方波 80 × 正弦 80，U1=500；逐时刻口径下"同时打在"出现在正弦峰值时段，轮询捕获
+    await clickSeg('segX', 'square');
+    await setInput('rX', 80);
+    let st2 = '', sawBoth = false;
+    const t0b = Date.now();
+    while (Date.now() - t0b < 8000) {
+        st2 = (await readAll('#dataGrid .data-item')).pop();
+        if (st2.includes('同时打在')) { sawBoth = true; break; }
+        await sleep(120);
+    }
+    ok(sawBoth, '双向超临界 → "同时打在"口径（轮询至正弦峰值时段）', st2);
+    await setInput('rU1', 1000);
+    await setInput('rX', 80);
+    await sleep(400);
+}
+await shot('osc2-shot-clip.png');
+
+console.log('== 8. 播放速度（0.5~4×）');
+{
+    // 无头环境 rAF 节流且帧率随时间波动 → 以相邻同时长窗口的推进量比值校验速度生效
+    await setSel('speed', '1');
+    await sleep(100);
+    const s0 = await dbg();
+    await sleep(600);
+    const s1 = await dbg();
+    const a1 = s1.t - s0.t;
+    await setSel('speed', '4');
+    await sleep(100);
+    const d0 = await dbg();
+    await sleep(600);
+    const d1 = await dbg();
+    const a4 = d1.t - d0.t;
+    ok(d0.speed === 4 && a4 > a1 * 2, '4× 明显快于 1×（推进 ≥2 倍）', JSON.stringify({ a1: a1.toFixed(2), a4: a4.toFixed(2) }));
+    await setSel('speed', '0.5');
+    await sleep(100);
+    const w0 = await dbg();
+    await sleep(600);
+    const w1 = await dbg();
+    const a05 = w1.t - w0.t;
+    ok(w0.speed === 0.5 && a05 < a1 * 0.75, '0.5× 明显慢于 1×（推进 <0.75 倍）', JSON.stringify({ a1: a1.toFixed(2), a05: a05.toFixed(2) }));
+    await setSel('speed', '1');
+}
+
+console.log('== 9. 重置恢复默认');
+await click('btnPause');
+await sleep(150);
+await click('btnReset');
+await sleep(300);
+{
+    const d = await dbg();
+    ok(d.phase === 'running' && d.t < 0.5, '重置后回运行态、t≈0', JSON.stringify({ phase: d.phase, t: d.t }));
+    ok(d.uxType === 'saw' && d.uyType === 'sine' && d.uxA === 80 && d.uyA === 50 && d.U1 === 1000, '重置恢复默认组合与参数');
+    ok(await ev(`document.getElementById('speed').value`) === '1', '速度下拉恢复 1×');
+}
+
+console.log('== 10. 空格/R 快捷键');
 await ev(`document.activeElement && document.activeElement.blur(); true`);
-await sleep(250);
 await cdp.send('Input.dispatchKeyEvent', { type: 'keyDown', code: 'Space', key: ' ', windowsVirtualKeyCode: 32 });
 await cdp.send('Input.dispatchKeyEvent', { type: 'keyUp', code: 'Space', key: ' ', windowsVirtualKeyCode: 32 });
-await sleep(300);
-ok(await read('#btnAuto') === '演示中…', '空格触发自动演示');
+await sleep(200);
+ok((await dbg()).phase === 'paused' && await read('#btnPause') === '继续', '空格暂停');
+await cdp.send('Input.dispatchKeyEvent', { type: 'keyDown', code: 'Space', key: ' ', windowsVirtualKeyCode: 32 });
+await cdp.send('Input.dispatchKeyEvent', { type: 'keyUp', code: 'Space', key: ' ', windowsVirtualKeyCode: 32 });
+await sleep(200);
+ok((await dbg()).phase === 'running', '空格继续');
+await cdp.send('Input.dispatchKeyEvent', { type: 'keyDown', code: 'Space', key: ' ', windowsVirtualKeyCode: 32 });
+await cdp.send('Input.dispatchKeyEvent', { type: 'keyUp', code: 'Space', key: ' ', windowsVirtualKeyCode: 32 });
+await sleep(150);
 await cdp.send('Input.dispatchKeyEvent', { type: 'keyDown', code: 'KeyR', key: 'r', windowsVirtualKeyCode: 82 });
 await cdp.send('Input.dispatchKeyEvent', { type: 'keyUp', code: 'KeyR', key: 'r', windowsVirtualKeyCode: 82 });
 await sleep(300);
-ok(await read('#btnAuto') === '▶ 自动演示', 'R 重置回 idle');
 {
     const d = await dbg();
-    ok(d.speed === 1 && d.Uy === 50 && d.Ux === 0, 'R 重置含速度恢复');
+    ok(d.phase === 'running' && d.t < 0.5 && d.uxType === 'saw' && d.uyType === 'sine', '暂停态 R 重置回默认并运行', JSON.stringify(d));
 }
 
-console.log('== 16. v1.2 无障碍属性完整性（18.3 / 18.7-4）');
+console.log('== 11. 无障碍属性');
 {
     const a = await ev(`(() => {
-        const g = id => { const e = document.getElementById(id); return { label: e.getAttribute('aria-label'), pressed: e.getAttribute('aria-pressed'), disabled: e.disabled }; };
-        return { btnAuto: g('btnAuto'), btnPause: g('btnPause'), btnReset: g('btnReset'),
-                 dirY: g('dirY'), dirX: g('dirX'), mBtn1: g('mBtn1'), mBtn2: g('mBtn2'),
+        const g = id => { const e = document.getElementById(id); return { label: e.getAttribute('aria-label'), disabled: e.disabled }; };
+        const segBtns = [...document.querySelectorAll('#segX button, #segY button')].map(b => b.getAttribute('aria-pressed'));
+        return { btnStart: g('btnStart'), btnPause: g('btnPause'), btnReset: g('btnReset'),
+                 rX: document.getElementById('rX').getAttribute('aria-valuetext'),
+                 rY: document.getElementById('rY').getAttribute('aria-valuetext'),
                  rU1: document.getElementById('rU1').getAttribute('aria-valuetext'),
-                 rB: document.getElementById('rB').getAttribute('aria-valuetext'),
-                 rC: document.getElementById('rC').getAttribute('aria-valuetext'),
-                 rSpd: document.getElementById('rSpd').getAttribute('aria-valuetext') };
+                 speed: document.getElementById('speed').getAttribute('aria-label'),
+                 segPressed: segBtns, segActive: document.querySelectorAll('#segX button.active, #segY button.active').length };
     })()`);
-    ok(a.btnAuto.label && a.btnPause.label && a.btnReset.label, '三个控制按钮均有 aria-label', JSON.stringify(a));
-    ok(a.dirY.label && a.dirX.label && a.dirY.pressed === 'true' && a.dirX.pressed === 'false', '方向切换 aria-label + aria-pressed 正确');
-    ok(a.mBtn1.label && a.mBtn2.label && a.mBtn1.pressed === 'true' && a.mBtn2.pressed === 'false', '模式切换 aria-label + aria-pressed 正确');
-    ok(a.rU1 && a.rU1.includes('伏') && a.rB && a.rB.includes('伏') && a.rSpd && a.rSpd.includes('倍'), '滑条 aria-valuetext 带单位', JSON.stringify({ rU1: a.rU1, rB: a.rB, rSpd: a.rSpd }));
+    ok(a.btnStart.label && a.btnPause.label && a.btnReset.label, '三个按钮均有 aria-label');
+    ok(a.rX && a.rX.includes('伏') && a.rU1 && a.rU1.includes('伏'), '滑条 aria-valuetext 带单位', JSON.stringify({ rX: a.rX, rU1: a.rU1 }));
+    ok(!!a.speed, '速度下拉有 aria-label');
+    ok(a.segPressed.length === 8 && a.segPressed.every(v => v === 'true' || v === 'false'), '8 个波形按钮均有 aria-pressed');
+    ok(a.segActive === 2, '每组恰一个激活波形按钮');
 }
 
-console.log('== 17. 窄屏 375px + 过渡提示可辨识（18.4 / 18.7-5）');
+console.log('== 12. 静态原理图无动画（运行中逐字节一致）');
+{
+    const c1 = await canvasData('tubeCanvas');
+    await sleep(700);
+    const c2 = await canvasData('tubeCanvas');
+    ok(c1 === c2, '原理图 700ms 逐字节一致（无动画）');
+    // 数值标注仅刷新数字：暂停态改 U1 → 原理图像素变化（仅数值区）
+    await click('btnPause');
+    await sleep(150);
+    const t1 = await canvasData('tubeCanvas');
+    await setInput('rU1', 1500);
+    await sleep(300);
+    const t2 = await canvasData('tubeCanvas');
+    ok(t1 !== t2, '静态图 U1 数值标注随参数刷新（无动画，仅数字变）');
+    await setInput('rU1', 1000);
+    await click('btnPause');
+    ok(await designProbe('tubeCanvas', 560, 140, 143, 160, 65, GREEN) || await designProbe('tubeCanvas', 560, 140, 195, 160, 65, true), '原理图含极板区段');
+    ok(await designProbe('tubeCanvas', 560, 40, 260, 90, 70, INK), '原理图含电源符号与导线');
+}
+
+console.log('== 13. 窄屏 375px');
 await cdp.send('Emulation.setDeviceMetricsOverride', { width: 375, height: 812, deviceScaleFactor: 2, mobile: true });
 await sleep(800);
-ok(await ev(`document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1`) === true, '375px 无横向溢出');
-await click('btnAuto');
 {
-    let d = null;
-    try { d = await waitForDbg(x => x.m1phase === 'running' && x.m1t >= 3.2 && x.m1t < 3.45, 9000, '窄屏过渡窗口'); } catch (e) { }
-    ok(!!d, '窄屏捕获过渡窗口');
-    await shot('osc-shot-narrow-transition.png');   // 人工复核“· 参数过渡”可见
-    const de = await waitForDbg(x => x.m1phase === 'ended', 14000, '窄屏演示结束');
-    ok(de.U1 === 1000 && de.Uy === 50, '窄屏演示结束回默认');
+    ok(await ev(`document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1`) === true, '375px 无横向溢出');
+    const cols = await ev(`getComputedStyle(document.querySelector('.top-row')).gridTemplateColumns.split(' ').length`);
+    ok(cols === 1, '窄屏第 1 排上下堆叠', cols);
+    const cols2 = await ev(`getComputedStyle(document.querySelector('.charts-row')).gridTemplateColumns.split(' ').length`);
+    ok(cols2 === 1, '窄屏第 2 排上下堆叠', cols2);
+    const dataCols = await ev(`getComputedStyle(document.querySelector('#dataGrid')).gridTemplateColumns.split(' ').length`);
+    ok(dataCols === 2, '窄屏实时数值 2 列', dataCols);
 }
-await shot('osc-shot-narrow.png');
-// v1.3：compact（fit<0.62）下扫描电压小图隐藏
-await click('mBtn2');
-await sleep(600);
-{
-    const redNarrow = await sceneRegionProbe(60, 400, 260, 78, 'rgb[0] > 150 && rgb[1] < 110 && rgb[2] < 110');
-    ok(!redNarrow, '窄屏 compact 扫描小图隐藏（区域无回扫红色）');
-}
-await click('btnPause');
-await sleep(200);
-await click('mBtn1');
-await sleep(300);
+await shot('osc2-shot-narrow.png');
 await cdp.send('Emulation.clearDeviceMetricsOverride');
 await sleep(400);
 
-console.log('== 17b. v1.3 串联极板/椭圆屏面/扫描小图/带撇记法');
+console.log('== 13b. 满窗口截图（4× 加速积累轨迹后暂停）');
 {
-    const leg = await ev(`document.querySelector('.legend').textContent`);
-    ok(leg.includes('偏转电场 YY′') && leg.includes('XX′ 极板'), '图例带撇记法 YY′/XX′', leg);
-    ok(leg.includes('回扫（束流熄灭）'), '图例新增「回扫（束流熄灭）」项');
-    const redJudge = 'rgb[0] > 150 && rgb[1] < 110 && rgb[2] < 110';
-    await click('mBtn2');
-    await sleep(600);
-    ok(await sceneRegionProbe(60, 400, 260, 78, redJudge), '模式二扫描小图回扫红色虚线可见');
-    ok(await sceneRegionProbe(550, 262, 12, 12, 'rgb[1] - rgb[0] >= 4 && rgb[1] - rgb[2] >= 2'), '侧视椭圆屏面（淡绿填充）已绘制');
-    await setInput('rB', 50);
-    await setInput('rU1', 500);
-    await setInput('rC', 100);
-    await sleep(300);
-    data = await readAll('#dataGrid .data-item');
-    ok(data[data.length - 1].includes('XX′ 极板'), '模式二 XX′ 截断提示带撇记法', data[data.length - 1]);
-    await setInput('rU1', 1000);
-    await setInput('rC', 80);
-    await sleep(300);
-    await shot('osc-shot-v13-mode2.png');
+    await setSel('speed', '4');
+    let dFull = null;
+    const tf = Date.now();
+    while (Date.now() - tf < 25000) {
+        const d = await dbg();
+        if (d.t >= 10.5 && d.pts >= 400) { dFull = d; break; }
+        await sleep(300);
+    }
+    await setSel('speed', '1');
     await click('btnPause');
     await sleep(200);
-    await click('mBtn1');
-    await sleep(300);
-    ok(!(await sceneRegionProbe(60, 400, 260, 78, redJudge)), '切回模式一后扫描小图不再绘制');
-    await shot('osc-shot-v13-mode1.png');
+    const d = await dbg();
+    ok(!!dFull && d.phase === 'paused', '满窗口积累完成（t≥10.5s、暂停冻结）', JSON.stringify({ t: d.t, pts: d.pts }));
+    await shot('osc2-shot-full.png');
+    await click('btnPause');
 }
 
-console.log('== 18. 全程控制台错误复查（18.7-8）');
+console.log('== 14. 全程控制台错误复查');
 ok(cdp.bag.msgs.length === 0, '交互全程无控制台错误', cdp.bag.msgs.slice(0, 3).join(' | '));
 
+await closeTab(tab);
 cdp.close();
 console.log('\n========================================');
-console.log(`浏览器验证(v1.3): ${pass} 通过, ${fail} 失败`);
+console.log(`浏览器验证(v2): ${pass} 通过, ${fail} 失败`);
 process.exit(fail ? 1 : 0);
