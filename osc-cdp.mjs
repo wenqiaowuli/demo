@@ -415,9 +415,9 @@ console.log('== 13. 静态原理图无动画（运行中逐字节一致）');
     ok(t1 !== t2, '静态图 U1 数值标注随参数刷新（无动画，仅数字变）');
     await setInput('rU1', 1000);
     await click('btnPause');
-    ok(await designProbe('tubeCanvas', 480, 210, 141, 52, 89, 'rgb[2] > 180 && rgb[0] < 180 && rgb[1] < 150'), '原理图含 XX′ 竖直极板（紫色竖直平行四边形）');
-    ok(await designProbe('tubeCanvas', 480, 142, 155, 53, 60, 'rgb[0] > 180 && rgb[1] < 170 && rgb[2] < 130'), '原理图含 YY′ 水平极板（橙）');
-    ok(await designProbe('tubeCanvas', 480, 51, 254, 78, 61, INK), '原理图含电源符号与导线');
+    ok(await designProbe('tubeCanvas', 480, 213, 148, 45, 79, 'rgb[2] > 180 && rgb[0] < 180 && rgb[1] < 150'), '原理图含 XX′ 竖直极板（紫色竖直平行四边形）');
+    ok(await designProbe('tubeCanvas', 480, 152, 160, 46, 54, 'rgb[0] > 180 && rgb[1] < 170 && rgb[2] < 130'), '原理图含 YY′ 水平极板（橙）');
+    ok(await designProbe('tubeCanvas', 480, 70, 250, 69, 54, INK), '原理图含电源符号与导线');
 }
 
 console.log('== 14. 窄屏 375px');
