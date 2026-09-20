@@ -534,6 +534,11 @@
                 c.fillText('荧光屏（侧视）', 470, 88);
             }
             // 静态束流示意线：直线 + YY′ 区段静态弯折 + 出区直线
+            // （XX′ 远板先画，使束流呈现在两块竖直极板之间）
+            c.fillStyle = 'rgba(124,58,237,0.08)'; c.strokeStyle = 'rgba(124,58,237,0.45)'; c.lineWidth = 1;
+            c.beginPath();
+            c.moveTo(238, 134); c.lineTo(250, 128); c.lineTo(250, 218); c.lineTo(238, 212); c.closePath();
+            c.fill(); c.stroke();
             c.strokeStyle = 'rgba(13,148,136,0.85)'; c.lineWidth = 1.6;
             c.beginPath();
             c.moveTo(103, 175); c.lineTo(150, 175);
@@ -600,19 +605,17 @@
             c.fillText((st.Uy.type === 'dc' ? 'U₀ = ' : 'Ay = ') + fmtSigned(st.Uy.type === 'dc' ? st.Uy.dc : st.Uy.A, 0) + ' V', 182, 112);
             // 静态 Ey 箭头（+Uy → 上板正 → 场向下）
             for (const x of [165, 182, 199]) drawArrow(c, x, 158, x, 168, C.defE, 1.4, 5);
-            // XX′ 极板（后区段，前后板透视平行四边形）
+            // XX′ 极板（后区段）：水平偏转为竖直放置的两块极板（左/右夹住电子束），
+            // 侧视沿极板看去呈前后错位的两根竖直透视平行四边形，束流从两板之间通过
             c.fillStyle = 'rgba(124,58,237,0.14)'; c.strokeStyle = 'rgba(124,58,237,0.75)'; c.lineWidth = 1.2;
             c.beginPath();
-            c.moveTo(230, 143); c.lineTo(295, 143); c.lineTo(288, 155); c.lineTo(223, 155); c.closePath();
-            c.fill(); c.stroke();
-            c.beginPath();
-            c.moveTo(230, 207); c.lineTo(295, 207); c.lineTo(288, 195); c.lineTo(223, 195); c.closePath();
+            c.moveTo(270, 140); c.lineTo(282, 134); c.lineTo(282, 224); c.lineTo(270, 218); c.closePath();
             c.fill(); c.stroke();
             c.fillStyle = C.xx; c.font = f(10, true);
-            c.fillText('X', 301, 153);
-            c.fillText('X′', 301, 205);
+            c.fillText('X', 276, 130);
+            c.fillText('X′', 244, 228);
             c.fillStyle = C.xx; c.font = f(10);
-            if (!compact) c.fillText('XX′ 水平偏转（前后板）', 262, 248);
+            if (!compact) c.fillText('XX′ 水平偏转（竖直放置）', 262, 248);
             c.fillStyle = C.ink; c.font = f(10.5);
             c.fillText((st.Ux.type === 'dc' ? 'U₀ = ' : 'Ax = ') + fmtSigned(st.Ux.type === 'dc' ? st.Ux.dc : st.Ux.A, 0) + ' V', 262, 262);
             // ⊙ 出纸面标记（静态示意，位于 XX′ 区段）
@@ -924,7 +927,11 @@
                 btn.setAttribute('aria-pressed', String(on));
             }
         }
-        function afterParamChange() { updateParamUI(); }
+        function afterParamChange() {
+            // 用户裁定：切换波形组合或调节参数后，荧光屏清除旧轨迹重新积累
+            st.pts = [];
+            updateParamUI();
+        }
 
         // ---------- 按钮状态机 ----------
         function setButtons() {

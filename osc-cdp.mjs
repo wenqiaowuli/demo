@@ -221,6 +221,13 @@ console.log('== 5. 四种波形切换（水平×竖直组合遍历）');
     await clickSeg('segX', 'sine'); await clickSeg('segY', 'sine');
     await sleep(900);
     ok(await designProbe('scopeCanvas', 400, 120, 110, 160, 160, GREEN), '正弦×正弦 → 屏上李萨如椭圆');
+    // 组合切换清屏：切换波形类型后旧轨迹立即清除、重新积累
+    await clickSeg('segX', 'saw');
+    await sleep(150);
+    const dClear = await dbg();
+    ok(dClear.pts < 20, '切换组合后荧光屏旧轨迹清除', dClear.pts);
+    await sleep(800);
+    ok((await dbg()).pts > dClear.pts, '清除后新波形重新积累');
 }
 await shot('osc2-shot-combo.png');
 
@@ -361,7 +368,8 @@ console.log('== 12. 静态原理图无动画（运行中逐字节一致）');
     ok(t1 !== t2, '静态图 U1 数值标注随参数刷新（无动画，仅数字变）');
     await setInput('rU1', 1000);
     await click('btnPause');
-    ok(await designProbe('tubeCanvas', 560, 140, 143, 160, 65, GREEN) || await designProbe('tubeCanvas', 560, 140, 195, 160, 65, true), '原理图含极板区段');
+    ok(await designProbe('tubeCanvas', 560, 232, 124, 58, 104, 'rgb[2] > 180 && rgb[0] < 180 && rgb[1] < 150'), '原理图含 XX′ 竖直极板（紫色竖直平行四边形）');
+    ok(await designProbe('tubeCanvas', 560, 150, 140, 60, 70, 'rgb[0] > 180 && rgb[1] < 170 && rgb[2] < 130'), '原理图含 YY′ 水平极板（橙）');
     ok(await designProbe('tubeCanvas', 560, 40, 260, 90, 70, INK), '原理图含电源符号与导线');
 }
 
