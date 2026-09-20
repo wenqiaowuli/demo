@@ -156,7 +156,7 @@ await sleep(300);
         await sleep(200);
     }
     ok(!!d && d.phase === 'running', '开始后时间推进、屏上轨迹累积', JSON.stringify({ phase: d?.phase, t: d?.t, pts: d?.pts }));
-    ok(await designProbe('scopeCanvas', 400, 74, 80, 240, 240, GREEN), '荧光屏出现荧光绿波形');
+    ok(await designProbe('scopeCanvas', 480, 120, 94, 240, 240, GREEN), '荧光屏出现荧光绿波形');
     ok(await chartHas('chartX', INK), 'Ux–t 图有锯齿实线');
     ok(await chartHas('chartX', RED), 'Ux–t 图有回扫红色虚线');
     ok(await chartHas('chartY', INK), 'Uy–t 图有正弦实线');
@@ -228,12 +228,12 @@ await sleep(200);
 console.log('== 6. 代表组合视觉验证（待机配置 → 开始 → 探测 → 重置）');
 {
     const combos = [
-        { name: '直流×正弦 → 屏上竖直直线', x: 'dc', y: 'sine', region: [174, 80, 52, 240] },
-        { name: '直流×直流(+40V) → 屏上静止亮点', x: 'dc', y: 'dc', region: [188, 158, 24, 24], ySlider: 40 },
-        { name: '方波×方波 → 屏上矩形轨迹', x: 'square', y: 'square', region: [120, 110, 160, 160], xSlider: 60, ySlider: 60 },
-        { name: '正弦×正弦 → 屏上李萨如椭圆', x: 'sine', y: 'sine', region: [120, 110, 160, 160] },
-        { name: '余弦×余弦 → 屏上李萨如椭圆', x: 'cosine', y: 'cosine', region: [120, 110, 160, 160] },
-        { name: '锯齿×余弦 → 屏上余弦波形', x: 'saw', y: 'cosine', region: [74, 80, 240, 240] },
+        { name: '直流×正弦 → 屏上竖直直线', x: 'dc', y: 'sine', region: [220, 94, 52, 240] },
+        { name: '直流×直流(+40V) → 屏上静止亮点', x: 'dc', y: 'dc', region: [234, 172, 24, 24], ySlider: 40 },
+        { name: '方波×方波 → 屏上矩形轨迹', x: 'square', y: 'square', region: [166, 124, 160, 160], xSlider: 60, ySlider: 60 },
+        { name: '正弦×正弦 → 屏上李萨如椭圆', x: 'sine', y: 'sine', region: [166, 124, 160, 160] },
+        { name: '余弦×余弦 → 屏上李萨如椭圆', x: 'cosine', y: 'cosine', region: [166, 124, 160, 160] },
+        { name: '锯齿×余弦 → 屏上余弦波形', x: 'saw', y: 'cosine', region: [120, 94, 240, 240] },
     ];
     for (const cb of combos) {
         await click('btnReset');            // 回待机 + 默认参数
@@ -245,7 +245,7 @@ console.log('== 6. 代表组合视觉验证（待机配置 → 开始 → 探测
         await setSel('speed', '4');         // 4× 积累更快，重置后自动恢复 1×
         await click('btnStart');
         await sleep(1300);
-        const passProbe = await designProbe('scopeCanvas', 400, cb.region[0], cb.region[1], cb.region[2], cb.region[3], GREEN);
+        const passProbe = await designProbe('scopeCanvas', 480, cb.region[0], cb.region[1], cb.region[2], cb.region[3], GREEN);
         ok(passProbe, cb.name);
     }
     await click('btnReset');
@@ -264,7 +264,7 @@ console.log('== 7. 直流电压可调（−100~+100 V）与清屏');
     ok((await dbg()).uxDC === -60, 'dbg 直流值同步');
     await click('btnStart');
     await sleep(1200);
-    ok(await designProbe('scopeCanvas', 400, 138, 80, 16, 240, GREEN), '直流−60V×正弦 → 屏上水平直线（X=−2.4cm）');
+    ok(await designProbe('scopeCanvas', 480, 186, 94, 16, 240, GREEN), '直流−60V×正弦 → 屏上水平直线（X=−2.4cm）');
     // 参数调节清屏：运行中改幅度 → 旧轨迹清除重新积累
     const before = (await dbg()).pts;
     await setInput('rY', 30);
@@ -415,9 +415,9 @@ console.log('== 13. 静态原理图无动画（运行中逐字节一致）');
     ok(t1 !== t2, '静态图 U1 数值标注随参数刷新（无动画，仅数字变）');
     await setInput('rU1', 1000);
     await click('btnPause');
-    ok(await designProbe('tubeCanvas', 560, 232, 124, 58, 104, 'rgb[2] > 180 && rgb[0] < 180 && rgb[1] < 150'), '原理图含 XX′ 竖直极板（紫色竖直平行四边形）');
-    ok(await designProbe('tubeCanvas', 560, 150, 140, 60, 70, 'rgb[0] > 180 && rgb[1] < 170 && rgb[2] < 130'), '原理图含 YY′ 水平极板（橙）');
-    ok(await designProbe('tubeCanvas', 560, 40, 260, 90, 70, INK), '原理图含电源符号与导线');
+    ok(await designProbe('tubeCanvas', 480, 214, 134, 54, 96, 'rgb[2] > 180 && rgb[0] < 180 && rgb[1] < 150'), '原理图含 XX′ 竖直极板（紫色竖直平行四边形）');
+    ok(await designProbe('tubeCanvas', 480, 138, 148, 56, 66, 'rgb[0] > 180 && rgb[1] < 170 && rgb[2] < 130'), '原理图含 YY′ 水平极板（橙）');
+    ok(await designProbe('tubeCanvas', 480, 37, 259, 84, 66, INK), '原理图含电源符号与导线');
 }
 
 console.log('== 14. 窄屏 375px');
