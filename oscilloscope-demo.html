@@ -653,7 +653,7 @@
         }
 
         // ---------- 示波器荧光屏（动态合成，设计坐标 400×360） ----------
-        const GX = 120, GY = 94, GW = 240, GH = 240, PX = 20;   // 480×428 画布居中
+        const GX = 96, GY = 70, GW = 288, GH = 288, PX = 24;    // 480×428 画布居中，网格放大 20%（288=240×1.2）
         const SCX = GX + GW / 2, SCY = GY + GH / 2;
         function drawScope(c) {
             const view = views.scope, compact = view.fit < 0.62;
