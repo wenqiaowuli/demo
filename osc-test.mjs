@@ -160,29 +160,43 @@ section('v1.1 过渡段时间线：3~3.5 s 回落过渡、6~6.5 s 水平准备�
         't=6.5 主阶段③起点: Uy=0、Ux=−100、U1=1000', JSON.stringify(p65));
 }
 
-// ---------- 8. 侧视电子束几何 ----------
-section('侧视电子束 beamPath（打极板截断/出射/屏映射）');
+// ---------- 8. 侧视电子束几何（v1.3 串联画法：YY′ 区段在前、XX′ 区段在后） ----------
+section('侧视电子束 beamPath（串联极板、分段截断、出射/屏映射）');
 {
     const T = OSC.TUBE;
+    // v1.3 区段几何：YY′ 214~290、间隙、XX′ 306~382，不越锥口 390，屏端不变
+    ok(T.X0 === 214 && T.YY_X1 === 290 && T.XX_X0 === 306 && T.X1 === 382, '串联区段边界 214/290/306/382',
+        JSON.stringify([T.X0, T.YY_X1, T.XX_X0, T.X1]));
+    ok(T.XX_X0 - T.YY_X1 >= 8 && T.X1 < 390 && T.X_END === 540, '两区段留间隙、不越锥口、屏端不变');
     const p1 = OSC.beamPath(50, 0, 1000);
     ok(p1.spotValid === true && near(p1.endX, T.X_END, 1e-9), '默认：束流到达管端');
     ok(near(p1.pts[p1.pts.length - 1].y, T.AXIS - 2 * T.FACE_PX_PER_CM, 1e-6), '默认末端 y = 轴上方 2cm×21px', p1.pts[p1.pts.length - 1].y);
+    // YY′ 区段内类平抛：出口点 = 20 个加速点 + 24 个抛物线点
+    const N = 24, exitIdx = 20 + N;
+    const exit = p1.pts[exitIdx];
+    ok(near(exit.x, T.YY_X1, 0.5) && near(Math.abs(exit.y - T.AXIS), 60 * 4 * 50 / 1000, 0.5),
+        'YY′ 出口竖直偏移 ≈ 60px/cm×0.2cm=12px', Math.abs(exit.y - T.AXIS).toFixed(2));
+    // 出 YY′ 后沿切线直线直到屏面（取直线段中点验证线性）
+    const tail = p1.pts.length - exitIdx - 1;
+    const mid = p1.pts[exitIdx + Math.floor(tail / 2)];
+    ok(near(mid.y, (exit.y + p1.pts[p1.pts.length - 1].y) / 2, 1.0), '出 YY′ 后沿切线直线', mid.y.toFixed(2));
     const ph = OSC.beamPath(80, 0, 500);
-    ok(ph.spotValid === false && ph.cutDir === 'YY', 'U1=500,Uy=80 → YY 打极板截断');
+    ok(ph.spotValid === false && ph.cutDir === 'YY', 'U1=500,Uy=80 → YY′ 打极板截断');
     ok(near(Math.abs(ph.cutPt.y - T.AXIS), T.HALF_GAP_PX, 1e-6), '截断点恰在极板表面（±30px）', Math.abs(ph.cutPt.y - T.AXIS));
-    ok(ph.cutPt.x > T.X0 && ph.cutPt.x < T.X1, '截断在偏转区内', ph.cutPt.x);
+    ok(ph.cutPt.x > T.X0 && ph.cutPt.x < T.YY_X1, 'YY′ 截断在 YY′ 区段内', ph.cutPt.x);
     const px = OSC.beamPath(0, 80, 500);
-    ok(px.spotValid === false && px.cutDir === 'XX', 'Ux 单独超限 → XX 截断');
+    ok(px.spotValid === false && px.cutDir === 'XX', 'Ux 单独超限 → XX′ 截断');
+    ok(px.cutPt.x > T.XX_X0 && px.cutPt.x < T.X1, 'XX′ 截断在 XX′ 区段内', px.cutPt.x);
+    ok(near(px.cutPt.y, T.AXIS, 1e-6), '纯 XX′ 截断侧视在管轴上（水平偏转为出纸面方向）', px.cutPt.y);
     const pb = OSC.beamPath(80, 80, 500);
-    ok(pb.spotValid === false && pb.cutDir === 'both', '双超限 → both');
+    ok(pb.spotValid === false && pb.cutDir === 'both', '双超限 → both（状态口径不变）');
+    ok(pb.cutPt.x > T.X0 && pb.cutPt.x < T.YY_X1, '双向碰板截断画在 YY′ 区段（电子先经过 YY′）', pb.cutPt.x);
     const pc = OSC.beamPath(62, 0, 500);
     ok(pc.spotValid === true, 'U1=500,Uy=62（4.96mm）→ 正常通过');
     const pe = OSC.beamPath(100, 0, 800);
-    ok(pe.spotValid === true && near(Math.abs(pe.pts[40 + 20].y - T.AXIS), T.HALF_GAP_PX, 1.5), '临界（U1=800,Uy=100）恰沿极板边缘通过');
-    // 侧视抛物线自洽：出区偏移 = 60px/cm × 4·Uy/U1 cm（pts[60] = 出区点）
-    const pf = OSC.beamPath(50, 0, 1000);
-    const exit = pf.pts[60];
-    ok(near(Math.abs(exit.y - T.AXIS), 60 * 4 * 50 / 1000, 0.5), '出区竖直偏移 ≈ 60px/cm×0.2cm=12px', Math.abs(exit.y - T.AXIS).toFixed(2));
+    ok(pe.spotValid === true && near(Math.abs(pe.pts[exitIdx].y - T.AXIS), T.HALF_GAP_PX, 1.5), '临界（U1=800,Uy=100）恰沿 YY′ 板缘通过');
+    const pu = OSC.beamPath(0, 100, 1000);
+    ok(pu.spotValid === true && near(pu.pts[pu.pts.length - 1].x, T.X_END, 1e-9), 'Ux 临界内大值无侧视偏移，仍达屏端');
 }
 
 // ---------- 9. 常量与几何 ----------

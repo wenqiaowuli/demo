@@ -307,9 +307,10 @@
             <span><i style="background:#0d9488"></i>电子束</span>
             <span><i style="background:#16a34a"></i>荧光亮点 / 波形</span>
             <span><i style="background:#d97706"></i>加速电场</span>
-            <span><i style="background:#ea580c"></i>偏转电场 YY</span>
-            <span><i style="background:#7c3aed"></i>XX 极板（⊥纸面）</span>
+            <span><i style="background:#ea580c"></i>偏转电场 YY′</span>
+            <span><i style="background:#7c3aed"></i>XX′ 极板（水平偏转·前后板）</span>
             <span><i style="background:#64748b"></i>电极 / 极板</span>
+            <span><i style="background:repeating-linear-gradient(90deg,#dc2626 0 4px,transparent 4px 7px)"></i>回扫（束流熄灭）</span>
             <span>待机（模式一）可拖拽屏上亮点</span>
             <span>空格 = 播放/暂停 · R = 重置</span>
         </div>
@@ -390,38 +391,59 @@
             return { U1: 1000, Uy: 50 * k6, Ux: 100 - 100 * k6 };
         }
 
-        // ===== 侧视电子束几何（设计坐标 880×520） =====
+        // ===== 侧视电子束几何（设计坐标 880×520；v1.3 课本串联画法） =====
         var TUBE = {
-            AXIS: 268, X_K: 66, X_A: 125, X0: 214, X1: 334, X_END: 540,
-            HALF_GAP_PX: 30,      // 偏转区半间距 0.5 cm = 30 px（60 px/cm）
+            AXIS: 268, X_K: 66, X_A: 125,
+            X0: 214,              // YY′ 区段入口（靠近电子枪）
+            YY_X1: 290,           // YY′ 区段出口
+            XX_X0: 306,           // XX′ 区段入口（中间留 ~16 px 间隙）
+            X1: 382,              // XX′ 区段出口（不越锥口 x≈390）
+            X_END: 540,
+            HALF_GAP_PX: 30,      // 极板半间距 0.5 cm = 30 px（60 px/cm）
             FACE_CX: 725, FACE_CY: 278, FACE_PX_PER_CM: 21
         };
+        // v1.3：YY′ 在前（竖直类平抛弯曲段只在 YY′ 区段内），XX′ 在后（水平偏转为出纸面
+        // 方向，侧视不画水平位移、束流沿切线直线穿过）；物理口径不变：出 YY′ 竖直偏移仍为
+        // 0.04·Uy/U1 m（60 px/cm），屏上映射 endY 与 v1.2 完全一致。
         function beamPath(Uy, Ux, U1) {
-            var AXIS = TUBE.AXIS, X0 = TUBE.X0, X1 = TUBE.X1;
+            var AXIS = TUBE.AXIS;
             var pts = [];
             var i;
-            for (i = 0; i <= 20; i++) pts.push({ x: TUBE.X_K + (X0 - TUBE.X_K) * i / 20, y: AXIS });
-            var yExitPx = -(4 * Uy / U1) * 60;           // 出区竖直偏移（60 px/cm，画布 y 向下）
+            for (i = 0; i <= 20; i++) pts.push({ x: TUBE.X_K + (TUBE.X0 - TUBE.X_K) * i / 20, y: AXIS });
+            var yExitPx = -(4 * Uy / U1) * 60;           // 出 YY′ 竖直偏移（60 px/cm，画布 y 向下）
             var lim = CRIT * U1;
             var hitY = Math.abs(Uy) > lim + EPS, hitX = Math.abs(Ux) > lim + EPS;
-            var sCut = 1, cutDir = null;
+            var cutDir = hitY ? (hitX ? 'both' : 'YY') : (hitX ? 'XX' : null);
             function sHit(U) { return Math.sqrt(TUBE.HALF_GAP_PX * U1 / (240 * Math.abs(U))); }
-            if (hitY && hitX) { sCut = Math.min(sHit(Uy), sHit(Ux)); cutDir = 'both'; }
-            else if (hitY) { sCut = sHit(Uy); cutDir = 'YY'; }
-            else if (hitX) { sCut = sHit(Ux); cutDir = 'XX'; }
-            var N = 40;
-            for (i = 1; i <= N; i++) {
-                var s = (i / N) * sCut;
-                pts.push({ x: X0 + (X1 - X0) * s, y: AXIS + yExitPx * s * s });
+            var cutPt = null;
+            if (hitY) {
+                // 仅 |Uy| 超限在 YY′ 区段截断；双向超限时电子先经过 YY′，同样画在 YY′ 截断
+                var s = Math.min(sHit(Uy), 1);
+                cutPt = { x: TUBE.X0 + (TUBE.YY_X1 - TUBE.X0) * s, y: AXIS + yExitPx * s * s };
+            } else {
+                var N = 24;
+                for (i = 1; i <= N; i++) {
+                    var s2 = i / N;
+                    pts.push({ x: TUBE.X0 + (TUBE.YY_X1 - TUBE.X0) * s2, y: AXIS + yExitPx * s2 * s2 });
+                }
+                if (hitX) {
+                    // 仅 |Ux| 超限在 XX′ 区段截断（截断纵向位置按板内位移比例，侧视画在直线路径上）
+                    var sx = Math.min(sHit(Ux), 1);
+                    var cx2 = TUBE.XX_X0 + (TUBE.X1 - TUBE.XX_X0) * sx;
+                    var exY = AXIS + yExitPx;
+                    var endY0 = AXIS - offCm(Uy, U1) * TUBE.FACE_PX_PER_CM;
+                    cutPt = { x: cx2, y: exY + (endY0 - exY) * (cx2 - TUBE.YY_X1) / (TUBE.X_END - TUBE.YY_X1) };
+                }
             }
-            if (cutDir) {
-                var cp = pts[pts.length - 1];
-                return { pts: pts, spotValid: false, cutDir: cutDir, cutPt: cp, endX: cp.x, endY: cp.y };
+            if (cutPt) {
+                pts.push(cutPt);
+                return { pts: pts, spotValid: false, cutDir: cutDir, cutPt: cutPt, endX: cutPt.x, endY: cutPt.y };
             }
             var endY = AXIS - offCm(Uy, U1) * TUBE.FACE_PX_PER_CM;
-            for (i = 1; i <= 20; i++) {
-                var k = i / 20;
-                pts.push({ x: X1 + (TUBE.X_END - X1) * k, y: AXIS + yExitPx + (endY - AXIS - yExitPx) * k });
+            var ex = AXIS + yExitPx;
+            for (i = 1; i <= 24; i++) {
+                var k = i / 24;
+                pts.push({ x: TUBE.YY_X1 + (TUBE.X_END - TUBE.YY_X1) * k, y: ex + (endY - ex) * k });
             }
             return { pts: pts, spotValid: true, cutDir: null, cutPt: null, endX: TUBE.X_END, endY: endY };
         }
@@ -535,6 +557,7 @@
             c.lineCap = 'butt'; c.lineJoin = 'miter';
 
             drawStageStrip(c);
+            drawScanChart(c);
             drawShell(c);
             drawGun(c);
             drawDeflector(c);
@@ -557,6 +580,59 @@
             }
         }
 
+        // v1.3：模式二扫描电压 Ux–t 小图（课本图 10.5-5；仅模式二、compact 隐藏、不依赖辅助开关）
+        function drawScanChart(c) {
+            if (st.mode !== 2 || views.scene.fit < 0.62) return;
+            const midY = 436, halfH = 19, axL = 96, axR = 296, cycW = 100;
+            const yOf = (ux) => midY - ux * halfH / 100;   // 纵轴按 100 V 满幅，幅度随 Ax 实时反映
+            c.fillStyle = C.ink; c.font = sceneFont(10.5, true); c.textAlign = 'left';
+            c.fillText('扫描电压 Ux–t', 60, 393);
+            c.fillStyle = C.mut; c.font = sceneFont(9);
+            c.fillText('课本图 10.5-5', 162, 393);
+            // 坐标轴
+            c.strokeStyle = C.axis; c.lineWidth = 1.2;
+            c.beginPath();
+            c.moveTo(axL, midY - halfH - 5); c.lineTo(axL, midY + halfH + 5);
+            c.moveTo(axL, midY); c.lineTo(axR + 8, midY);
+            c.stroke();
+            c.fillStyle = C.mut; c.font = sceneFont(9.5);
+            c.textAlign = 'center';
+            c.fillText('Ux', axL, midY - halfH - 9);
+            c.fillText('t', axR + 13, midY + 3);
+            // t₁ / 2t₁ 刻度（约 2 个完整扫描周期）
+            c.strokeStyle = C.axis;
+            for (const [tx, name] of [[axL + cycW, 't₁'], [axL + 2 * cycW, '2t₁']]) {
+                c.beginPath(); c.moveTo(tx, midY - 3); c.lineTo(tx, midY + 3); c.stroke();
+                c.fillStyle = C.mut;
+                c.fillText(name, tx, midY + 33);
+            }
+            // 正扫实线：Ux 由 −Ax 线性升至 +Ax；回扫陡降红色虚线（束流熄灭）
+            c.strokeStyle = C.ink; c.lineWidth = 1.6;
+            c.beginPath();
+            for (let k = 0; k < 2; k++) {
+                const bx = axL + k * cycW;
+                c.moveTo(bx, yOf(-st.p2.Ax));
+                c.lineTo(bx + 0.9 * cycW, yOf(st.p2.Ax));
+            }
+            c.stroke();
+            c.strokeStyle = C.bad; c.lineWidth = 1.4; c.setLineDash([4, 3]);
+            c.beginPath();
+            for (let k = 0; k < 2; k++) {
+                const bx = axL + k * cycW;
+                c.moveTo(bx + 0.9 * cycW, yOf(st.p2.Ax));
+                c.lineTo(bx + cycW, yOf(-st.p2.Ax));
+            }
+            c.stroke();
+            c.setLineDash([]);
+            // 游标：与屏面亮点同源（同一 instUV() 瞬时 Ux）；回扫阶段束流熄灭 → 停显
+            const iu = instUV();
+            if (iu) {
+                c.fillStyle = C.blue;
+                c.beginPath(); c.arc(axL + st.m2.p * cycW, yOf(iu.ux), 3, 0, Math.PI * 2); c.fill();
+            }
+            c.textAlign = 'left';
+        }
+
         function drawStatus(c, s) {
             const compact = views.scene.fit < 0.62;
             let leftTxt = s.left;
@@ -577,9 +653,9 @@
         function statusMode1() {
             const sy = OSC.hitState(st.p1.Uy, st.U1), sx = OSC.hitState(st.p1.Ux, st.U1);
             let right, color;
-            if (sy === 'hit' && sx === 'hit') { right = '电子同时打在 XX、YY 偏转极板上，荧光屏无亮点'; color = C.bad; }
-            else if (sy === 'hit') { right = '电子打在 YY 极板上，荧光屏无亮点'; color = C.bad; }
-            else if (sx === 'hit') { right = '电子打在 XX 极板上，荧光屏无亮点'; color = C.bad; }
+            if (sy === 'hit' && sx === 'hit') { right = '电子同时打在 XX′、YY′ 偏转极板上，荧光屏无亮点'; color = C.bad; }
+            else if (sy === 'hit') { right = '电子打在 YY′ 极板上，荧光屏无亮点'; color = C.bad; }
+            else if (sx === 'hit') { right = '电子打在 XX′ 极板上，荧光屏无亮点'; color = C.bad; }
             else if (sy === 'critical' || sx === 'critical') { right = '临界：恰沿极板边缘通过'; color = C.warn; }
             else {
                 right = '正常成像 (X=' + fmtSigned(OSC.offCm(st.p1.Ux, st.U1), 2) +
@@ -601,11 +677,11 @@
             const s = OSC.scanStatus(st.p2.Ay, st.p2.Ax, st.U1);
             let right, color;
             if (s === 'ok') { right = '正常波形（屏显 2 个完整周期）'; color = C.spot; }
-            else if (s === 'yy') { right = '信号峰值过大：波形上下削顶（打在 YY 极板）'; color = C.warn; }
-            else if (s === 'xx') { right = '扫描幅度过大：波形两端截断（打在 XX 极板）'; color = C.warn; }
+            else if (s === 'yy') { right = '信号峰值过大：波形上下削顶（打在 YY′ 极板）'; color = C.warn; }
+            else if (s === 'xx') { right = '扫描幅度过大：波形两端截断（打在 XX′ 极板）'; color = C.warn; }
             else if (s === 'both') { right = '双向局部缺失：峰值与幅度均超临界'; color = C.warn; }
             else { right = '当前参数无有效成像'; color = C.bad; }
-            return { left: '模式二 波形扫描　XX 锯齿扫描 + YY 正弦信号 ⇒ 屏显波形', right, color };
+            return { left: '模式二 波形扫描　XX′ 锯齿扫描 + YY′ 正弦信号 ⇒ 屏显波形', right, color };
         }
 
         function drawStageStrip(c) {
@@ -637,20 +713,28 @@
             c.moveTo(390, 222); c.lineTo(556, 152);
             c.moveTo(390, 314); c.lineTo(556, 384);
             c.stroke();
-            c.setLineDash([5, 4]);
-            c.beginPath(); c.moveTo(556, 140); c.lineTo(556, 396); c.stroke();
-            c.setLineDash([]);
+            // v1.3：侧视屏面改为课本式椭圆（淡填充+描边，替换原竖直虚线）
+            c.beginPath();
+            c.ellipse(556, 268, 10, 116, 0, 0, Math.PI * 2);
+            c.fillStyle = 'rgba(22,163,74,0.07)';
+            c.fill();
+            c.strokeStyle = C.shell; c.stroke();
             c.textAlign = 'center';
             if (!compact) {
                 c.fillStyle = C.mut; c.font = sceneFont(10.5);
                 c.fillText('荧光屏（侧视）', 556, 132);
             }
             if (st.aux) {
-                c.fillStyle = C.mut; c.font = sceneFont(10);
-                c.fillText('L′ = 18 cm（示意，未按比例）', 445, 344);
+                // v1.3：L′ 从偏转区末端（XX′ 区段出口）画到屏面
+                if (!compact) {
+                    c.fillStyle = C.mut; c.font = sceneFont(9.5); c.textAlign = 'left';
+                    c.fillText('两对极板按课本串联绘制，灵敏度按等效模型统一', 160, 364);
+                }
+                c.fillStyle = C.mut; c.font = sceneFont(10); c.textAlign = 'center';
+                c.fillText('L′ = 18 cm（示意，未按比例）', 456, 388);
                 c.setLineDash([3, 3]);
                 c.strokeStyle = 'rgba(31,41,55,0.3)'; c.lineWidth = 1;
-                c.beginPath(); c.moveTo(334, 326); c.lineTo(556, 326); c.stroke();
+                c.beginPath(); c.moveTo(T.X1, 372); c.lineTo(546, 372); c.stroke();
                 c.setLineDash([]);
             }
             c.textAlign = 'left';
@@ -658,6 +742,21 @@
 
         function drawGun(c) {
             const compact = views.scene.fit < 0.62;
+            // v1.3：课本式加速电源符号（电池长短线），K 接 −、A 接 +，与加速电场线 A→K 方向自洽
+            c.strokeStyle = C.ink; c.lineWidth = 1.2;
+            c.beginPath();
+            c.moveTo(69, 296); c.lineTo(69, 342); c.lineTo(91, 342);
+            c.moveTo(103, 342); c.lineTo(125, 342); c.lineTo(125, 296);
+            c.stroke();
+            c.lineWidth = 2.4;
+            c.beginPath(); c.moveTo(91, 336); c.lineTo(91, 348); c.stroke();   // 负极（短粗线）
+            c.lineWidth = 1.2;
+            c.beginPath(); c.moveTo(103, 330); c.lineTo(103, 354); c.stroke(); // 正极（长线）
+            c.fillStyle = C.ink; c.font = sceneFont(10, true); c.textAlign = 'center';
+            c.fillText('−', 83, 338);
+            c.fillText('+', 111, 338);
+            c.fillStyle = C.accelE; c.font = sceneFont(11.5, true);
+            c.fillText('U1 = ' + st.U1 + ' V', 97, 370);
             // 灯丝
             c.strokeStyle = C.accelE; c.lineWidth = 1.8;
             c.beginPath();
@@ -665,18 +764,28 @@
             c.stroke();
             c.fillStyle = C.mut; c.font = sceneFont(10); c.textAlign = 'center';
             if (!compact) c.fillText('灯丝', 48, 290);
-            // 阴极 K
+            // 阴极 K / 阳极 A（带小孔）；底色小块遮住穿过的电源导线
             c.fillStyle = C.metal;
             c.fillRect(66, 240, 6, 56);
-            c.fillText(compact ? 'K' : 'K 阴极', 69, 310);
-            // 阳极 A（带小孔）
             c.fillRect(122, 240, 6, 18);
             c.fillRect(122, 278, 6, 18);
+            if (!compact) {
+                c.fillStyle = '#f8fafc';
+                c.fillRect(48, 301, 42, 12);
+                c.fillRect(104, 301, 42, 12);
+            }
+            c.fillStyle = C.mut; c.font = sceneFont(10);
+            c.fillText(compact ? 'K' : 'K 阴极', 69, 310);
             c.fillText(compact ? 'A' : 'A 加速', 125, 310);
             // 加速电场线：A(+) → K(−)，方向向左
             for (const y of [246, 257, 279, 290]) drawArrow(c, 118, y, 80, y, C.accelE, 1.5, 6);
-            c.fillStyle = C.accelE; c.font = sceneFont(11.5, true);
-            c.fillText('U1 = ' + st.U1 + ' V', 97, 230);
+            // v1.3：课本整体标注「电子枪」（引线指向灯丝+K+A 组件）
+            if (!compact) {
+                c.strokeStyle = 'rgba(31,41,55,0.35)'; c.lineWidth = 1;
+                c.beginPath(); c.moveTo(95, 204); c.lineTo(95, 236); c.stroke();
+                c.fillStyle = C.ink; c.font = sceneFont(10.5, true);
+                c.fillText('电子枪', 95, 198);
+            }
             c.textAlign = 'left';
         }
 
@@ -685,50 +794,64 @@
             const iu = instUV();
             const uyShow = st.mode === 1 ? st.p1.Uy : st.p2.Ay;
             const uxShow = st.mode === 1 ? st.p1.Ux : st.p2.Ax;
-            // YY 上下极板
+            // v1.3：课本整体标注「偏转电极」（引线指向两对极板区，置于两区段间隙上方）
+            if (!compact) {
+                c.strokeStyle = 'rgba(31,41,55,0.35)'; c.lineWidth = 1;
+                c.beginPath(); c.moveTo(298, 222); c.lineTo(298, 208); c.stroke();
+                c.fillStyle = C.ink; c.font = sceneFont(10.5, true); c.textAlign = 'left';
+                c.fillText('偏转电极', 306, 217);
+            }
+            // YY′ 上下极板（前区段 214~290，靠近电子枪）
             c.fillStyle = 'rgba(234,88,12,0.10)'; c.strokeStyle = C.defE; c.lineWidth = 1.6;
-            c.fillRect(214, 224, 120, 14); c.strokeRect(214, 224, 120, 14);
-            c.fillRect(214, 298, 120, 14); c.strokeRect(214, 298, 120, 14);
-            c.fillStyle = C.defE; c.font = sceneFont(11.5, true); c.textAlign = 'center';
-            if (!compact) c.fillText('YY 竖直偏转', 274, 218);
+            c.fillRect(214, 224, 76, 14); c.strokeRect(214, 224, 76, 14);
+            c.fillRect(214, 298, 76, 14); c.strokeRect(214, 298, 76, 14);
+            c.fillStyle = C.defE; c.font = sceneFont(10.5, true); c.textAlign = 'center';
+            // v1.3：单板标注 Y（上板）/ Y′（下板），与课本图甲一致
+            c.fillText('Y', 252, 235);
+            c.fillText('Y′', 252, 309);
+            if (!compact) c.fillText('YY′ 竖直偏转', 252, 218);
             c.fillStyle = C.ink; c.font = sceneFont(11);
-            c.fillText((st.mode === 1 ? 'Uy = ' : '信号峰值 Ay = ') + fmtSigned(uyShow, 0) + ' V', 274, 202);
+            c.fillText((st.mode === 1 ? 'Uy = ' : '信号峰值 Ay = ') + fmtSigned(uyShow, 0) + ' V', 252, 202);
             // Ey 电场箭头（方向：+Uy → 上板正 → 场向下）
             const uyInst = st.mode === 1 ? st.p1.Uy : (iu ? iu.uy : 0);
             if (Math.abs(uyInst) >= 3) {
                 const len = 8 + 18 * Math.min(1, Math.abs(uyInst) / 100);
-                for (const x of [234, 274, 314]) {
+                for (const x of [230, 252, 274]) {
                     if (uyInst > 0) drawArrow(c, x, 242, x, 242 + len, C.defE, 1.6, 6);
                     else drawArrow(c, x, 294, x, 294 - len, C.defE, 1.6, 6);
                 }
             }
-            // XX 极板（⊥纸面，透视窄条）
-            c.fillStyle = 'rgba(124,58,237,0.55)';
-            c.fillRect(214, 244, 120, 3);
-            c.fillRect(214, 289, 120, 3);
-            c.strokeStyle = 'rgba(124,58,237,0.6)'; c.lineWidth = 1;
+            // XX′ 极板（后区段 306~382，靠近荧光屏；前后两块、板面平行于纸面，透视平行四边形）
+            c.fillStyle = 'rgba(124,58,237,0.14)'; c.strokeStyle = 'rgba(124,58,237,0.75)'; c.lineWidth = 1.2;
             c.beginPath();
-            c.moveTo(214, 245); c.lineTo(207, 238); c.moveTo(334, 245); c.lineTo(341, 238);
-            c.moveTo(214, 290); c.lineTo(207, 297); c.moveTo(334, 290); c.lineTo(341, 297);
-            c.stroke();
+            c.moveTo(306, 224); c.lineTo(382, 224); c.lineTo(374, 238); c.lineTo(298, 238); c.closePath();
+            c.fill(); c.stroke();
+            c.beginPath();
+            c.moveTo(306, 312); c.lineTo(382, 312); c.lineTo(374, 298); c.lineTo(298, 298); c.closePath();
+            c.fill(); c.stroke();
+            // v1.3：透视板端标注 X / X′
+            c.fillStyle = C.xx; c.font = sceneFont(10, true);
+            c.fillText('X', 388, 235);
+            c.fillText('X′', 388, 307);
             c.fillStyle = C.xx; c.font = sceneFont(10.5);
-            if (!compact) c.fillText('XX 水平偏转（板面⊥纸面）', 274, 332);
+            if (!compact) c.fillText('XX′ 水平偏转（前后板）', 344, 332);
             c.fillStyle = C.ink; c.font = sceneFont(11);
-            c.fillText((st.mode === 1 ? 'Ux = ' : '扫描幅度 Ax = ') + fmtSigned(uxShow, 0) + ' V', 274, 348);
-            // Ux 方向标记：+Ux → 偏出纸面 → 屏右
+            c.fillText((st.mode === 1 ? 'Ux = ' : '扫描幅度 Ax = ') + fmtSigned(uxShow, 0) + ' V', 344, 348);
+            // Ux 方向标记（出/入纸面，位于 XX′ 区段）：+Ux → 偏出纸面 → 屏右
             const uxInst = st.mode === 1 ? st.p1.Ux : (iu ? iu.ux : 0);
             if (Math.abs(uxInst) >= 3) {
                 c.strokeStyle = C.xx; c.lineWidth = 1.6;
-                c.beginPath(); c.arc(352, 268, 8, 0, Math.PI * 2); c.stroke();
-                if (uxInst > 0) { c.fillStyle = C.xx; c.beginPath(); c.arc(352, 268, 2.6, 0, Math.PI * 2); c.fill(); }
+                c.beginPath(); c.arc(362, 268, 8, 0, Math.PI * 2); c.stroke();
+                if (uxInst > 0) { c.fillStyle = C.xx; c.beginPath(); c.arc(362, 268, 2.6, 0, Math.PI * 2); c.fill(); }
                 else {
                     c.beginPath();
-                    c.moveTo(352 - 4, 268 - 4); c.lineTo(352 + 4, 268 + 4);
-                    c.moveTo(352 + 4, 268 - 4); c.lineTo(352 - 4, 268 + 4);
+                    c.moveTo(362 - 4, 268 - 4); c.lineTo(362 + 4, 268 + 4);
+                    c.moveTo(362 + 4, 268 - 4); c.lineTo(362 - 4, 268 + 4);
                     c.stroke();
                 }
-                c.fillStyle = C.xx; c.font = sceneFont(9.5);
-                c.fillText(uxInst > 0 ? '出纸面（屏右）' : '入纸面（屏左）', 352, 290);
+                c.fillStyle = C.xx; c.font = sceneFont(9.5); c.textAlign = 'left';
+                c.fillText(uxInst > 0 ? '出纸面（屏右）' : '入纸面（屏左）', 374, 290);
+                c.textAlign = 'left';
             }
             c.textAlign = 'left';
         }
@@ -738,7 +861,7 @@
             c.strokeStyle = C.blue; c.lineWidth = 2;
             roundRectPath(c, 584, 92, 282, 378, 10); c.stroke();
             c.fillStyle = C.ink; c.font = sceneFont(12.5, true); c.textAlign = 'left';
-            c.fillText('荧光屏正面（±6 cm）', 600, 116);
+            c.fillText(views.scene.fit < 0.62 ? '荧光屏正面' : '荧光屏正面（从右向左看，±6 cm）', 600, 116);
             // 网格区
             const gx = 599, gy = 152, gw = 252, gh = 252, cx = T.FACE_CX, cy = T.FACE_CY, px = T.FACE_PX_PER_CM;
             c.fillStyle = 'rgba(22,163,74,0.04)';
@@ -767,6 +890,15 @@
             c.fillText('−6', gx - 5, gy + gh);
             c.fillText('Y/cm', gx - 5, gy - 6);
             c.textAlign = 'left';
+            // v1.3：十字四端轴端标注（课本图乙，置于屏面内侧，避让 0 刻度数字）
+            c.fillStyle = '#15803d'; c.font = sceneFont(11, true);
+            c.textAlign = 'center';
+            c.fillText('Y', cx, gy + 14);
+            c.fillText('Y′', cx, gy + gh - 7);
+            c.textAlign = 'right';
+            c.fillText('X', gx + gw - 7, cy - 7);
+            c.textAlign = 'left';
+            c.fillText('X′', gx + 7, cy - 7);
             if (st.aux) {
                 // 打极板临界 ±5 cm
                 c.strokeStyle = C.defE; c.lineWidth = 1.2; c.setLineDash([5, 4]);
@@ -836,6 +968,19 @@
                     c.stroke();
                 }
             }
+            // v1.3：束流在椭圆屏面的落点小亮点（亮斑颜色保持荧光绿）
+            if (path.spotValid) {
+                const ey2 = clamp(path.endY, 152, 384);
+                const dex = 10 * Math.sqrt(Math.max(0, 1 - Math.pow((ey2 - 268) / 116, 2)));
+                const ex2 = 556 - dex;
+                c.fillStyle = C.spot;
+                c.beginPath(); c.arc(ex2, ey2, 3, 0, Math.PI * 2); c.fill();
+                if (st.mode === 1 && views.scene.fit >= 0.62) {
+                    c.fillStyle = C.spot; c.font = sceneFont(9.5, true); c.textAlign = 'right';
+                    c.fillText('亮斑', ex2 - 6, clamp(ey2 - 7, 162, 378));
+                    c.textAlign = 'left';
+                }
+            }
             if (st.aux && path.spotValid) {
                 // v₀ 速度箭头
                 const v0n = OSC.v0(st.U1) / 1e7;
@@ -843,14 +988,18 @@
                 drawArrow(c, 134, 244, 134 + len, 244, C.beam, 2.2, 7);
                 c.fillStyle = C.beam; c.font = sceneFont(10);
                 c.fillText('v₀ = ' + v0n.toFixed(2) + '×10⁷ m/s', 134, 260);
-                // 板内侧移标注
+                // 板内侧移标注（v1.3：锚定 YY′ 出口截面，数值口径不变）
                 if (Math.abs(path.endY - T.AXIS) > 4) {
                     c.strokeStyle = C.dash; c.lineWidth = 1; c.setLineDash([3, 3]);
-                    c.beginPath(); c.moveTo(338, T.AXIS); c.lineTo(338, path.endY); c.stroke();
+                    c.beginPath(); c.moveTo(T.YY_X1, T.AXIS); c.lineTo(T.YY_X1, path.endY); c.stroke();
                     c.setLineDash([]);
                     c.fillStyle = C.mut; c.font = sceneFont(9.5); c.textAlign = 'left';
                     const ycm = 4 * (st.mode === 1 ? st.p1.Uy : (instUV() ? instUV().uy : 0)) / st.U1;
-                    c.fillText('y=' + fmtSigned(ycm * 10, 1) + ' mm', 342, (T.AXIS + path.endY) / 2 + 3);
+                    const down = path.endY > T.AXIS;
+                    const midTxt = (T.AXIS + path.endY) / 2 + 3;
+                    // 向下偏转且中点落入极板条带（y 298~312）时，文字移到极板下方，避免压板
+                    const ty = down && midTxt > 296 ? 322 : midTxt;
+                    c.fillText('y=' + fmtSigned(ycm * 10, 1) + ' mm', T.YY_X1 + 4, ty);
                 }
             }
         }
@@ -875,6 +1024,17 @@
             c.beginPath(); c.arc(sp.x, sp.y, 16, 0, Math.PI * 2); c.fill();
             c.fillStyle = C.spot;
             c.beginPath(); c.arc(sp.x, sp.y, 4.5, 0, Math.PI * 2); c.fill();
+            // v1.3：模式一正常成像时标注「亮斑」（荧光绿；位置避让屏面边缘与网格刻度）
+            {
+                const gx = 599, gy = 152, gw = 252, gh = 252;
+                let lx = sp.x + 9, ly = sp.y - 8, align = 'left';
+                if (sp.x > gx + gw - 44) { lx = sp.x - 9; align = 'right'; }      // 右缘左翻
+                if (sp.y < gy + 22) ly = sp.y + 18;                               // 上缘下移
+                else if (sp.y > gy + gh - 10) ly = sp.y - 12;                     // 下缘上移
+                c.fillStyle = C.spot; c.font = sceneFont(9.5, true); c.textAlign = align;
+                c.fillText('亮斑', lx, ly);
+                c.textAlign = 'left';
+            }
         }
 
         function drawTrail(c) {
@@ -1061,7 +1221,7 @@
                 const anyHit = hitX || hitY;
                 const hsSel = OSC.hitState(u, st.U1);
                 if (anyHit) {
-                    const hitDir = hitX && hitY ? 'XX、YY' : (hitX ? 'XX' : 'YY');
+                    const hitDir = hitX && hitY ? 'XX′、YY′' : (hitX ? 'XX′' : 'YY′');
                     const yb = py(5 * Math.sign(off || 1));
                     c.strokeStyle = C.bad; c.lineWidth = 1.8;
                     c.beginPath();

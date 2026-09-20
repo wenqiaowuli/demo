@@ -1,4 +1,4 @@
-// CDP 驱动 chrome-headless-shell 验证示波器演示页（v4，覆盖需求 16.6 + 18.7 验证清单）
+// CDP 驱动 chrome-headless-shell 验证示波器演示页（v5，覆盖需求 16.6 + 18.7 + 20.5 验证清单）
 // 用法: node osc-cdp.mjs  (需 http://127.0.0.1:8642 + 9223 调试端口)
 import { writeFileSync } from 'node:fs';
 
@@ -107,6 +107,21 @@ const chartRProbe = (uVal, yVal, rad, judgeExpr) => ev(`(() => {
     }
     return false;
 })()`);
+// v1.3 主场景设计坐标区域探测：judge(rgb) 命中返回 true（透明底合成到白底）
+const sceneRegionProbe = (x0, y0, w, h, judgeExpr) => ev(`(() => {
+    const c = document.getElementById('scene');
+    const ctx = c.getContext('2d');
+    const s = c.width / 880;
+    for (let y = Math.round(${y0} * s); y < Math.round((${y0} + ${h}) * s); y += 2) {
+        for (let x = Math.round(${x0} * s); x < Math.round((${x0} + ${w}) * s); x += 2) {
+            const d = ctx.getImageData(x, y, 1, 1).data;
+            const a = d[3] / 255;
+            const rgb = [0, 1, 2].map(i => Math.round(d[i] * a + 255 * (1 - a)));
+            if (${judgeExpr}) return true;
+        }
+    }
+    return false;
+})()`);
 
 console.log('== 1. 加载页面');
 await cdp.send('Page.navigate', { url: PAGE_URL });
@@ -157,7 +172,7 @@ await setInput('rU1', 500);
 await setInput('rC', 100);      // Ux=100 → 仅 XX 碰板；Uy=50 正常
 await sleep(300);
 data = await readAll('#dataGrid .data-item');
-ok(data[data.length - 1].includes('XX 极板'), '状态：电子打在 XX 极板上', data[data.length - 1]);
+ok(data[data.length - 1].includes('XX′ 极板'), '状态：电子打在 XX′ 极板上（带撇记法）', data[data.length - 1]);
 ok(await ev(`document.getElementById('dirY').getAttribute('aria-pressed') === 'true'`) === true, '当前处于 Y 图');
 {
     const blueAtY = await chartRProbe(50, 2, 5, 'rgb[2] > 180 && rgb[0] < 110');
@@ -406,13 +421,52 @@ await click('btnAuto');
     ok(de.U1 === 1000 && de.Uy === 50, '窄屏演示结束回默认');
 }
 await shot('osc-shot-narrow.png');
+// v1.3：compact（fit<0.62）下扫描电压小图隐藏
+await click('mBtn2');
+await sleep(600);
+{
+    const redNarrow = await sceneRegionProbe(60, 400, 260, 78, 'rgb[0] > 150 && rgb[1] < 110 && rgb[2] < 110');
+    ok(!redNarrow, '窄屏 compact 扫描小图隐藏（区域无回扫红色）');
+}
+await click('btnPause');
+await sleep(200);
+await click('mBtn1');
+await sleep(300);
 await cdp.send('Emulation.clearDeviceMetricsOverride');
 await sleep(400);
+
+console.log('== 17b. v1.3 串联极板/椭圆屏面/扫描小图/带撇记法');
+{
+    const leg = await ev(`document.querySelector('.legend').textContent`);
+    ok(leg.includes('偏转电场 YY′') && leg.includes('XX′ 极板'), '图例带撇记法 YY′/XX′', leg);
+    ok(leg.includes('回扫（束流熄灭）'), '图例新增「回扫（束流熄灭）」项');
+    const redJudge = 'rgb[0] > 150 && rgb[1] < 110 && rgb[2] < 110';
+    await click('mBtn2');
+    await sleep(600);
+    ok(await sceneRegionProbe(60, 400, 260, 78, redJudge), '模式二扫描小图回扫红色虚线可见');
+    ok(await sceneRegionProbe(550, 262, 12, 12, 'rgb[1] - rgb[0] >= 4 && rgb[1] - rgb[2] >= 2'), '侧视椭圆屏面（淡绿填充）已绘制');
+    await setInput('rB', 50);
+    await setInput('rU1', 500);
+    await setInput('rC', 100);
+    await sleep(300);
+    data = await readAll('#dataGrid .data-item');
+    ok(data[data.length - 1].includes('XX′ 极板'), '模式二 XX′ 截断提示带撇记法', data[data.length - 1]);
+    await setInput('rU1', 1000);
+    await setInput('rC', 80);
+    await sleep(300);
+    await shot('osc-shot-v13-mode2.png');
+    await click('btnPause');
+    await sleep(200);
+    await click('mBtn1');
+    await sleep(300);
+    ok(!(await sceneRegionProbe(60, 400, 260, 78, redJudge)), '切回模式一后扫描小图不再绘制');
+    await shot('osc-shot-v13-mode1.png');
+}
 
 console.log('== 18. 全程控制台错误复查（18.7-8）');
 ok(cdp.bag.msgs.length === 0, '交互全程无控制台错误', cdp.bag.msgs.slice(0, 3).join(' | '));
 
 cdp.close();
 console.log('\n========================================');
-console.log(`浏览器验证(v1.2): ${pass} 通过, ${fail} 失败`);
+console.log(`浏览器验证(v1.3): ${pass} 通过, ${fail} 失败`);
 process.exit(fail ? 1 : 0);
