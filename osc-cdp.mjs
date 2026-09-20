@@ -113,10 +113,13 @@ ok(await ev('document.title') === '示波器演示｜高中物理', '页面标�
 ok(!!(await dbg()), 'getOscDebug 验证钩子可用');
 {
     const d = await dbg();
-    ok(d.phase === 'running', '加载即运行（连续波形）', d.phase);
+    ok(d.phase === 'idle', '加载不自动运行（待机态）', d.phase);
     ok(d.uxType === 'saw' && d.uyType === 'sine', '默认组合：水平=锯齿、竖直=正弦', d.uxType + '/' + d.uyType);
     ok(d.U1 === 1000 && d.uxA === 80 && d.uyA === 50, '默认参数 U1=1000、A=80/50');
-    ok(await read('#btnStart') === '运行中…' && await ev(`document.getElementById('btnStart').disabled`) === true, '运行中开始按钮禁用"运行中…"');
+    ok(await read('#btnStart') === '开始' && await ev(`!document.getElementById('btnStart').disabled`) === true, '待机态开始按钮可用"开始"');
+    ok(await ev(`document.getElementById('btnPause').disabled`) === true, '待机态暂停按钮禁用');
+    ok(await ev(`!document.getElementById('btnReset').disabled`) === true, '重置随时可用');
+    ok(d.t === 0 && d.pts === 0, '待机态 t=0、屏上无轨迹');
 }
 {
     const five = await ev(`(() => {
@@ -141,6 +144,8 @@ ok(!!(await dbg()), 'getOscDebug 验证钩子可用');
 }
 
 console.log('== 2. 默认组合（锯齿×正弦）动态波形');
+await click('btnStart');        // 待机态手动开始
+await sleep(300);
 {
     // 无头环境 rAF 启动/节流有波动 → 轮询等待时间推进与轨迹累积
     let d = null;
@@ -150,7 +155,7 @@ console.log('== 2. 默认组合（锯齿×正弦）动态波形');
         if (cur.t > 0.3 && cur.pts > 20) { d = cur; break; }
         await sleep(200);
     }
-    ok(!!d, '时间推进、屏上轨迹累积', JSON.stringify({ t: d?.t, pts: d?.pts }));
+    ok(!!d && d.phase === 'running', '开始后时间推进、屏上轨迹累积', JSON.stringify({ phase: d?.phase, t: d?.t, pts: d?.pts }));
     ok(await designProbe('scopeCanvas', 400, 74, 80, 240, 240, GREEN), '荧光屏出现荧光绿波形');
     ok(await chartHas('chartX', INK), 'Ux–t 图有锯齿实线');
     ok(await chartHas('chartX', RED), 'Ux–t 图有回扫红色虚线');
@@ -191,13 +196,13 @@ await sleep(400);
     ok(d.phase === 'running' && d.t > 0.2, '继续后时间推进', JSON.stringify({ phase: d.phase, t: d.t }));
 }
 
-console.log('== 5. 四种波形切换（水平×竖直组合遍历）');
+console.log('== 5. 五种波形切换（水平×竖直组合遍历）');
 {
-    const types = ['saw', 'sine', 'square', 'dc'];
+    const types = ['saw', 'sine', 'cosine', 'square', 'dc'];
     let allSwitch = true;
     for (const ty of types) { await clickSeg('segY', ty); await sleep(60); if ((await dbg()).uyType !== ty) allSwitch = false; }
     for (const tx of types) { await clickSeg('segX', tx); await sleep(60); if ((await dbg()).uxType !== tx) allSwitch = false; }
-    ok(allSwitch, '水平/竖直波形类型 4×4 全部可切换');
+    ok(allSwitch, '水平/竖直波形类型 5×5 全部可切换');
     // 恢复非 dc 组合再验证代表性合成
     await clickSeg('segX', 'dc'); await clickSeg('segY', 'sine');
     await setInput('rX', 0);
@@ -221,6 +226,14 @@ console.log('== 5. 四种波形切换（水平×竖直组合遍历）');
     await clickSeg('segX', 'sine'); await clickSeg('segY', 'sine');
     await sleep(900);
     ok(await designProbe('scopeCanvas', 400, 120, 110, 160, 160, GREEN), '正弦×正弦 → 屏上李萨如椭圆');
+    // 余弦×余弦 → 李萨如椭圆（与正弦同频，仅相位不同）
+    await clickSeg('segX', 'cosine'); await clickSeg('segY', 'cosine');
+    await sleep(900);
+    ok(await designProbe('scopeCanvas', 400, 120, 110, 160, 160, GREEN), '余弦×余弦 → 屏上李萨如椭圆');
+    // 锯齿×余弦 → 屏显 2 个完整周期余弦波形
+    await clickSeg('segX', 'saw'); await clickSeg('segY', 'cosine');
+    await sleep(900);
+    ok(await designProbe('scopeCanvas', 400, 74, 80, 240, 240, GREEN), '锯齿×余弦 → 屏上余弦波形');
     // 组合切换清屏：切换波形类型后旧轨迹立即清除、重新积累
     await clickSeg('segX', 'saw');
     await sleep(150);
@@ -300,20 +313,25 @@ console.log('== 8. 播放速度（0.5~4×）');
     await setSel('speed', '1');
 }
 
-console.log('== 9. 重置恢复默认');
-await click('btnPause');
-await sleep(150);
+console.log('== 9. 重置恢复默认设置（随时可用，回到待机态）');
+ok((await dbg()).phase === 'running', '重置前处于运行态');
 await click('btnReset');
 await sleep(300);
 {
     const d = await dbg();
-    ok(d.phase === 'running' && d.t < 0.5, '重置后回运行态、t≈0', JSON.stringify({ phase: d.phase, t: d.t }));
+    ok(d.phase === 'idle' && d.t === 0 && d.pts === 0, '重置后回待机态、t=0、屏已清空', JSON.stringify({ phase: d.phase, t: d.t, pts: d.pts }));
     ok(d.uxType === 'saw' && d.uyType === 'sine' && d.uxA === 80 && d.uyA === 50 && d.U1 === 1000, '重置恢复默认组合与参数');
     ok(await ev(`document.getElementById('speed').value`) === '1', '速度下拉恢复 1×');
+    ok(await read('#btnStart') === '开始' && await ev(`!document.getElementById('btnStart').disabled`) === true, '重置后开始按钮回"开始"');
+    ok(await ev(`document.getElementById('btnPause').disabled`) === true, '重置后暂停按钮禁用');
 }
 
 console.log('== 10. 空格/R 快捷键');
 await ev(`document.activeElement && document.activeElement.blur(); true`);
+await cdp.send('Input.dispatchKeyEvent', { type: 'keyDown', code: 'Space', key: ' ', windowsVirtualKeyCode: 32 });
+await cdp.send('Input.dispatchKeyEvent', { type: 'keyUp', code: 'Space', key: ' ', windowsVirtualKeyCode: 32 });
+await sleep(300);
+ok((await dbg()).phase === 'running' && await read('#btnPause') === '暂停', '待机态空格开始演示');
 await cdp.send('Input.dispatchKeyEvent', { type: 'keyDown', code: 'Space', key: ' ', windowsVirtualKeyCode: 32 });
 await cdp.send('Input.dispatchKeyEvent', { type: 'keyUp', code: 'Space', key: ' ', windowsVirtualKeyCode: 32 });
 await sleep(200);
@@ -322,16 +340,15 @@ await cdp.send('Input.dispatchKeyEvent', { type: 'keyDown', code: 'Space', key: 
 await cdp.send('Input.dispatchKeyEvent', { type: 'keyUp', code: 'Space', key: ' ', windowsVirtualKeyCode: 32 });
 await sleep(200);
 ok((await dbg()).phase === 'running', '空格继续');
-await cdp.send('Input.dispatchKeyEvent', { type: 'keyDown', code: 'Space', key: ' ', windowsVirtualKeyCode: 32 });
-await cdp.send('Input.dispatchKeyEvent', { type: 'keyUp', code: 'Space', key: ' ', windowsVirtualKeyCode: 32 });
-await sleep(150);
 await cdp.send('Input.dispatchKeyEvent', { type: 'keyDown', code: 'KeyR', key: 'r', windowsVirtualKeyCode: 82 });
 await cdp.send('Input.dispatchKeyEvent', { type: 'keyUp', code: 'KeyR', key: 'r', windowsVirtualKeyCode: 82 });
 await sleep(300);
 {
     const d = await dbg();
-    ok(d.phase === 'running' && d.t < 0.5 && d.uxType === 'saw' && d.uyType === 'sine', '暂停态 R 重置回默认并运行', JSON.stringify(d));
+    ok(d.phase === 'idle' && d.t === 0 && d.uxType === 'saw' && d.uyType === 'sine' && d.uxA === 80 && d.uyA === 50, 'R 重置恢复默认设置（待机）', JSON.stringify(d));
 }
+await click('btnStart');        // 恢复运行供后续用例使用
+await sleep(300);
 
 console.log('== 11. 无障碍属性');
 {
@@ -348,7 +365,7 @@ console.log('== 11. 无障碍属性');
     ok(a.btnStart.label && a.btnPause.label && a.btnReset.label, '三个按钮均有 aria-label');
     ok(a.rX && a.rX.includes('伏') && a.rU1 && a.rU1.includes('伏'), '滑条 aria-valuetext 带单位', JSON.stringify({ rX: a.rX, rU1: a.rU1 }));
     ok(!!a.speed, '速度下拉有 aria-label');
-    ok(a.segPressed.length === 8 && a.segPressed.every(v => v === 'true' || v === 'false'), '8 个波形按钮均有 aria-pressed');
+    ok(a.segPressed.length === 10 && a.segPressed.every(v => v === 'true' || v === 'false'), '10 个波形按钮均有 aria-pressed');
     ok(a.segActive === 2, '每组恰一个激活波形按钮');
 }
 

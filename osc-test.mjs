@@ -77,6 +77,12 @@ section('v2 波形函数 waveU/waveAt：锯齿/正弦/方波/直线');
     ok(near(OSC.waveU('sine', 0.25, 50, 0).u, 50, 1e-6), '正弦 p=0.25 → +A（峰）');
     ok(near(OSC.waveU('sine', 0.75, 50, 0).u, -50, 1e-6), '正弦 p=0.75 → −A（谷）');
     ok(near(OSC.waveU('sine', 0.5, 50, 0).u, 0, 1e-9), '正弦 p=0.5 → 0');
+    // 余弦
+    ok(OSC.WAVE_TYPES.includes('cosine') && OSC.wavePeriod('cosine') === 4, '余弦为五种波形之一，周期 4 s');
+    ok(near(OSC.waveU('cosine', 0, 50, 0).u, 50, 1e-9), '余弦 p=0 → +A');
+    ok(near(OSC.waveU('cosine', 0.25, 50, 0).u, 0, 1e-9), '余弦 p=0.25 → 0');
+    ok(near(OSC.waveU('cosine', 0.5, 50, 0).u, -50, 1e-6), '余弦 p=0.5 → −A（谷）');
+    ok(near(OSC.waveAt('cosine', 2, 50, 0).u, -50, 1e-6), 'waveAt 余弦 t=2s（p=0.5）→ −A');
     // 方波
     ok(OSC.waveU('square', 0.25, 50, 0).u === 50 && OSC.waveU('square', 0.499, 50, 0).u === 50, '方波前半周期 → +A');
     ok(OSC.waveU('square', 0.5, 50, 0).u === -50 && OSC.waveU('square', 0.75, 50, 0).u === -50, '方波后半周期 → −A');

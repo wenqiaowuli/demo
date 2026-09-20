@@ -277,6 +277,7 @@
                     <div class="seg" id="segX" role="group" aria-labelledby="lXType">
                         <button data-t="saw" type="button">锯齿</button>
                         <button data-t="sine" type="button">正弦</button>
+                        <button data-t="cosine" type="button">余弦</button>
                         <button data-t="square" type="button">方波</button>
                         <button data-t="dc" type="button">直线</button>
                     </div>
@@ -291,6 +292,7 @@
                     <div class="seg" id="segY" role="group" aria-labelledby="lYType">
                         <button data-t="saw" type="button">锯齿</button>
                         <button data-t="sine" type="button" class="active">正弦</button>
+                        <button data-t="cosine" type="button">余弦</button>
                         <button data-t="square" type="button">方波</button>
                         <button data-t="dc" type="button">直线</button>
                     </div>
@@ -352,7 +354,7 @@
         var T_SIGNAL = 4;       // 正弦 / 方波周期（1× 速度）秒
         var T_SAW = 8;          // 锯齿周期 = 2× 信号周期（屏显 2 个完整周期）
         var SAW_RETRACE = 0.10; // 锯齿回扫占一个周期的比例
-        var WAVE_TYPES = ['saw', 'sine', 'square', 'dc'];
+        var WAVE_TYPES = ['saw', 'sine', 'cosine', 'square', 'dc'];
         function wavePeriod(type) { return type === 'saw' ? T_SAW : T_SIGNAL; }
         // p∈[0,1) 为该方向本周期进度 → {u: 电压 V}；锯齿回扫段 u = null（束流熄灭）
         function waveU(type, p, A, U0) {
@@ -363,6 +365,7 @@
                 return { u: -A + 2 * A * (p / fwd), p: p };
             }
             if (type === 'sine') return { u: A * Math.sin(2 * Math.PI * p), p: p };
+            if (type === 'cosine') return { u: A * Math.cos(2 * Math.PI * p), p: p };
             if (type === 'square') return { u: p < 0.5 ? A : -A, p: p };
             return { u: null, p: p };
         }
@@ -395,11 +398,11 @@
             mut: '#6b7280', line: '#e5e7eb', axis: '#94a3b8', blue: '#2563eb',
             warn: '#b45309', bad: '#dc2626', dash: 'rgba(31,41,55,0.45)'
         };
-        const WAVE_NAME = { saw: '锯齿', sine: '正弦', square: '方波', dc: '直线' };
+        const WAVE_NAME = { saw: '锯齿', sine: '正弦', cosine: '余弦', square: '方波', dc: '直线' };
 
         // ---------- 状态 ----------
         const st = {
-            phase: 'running',                      // running | paused
+            phase: 'idle',                         // idle（待机，不自动运行）| running | paused
             t: 0,                                  // 教学时间（秒，含速度）
             speed: 1,
             U1: 1000,
@@ -500,8 +503,8 @@
         }
         function comboDesc() {
             const tx = st.Ux.type, ty = st.Uy.type;
-            if (tx === 'saw' && (ty === 'sine' || ty === 'square')) return '锯齿扫描 + ' + WAVE_NAME[ty] + '信号 ⇒ 屏显 2 个完整周期' + WAVE_NAME[ty] + '波形';
-            if (ty === 'saw' && (tx === 'sine' || tx === 'square')) return WAVE_NAME[tx] + '（竖）+ 锯齿扫描（横）⇒ 李萨如类合成波形';
+            if (tx === 'saw' && (ty === 'sine' || ty === 'cosine' || ty === 'square')) return '锯齿扫描 + ' + WAVE_NAME[ty] + '信号 ⇒ 屏显 2 个完整周期' + WAVE_NAME[ty] + '波形';
+            if (ty === 'saw' && (tx === 'sine' || tx === 'cosine' || tx === 'square')) return WAVE_NAME[tx] + '（竖）+ 锯齿扫描（横）⇒ 李萨如类合成波形';
             if (tx === 'saw' && ty === 'saw') return '锯齿 × 锯齿（同相同频）⇒ 屏上为往复斜线';
             if (tx === 'dc' && ty === 'dc') return '直流 × 直流 ⇒ 屏上静止亮点（位置由 U₀ 决定）';
             if (tx === 'dc') return '直流（横）× ' + WAVE_NAME[ty] + '（纵）⇒ 屏上竖直' + (ty === 'square' ? '线段' : '直线');
@@ -936,30 +939,32 @@
         // ---------- 按钮状态机 ----------
         function setButtons() {
             const run = st.phase === 'running';
+            const idle = st.phase === 'idle';
             btnStart.disabled = run;
-            btnStart.textContent = run ? '运行中…' : '重新开始';
+            btnStart.textContent = run ? '运行中…' : (idle ? '开始' : '重新开始');
+            btnPause.disabled = idle;                       // 待机无可暂停
             btnPause.textContent = run ? '暂停' : '继续';
-            btnReset.disabled = run;
+            btnReset.disabled = false;                      // 用户裁定：重置随时可用
             btnStart.setAttribute('aria-label', btnStart.textContent);
             btnPause.setAttribute('aria-label', btnPause.textContent);
             btnReset.setAttribute('aria-label', btnReset.textContent);
         }
 
         // ---------- 播放控制 ----------
-        function startFresh() {          // 重新开始：清屏回 t=0
+        function startFresh() {          // 开始/重新开始：清屏回 t=0 并运行
             st.t = 0; st.pts = []; st.phase = 'running';
             setButtons();
         }
         function togglePause() {
+            if (st.phase === 'idle') { startFresh(); return; }
             st.phase = st.phase === 'running' ? 'paused' : 'running';
             setButtons();
         }
-        function resetAll() {            // 重置：默认参数 + 清屏回 t=0（仅非运行态）
-            if (st.phase === 'running') return;
+        function resetAll() {            // 重置：恢复默认设置并停止（回到待机态）
             const d = DEFAULTS();
             st.U1 = d.U1; st.Ux = d.Ux; st.Uy = d.Uy; st.speed = d.speed;
             speedSel.value = '1';
-            st.t = 0; st.pts = []; st.phase = 'running';
+            st.t = 0; st.pts = []; st.phase = 'idle';
             updateParamUI(); setButtons();
         }
 
