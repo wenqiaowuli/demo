@@ -1028,8 +1028,6 @@
         }
         speedSel.addEventListener('change', () => {
             st.speed = +speedSel.value;
-            st.t = 0;
-            st.pts = [];
         });
         auxChk.addEventListener('change', () => { st.aux = auxChk.checked; });
         btnStart.addEventListener('click', () => { if (st.phase !== 'running') startFresh(); });
