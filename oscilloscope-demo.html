@@ -1034,10 +1034,12 @@
         btnPause.addEventListener('click', togglePause);
         btnReset.addEventListener('click', resetAll);
         window.addEventListener('keydown', (e) => {
-            const ae = document.activeElement;
-            if (ae && ae !== document.body && ae !== document.documentElement) return;
             const t = e.target;
-            if (t && (t.tagName === 'INPUT' || t.tagName === 'BUTTON' || t.tagName === 'SELECT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+            if (t) {
+                const tag = t.tagName, type = (t.type || '').toLowerCase();
+                const textInput = tag === 'INPUT' && !['button', 'checkbox', 'radio', 'range'].includes(type);
+                if (t.isContentEditable || tag === 'TEXTAREA' || textInput) return;
+            }
             if (e.code === 'Space') { e.preventDefault(); if (st.phase === 'idle') startFresh(); else togglePause(); }
             else if (e.key === 'r' || e.key === 'R') resetAll();
         });
