@@ -1026,7 +1026,10 @@
                 afterParamChange();
             });
         }
-        speedSel.addEventListener('change', () => { st.speed = +speedSel.value; });
+        speedSel.addEventListener('change', () => {
+            st.speed = +speedSel.value;
+            st.pts = [];
+        });
         auxChk.addEventListener('change', () => { st.aux = auxChk.checked; });
         btnStart.addEventListener('click', () => { if (st.phase !== 'running') startFresh(); });
         btnPause.addEventListener('click', togglePause);
@@ -1041,7 +1044,7 @@
         // ---------- 画布尺寸（DPR + ResizeObserver，系列约定） ----------
         function setupCanvas(canvas, view, aspect, design) {
             const cssWidth = canvas.clientWidth || 400;
-            const cssHeight = cssWidth / aspect;
+            const cssHeight = canvas.clientHeight || (cssWidth / aspect);
             const dpr = window.devicePixelRatio || 1;
             canvas.width = Math.round(cssWidth * dpr);
             canvas.height = Math.round(cssHeight * dpr);
