@@ -962,7 +962,7 @@
             setButtons();
         }
         function togglePause() {
-            if (st.phase === 'idle') { startFresh(); return; }
+            if (st.phase === 'idle') return;
             st.phase = st.phase === 'running' ? 'paused' : 'running';
             setButtons();
         }
@@ -1038,7 +1038,7 @@
         window.addEventListener('keydown', (e) => {
             const t = e.target;
             if (t && (t.tagName === 'INPUT' || t.tagName === 'BUTTON' || t.tagName === 'SELECT' || t.tagName === 'TEXTAREA')) return;
-            if (e.code === 'Space') { e.preventDefault(); togglePause(); }
+            if (e.code === 'Space') { e.preventDefault(); if (st.phase === 'idle') startFresh(); else togglePause(); }
             else if (e.key === 'r' || e.key === 'R') resetAll();
         });
 
