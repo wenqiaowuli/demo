@@ -1,1 +1,1090 @@
-see-local-file-too-large-use-followup
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>示波器演示｜高中物理</title>
+    <meta name="description" content="水平/竖直电压波形可选（锯齿/正弦/余弦/方波/直线）的示波器波形组合教学演示，参照课本示波管原理图，实时合成屏显波形与数据。">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background-color: #eef2f6;
+            color: #1f2937;
+            font-family: system-ui, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 12px 32px;
+        }
+        main {
+            width: 100%;
+            max-width: 880px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1 { font-size: 22px; margin-bottom: 12px; text-align: center; }
+        .group-title {
+            font-size: 12px;
+            color: #6b7280;
+            margin-bottom: 10px;
+            letter-spacing: 0.5px;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            border: 2px solid #2563eb;
+            border-radius: 10px;
+            background-color: #ffffff;
+        }
+        .top-row {
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            align-items: start;
+        }
+        .charts-row {
+            margin-top: 16px;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+        .chart-panel { min-width: 0; }
+        .chart-panel canvas { aspect-ratio: 20 / 9; }
+        #tubeCanvas { aspect-ratio: 480 / 428; }
+        #scopeCanvas { aspect-ratio: 480 / 428; }
+        @media (max-width: 720px) {
+            .top-row, .charts-row { grid-template-columns: 1fr; }
+        }
+        .play-bar {
+            margin-top: 14px;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .play-bar select {
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 7px 10px;
+            font-size: 13px;
+            background: #fff;
+            color: #1f2937;
+            cursor: pointer;
+        }
+        .play-bar .bar-label { font-size: 12.5px; color: #6b7280; }
+        button {
+            background: #2563eb;
+            border: none;
+            color: white;
+            padding: 9px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.15s ease, transform 0.15s ease;
+        }
+        button:hover:not(:disabled) { background: #1d4ed8; }
+        button:active:not(:disabled) { transform: translateY(1px); }
+        button:disabled { opacity: 0.45; cursor: not-allowed; }
+        input[type=range]:disabled { opacity: 0.45; cursor: not-allowed; }
+        .legend {
+            margin-top: 12px;
+            font-size: 12px;
+            color: #6b7280;
+            text-align: center;
+            line-height: 1.8;
+        }
+        .legend span { margin: 0 6px; white-space: nowrap; }
+        .legend i {
+            display: inline-block;
+            width: 16px;
+            height: 6px;
+            border-radius: 3px;
+            vertical-align: middle;
+            margin-right: 4px;
+        }
+        .data-group {
+            margin-top: 16px;
+            width: 100%;
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 14px 16px;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+        }
+        .data-grid {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            gap: 9px;
+        }
+        @media (max-width: 800px) { .data-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        .data-item {
+            background: #f8fafc;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 8px 10px;
+        }
+        .data-item.span-full { grid-column: 1 / -1; }
+        .data-item span {
+            display: block;
+            font-size: 11px;
+            color: #6b7280;
+            margin-bottom: 4px;
+        }
+        .data-item b {
+            display: block;
+            font-size: 14px;
+            color: #1f2937;
+            font-variant-numeric: tabular-nums;
+        }
+        .control-panel {
+            margin-top: 16px;
+            width: 100%;
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 14px 16px;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+        }
+        .param-row {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+        }
+        .param-row label {
+            font-size: 13px;
+            color: #1f2937;
+            white-space: nowrap;
+            min-width: 96px;
+        }
+        .param-row input[type=range] { flex: 1; min-width: 120px; }
+        .param-row .val {
+            min-width: 64px;
+            text-align: right;
+            font-size: 13px;
+            font-variant-numeric: tabular-nums;
+            color: #1f2937;
+        }
+        .seg {
+            display: inline-flex;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            overflow: hidden;
+            flex: 1;
+            min-width: 200px;
+        }
+        .seg button {
+            flex: 1;
+            background: #ffffff;
+            color: #1f2937;
+            border: none;
+            border-radius: 0;
+            padding: 7px 6px;
+            font-size: 12.5px;
+        }
+        .seg button:hover:not(:disabled) { background: #eef2f7; }
+        .seg button.active { background: #2563eb; color: #ffffff; }
+        .seg button + button { border-left: 1px solid #e5e7eb; }
+        .seg button.active:hover:not(:disabled) { background: #1d4ed8; }
+        .toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 12px;
+            font-size: 13px;
+            color: #1f2937;
+            cursor: pointer;
+        }
+        .toggle input { accent-color: #2563eb; }
+        .formula-card {
+            margin-top: 16px;
+            width: 100%;
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 14px 16px;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+        }
+        .fixed-note { font-size: 12px; color: #6b7280; line-height: 1.7; }
+        .fixed-note b { color: #b45309; font-weight: 600; }
+        .derive-status {
+            margin-top: 10px;
+            font-size: 12.5px;
+            color: #1f2937;
+            line-height: 1.7;
+            border-top: 1px dashed #e5e7eb;
+            padding-top: 8px;
+        }
+        .derive-status b { color: #b45309; }
+    </style>
+</head>
+<body>
+    <main>
+        <h1>示波器演示｜高中物理</h1>
+        <div class="top-row">
+            <section class="chart-panel">
+                <div class="group-title">示波管原理示意图（课本图 10.5-4 甲 · 静态）</div>
+                <canvas id="tubeCanvas" aria-label="示波管结构原理示意图（静态）：电子枪、串联偏转极板 YY′ 与 XX′、荧光屏"></canvas>
+            </section>
+            <section class="chart-panel">
+                <div class="group-title">示波器荧光屏</div>
+                <canvas id="scopeCanvas" aria-label="示波器荧光屏：水平与竖直电压波形合成的动态显示"></canvas>
+            </section>
+        </div>
+        <div class="charts-row">
+            <section class="chart-panel">
+                <div class="group-title">水平电压波形 Ux–t</div>
+                <canvas id="chartX" aria-label="水平偏转电压随时间变化的波形图"></canvas>
+            </section>
+            <section class="chart-panel">
+                <div class="group-title">竖直电压波形 Uy–t</div>
+                <canvas id="chartY" aria-label="竖直偏转电压随时间变化的波形图"></canvas>
+            </section>
+        </div>
+        <div class="play-bar">
+            <button id="btnStart" type="button" aria-label="开始">开始</button>
+            <button id="btnPause" type="button" aria-label="继续" disabled>继续</button>
+            <button id="btnReset" type="button" aria-label="重置">重置</button>
+            <span class="bar-label">播放速度</span>
+            <select id="speed" aria-label="播放速度倍率">
+                <option value="0.5">0.5×</option>
+                <option value="1" selected>1×</option>
+                <option value="2">2×</option>
+                <option value="4">4×</option>
+            </select>
+        </div>
+        <div class="legend">
+            <span><i style="background:#16a34a"></i>荧光波形 / 亮点</span>
+            <span><i style="background:repeating-linear-gradient(90deg,#dc2626 0 4px,transparent 4px 7px)"></i>削顶/截断 · 回扫（束流熄灭）</span>
+            <span><i style="background:repeating-linear-gradient(90deg,#ea580c 0 4px,transparent 4px 7px)"></i>打极板临界</span>
+            <span>空格 = 播放/暂停 · R = 重置</span>
+        </div>
+        <section class="data-group" aria-labelledby="dataTitle">
+            <div class="group-title" id="dataTitle">实时数值</div>
+            <div class="data-grid" id="dataGrid" aria-live="polite"></div>
+        </section>
+        <div class="control-panel">
+            <section aria-labelledby="paramTitle">
+                <div class="group-title" id="paramTitle">参数设定</div>
+                <div class="param-row">
+                    <label id="lXType">水平电压 Ux</label>
+                    <div class="seg" id="segX" role="group" aria-labelledby="lXType">
+                        <button data-t="saw" type="button">锯齿</button>
+                        <button data-t="sine" type="button">正弦</button>
+                        <button data-t="cosine" type="button">余弦</button>
+                        <button data-t="square" type="button">方波</button>
+                        <button data-t="dc" type="button">直线</button>
+                    </div>
+                </div>
+                <div class="param-row">
+                    <label for="rX" id="lX">水平幅度 Ax</label>
+                    <input type="range" id="rX" min="0" max="100" step="1" value="80" aria-label="水平幅度 Ax，0 到 100 伏">
+                    <span class="val" id="vX">80 V</span>
+                </div>
+                <div class="param-row">
+                    <label id="lYType">竖直电压 Uy</label>
+                    <div class="seg" id="segY" role="group" aria-labelledby="lYType">
+                        <button data-t="saw" type="button">锯齿</button>
+                        <button data-t="sine" type="button" class="active">正弦</button>
+                        <button data-t="cosine" type="button">余弦</button>
+                        <button data-t="square" type="button">方波</button>
+                        <button data-t="dc" type="button">直线</button>
+                    </div>
+                </div>
+                <div class="param-row">
+                    <label for="rY" id="lY">竖直幅度 Ay</label>
+                    <input type="range" id="rY" min="0" max="100" step="1" value="80" aria-label="竖直幅度 Ay，0 到 100 伏">
+                    <span class="val" id="vY">80 V</span>
+                </div>
+                <div class="param-row">
+                    <label for="rU1">加速电压 U₁</label>
+                    <input type="range" id="rU1" min="500" max="2000" step="10" value="1000" aria-label="加速电压 U1，500 到 2000 伏">
+                    <span class="val" id="vU1">1000 V</span>
+                </div>
+                <label class="toggle" for="auxChk">
+                    <input type="checkbox" id="auxChk" checked aria-label="显示教学辅助图层：临界线与标注">
+                    显示教学辅助
+                </label>
+            </section>
+        </div>
+        <section class="formula-card" aria-labelledby="deriveTitle">
+            <div class="group-title" id="deriveTitle">推导与判断</div>
+            <div class="fixed-note">
+                <b>加速</b>：eU₁ = ½mv₀² ⇒ v₀ = √(2eU₁/m)。<b>偏转（两方向对称）</b>：板内位移 y = UL²/(4dU₁)，出射角 tanθ = UL/(2dU₁)，屏上偏移 <b>X = 0.4·Ux/U₁、Y = 0.4·Uy/U₁</b>（cm 数 = 40·U/U₁）；<b>灵敏度 ∝ 1/U₁</b>。<b>打极板临界</b>：|U偏| = 0.125·U₁（板内 5 mm、屏上 ±5 cm），逐时刻判定：瞬时电压超临界的时段电子打在极板上，屏上波形该段缺失（削顶/截断）。<b>波形</b>（周期：锯齿 8 s、正弦/余弦/方波 4 s，锯齿周期 = 信号周期 ×2，屏显 2 个完整周期）：锯齿 U 由 −A 线性升至 +A、回扫阶段束流熄灭；正弦 U = A·sin(2πq)；余弦 U = A·cos(2πq)；方波 ±A 交替；直线 = 恒定直流 U₀。屏上光点位置由 X–Y 逐时刻合成。常量 e = 1.6×10⁻¹⁹ C、m = 9.1×10⁻³¹ kg；L = 4 cm、d = 1 cm、L′ = 18 cm、屏 ±6 cm。
+            </div>
+            <div class="derive-status" id="deriveStatus" aria-live="polite"></div>
+        </section>
+    </main>
+    <script id="osc-physics">
+    (function (root) {
+        'use strict';
+        // ===== 物理核（纯函数，可脱离 DOM 验证） =====
+        var e = 1.6e-19, m = 9.1e-31;             // 电子电荷量大小 / 质量
+        var L = 0.04, d = 0.01, Lp = 0.18;        // 板长 / 板间距 / 板右端到屏
+        var K = L * (L + 2 * Lp) / (4 * d);       // 结构常量 = 0.4 m
+        var SCREEN_HALF_CM = 6;
+        var CRIT = 0.125;                          // 打极板临界系数：|U偏| = 0.125·U1
+        var CRIT_OFF_CM = K * CRIT * 100;          // = 5 cm（结构性，与 U1 无关）
+        var EPS = 1e-9;
+
+        function v0(U1) { return Math.sqrt(2 * e * U1 / m); }
+        function tNs(U1) { return L / v0(U1) * 1e9; }
+        function field(U) { return U / d; }
+        function accel(U) { return e * U / (m * d); }
+        function innerMm(U, U1) { return 40 * U / U1; }        // y = 0.04·U/U1 m = 40·U/U1 mm
+        function tanTheta(U, U1) { return 2 * U / U1; }
+        function offCm(U, U1) { return 40 * U / U1; }          // 屏上偏移 cm = 0.4·U/U1 ×100
+        function hitState(U, U1) {
+            var lim = CRIT * U1, a = Math.abs(U);
+            if (a > lim + EPS) return 'hit';
+            if (a >= lim - EPS) return 'critical';
+            return 'ok';
+        }
+        function dragLimitV(U1) { return Math.floor(Math.min(100, CRIT * U1) + EPS); }
+        function dragLimitCm(U1) { return 40 * dragLimitV(U1) / U1; }
+        function inverseV(cm, U1) { return Math.round(cm * U1 / 40); }
+
+        // ===== v2 波形系统：锯齿 / 正弦 / 余弦 / 方波 / 直线（直流） =====
+        var T_SIGNAL = 4;       // 正弦 / 余弦 / 方波周期（1× 速度）秒
+        var T_SAW = 8;          // 锯齿周期 = 2× 信号周期（屏显 2 个完整周期）
+        var SAW_RETRACE = 0.10; // 锯齿回扫占一个周期的比例
+        var WAVE_TYPES = ['saw', 'sine', 'cosine', 'square', 'dc'];
+        function wavePeriod(type) { return type === 'saw' ? T_SAW : T_SIGNAL; }
+        // p∈[0,1) 为该方向本周期进度 → {u: 电压 V}；锯齿回扫段 u = null（束流熄灭）
+        function waveU(type, p, A, U0) {
+            if (type === 'dc') return { u: U0, p: 0 };
+            if (type === 'saw') {
+                var fwd = 1 - SAW_RETRACE;
+                if (p > fwd) return { u: null, p: p };
+                return { u: -A + 2 * A * (p / fwd), p: p };
+            }
+            if (type === 'sine') return { u: A * Math.sin(2 * Math.PI * p), p: p };
+            if (type === 'cosine') return { u: A * Math.cos(2 * Math.PI * p), p: p };
+            if (type === 'square') return { u: p < 0.5 ? A : -A, p: p };
+            return { u: null, p: p };
+        }
+        function waveAt(type, t, A, U0) {
+            var p = (t / wavePeriod(type)) % 1;
+            if (p < 0) p += 1;                     // 负时间（回看窗口）按周期回绕
+            return waveU(type, p, A, U0);
+        }
+        function sampleValid(u, U1) { return u !== null && Math.abs(u) <= CRIT * U1 + EPS; }
+
+        root.OSC = {
+            e: e, m: m, L: L, d: d, Lp: Lp, K: K,
+            SCREEN_HALF_CM: SCREEN_HALF_CM, CRIT: CRIT, CRIT_OFF_CM: CRIT_OFF_CM,
+            T_SIGNAL: T_SIGNAL, T_SAW: T_SAW, SAW_RETRACE: SAW_RETRACE, WAVE_TYPES: WAVE_TYPES,
+            v0: v0, tNs: tNs, field: field, accel: accel,
+            innerMm: innerMm, tanTheta: tanTheta, offCm: offCm,
+            hitState: hitState, dragLimitV: dragLimitV, dragLimitCm: dragLimitCm, inverseV: inverseV,
+            wavePeriod: wavePeriod, waveU: waveU, waveAt: waveAt, sampleValid: sampleValid
+        };
+    })(typeof window !== 'undefined' ? window : globalThis);
+    </script>
+    <script id="osc-app">
+    (() => {
+        'use strict';
+        const OSC = window.OSC;
+        const $ = (id) => document.getElementById(id);
+        const C = {
+            spot: '#16a34a', accelE: '#d97706', defE: '#ea580c',
+            xx: '#7c3aed', metal: '#64748b', shell: '#94a3b8', ink: '#1f2937',
+            mut: '#6b7280', line: '#e5e7eb', axis: '#94a3b8', blue: '#2563eb',
+            warn: '#b45309', bad: '#dc2626', dash: 'rgba(31,41,55,0.45)'
+        };
+        const WAVE_NAME = { saw: '锯齿', sine: '正弦', cosine: '余弦', square: '方波', dc: '直线' };
+
+        // ---------- 状态 ----------
+        const st = {
+            phase: 'idle',                         // idle（待机，不自动运行）| running | paused
+            t: 0,                                  // 教学时间（秒，含速度）
+            speed: 1,
+            U1: 1000,
+            Ux: { type: 'saw', A: 80, dc: 0 },     // 默认水平 = 锯齿
+            Uy: { type: 'sine', A: 80, dc: 0 },    // 默认竖直 = 正弦（初始幅度与水平相等，用户裁定）
+            aux: true,
+            pts: []                                // 屏上轨迹缓冲 [{t,x,y}|null]，x/y 单位 cm
+        };
+        const DEFAULTS = () => ({
+            U1: 1000, speed: 1,
+            Ux: { type: 'saw', A: 80, dc: 0 },
+            Uy: { type: 'sine', A: 80, dc: 0 }
+        });
+
+        // ---------- 瞬时电压 ----------
+        function instU(w, t) {
+            return OSC.waveAt(w.type, t, w.A, w.dc);   // {u, p}；锯齿回扫 u=null
+        }
+        function bufWindow() {
+            return 2 * Math.max(OSC.wavePeriod(st.Ux.type), OSC.wavePeriod(st.Uy.type));
+        }
+
+        // ---------- DOM ----------
+        const tubeCanvas = $('tubeCanvas'), tctx = tubeCanvas.getContext('2d');
+        const scopeCanvas = $('scopeCanvas'), sctx = scopeCanvas.getContext('2d');
+        const chartX = $('chartX'), ctxX = chartX.getContext('2d');
+        const chartY = $('chartY'), ctxY = chartY.getContext('2d');
+        const views = { tube: { fit: 1 }, scope: { fit: 1 }, X: { width: 400, height: 180 }, Y: { width: 400, height: 180 } };
+        const btnStart = $('btnStart'), btnPause = $('btnPause'), btnReset = $('btnReset');
+        const speedSel = $('speed'), auxChk = $('auxChk');
+        const rX = $('rX'), rY = $('rY'), rU1 = $('rU1');
+        const segX = $('segX'), segY = $('segY');
+
+        // ---------- 工具 ----------
+        const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+        const fmtSigned = (v, dig) => (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(dig);
+        const SUP = { '-': '⁻', 0: '⁰', 1: '¹', 2: '²', 3: '³', 4: '⁴', 5: '⁵', 6: '⁶', 7: '⁷', 8: '⁸', 9: '⁹' };
+        const sup = (n) => String(n).split('').map(ch => SUP[ch]).join('');
+        function fmtSci(v, dig) {
+            if (Math.abs(v) < 1e-12) return '0';
+            const sgn = v < 0 ? '−' : '+';
+            const exp = Math.floor(Math.log10(Math.abs(v)));
+            const mant = Math.abs(v) / Math.pow(10, exp);
+            return sgn + mant.toFixed(dig) + '×10' + sup(exp);
+        }
+        function font(view, size, bold) {
+            return (bold ? 'bold ' : '') + Math.max(size, 10 / view.fit).toFixed(1) + 'px system-ui, sans-serif';
+        }
+        function drawArrow(ctx, x0, y0, x1, y1, color, width, headLen) {
+            const dx = x1 - x0, dy = y1 - y0, len = Math.hypot(dx, dy);
+            if (len < 2) return;
+            const ang = Math.atan2(dy, dx);
+            ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = width; ctx.lineCap = 'round';
+            ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x1 - headLen * Math.cos(ang - Math.PI / 6.5), y1 - headLen * Math.sin(ang - Math.PI / 6.5));
+            ctx.lineTo(x1 - headLen * Math.cos(ang + Math.PI / 6.5), y1 - headLen * Math.sin(ang + Math.PI / 6.5));
+            ctx.closePath(); ctx.fill(); ctx.lineCap = 'butt';
+        }
+        function roundRectPath(ctx, x, y, w, h, r) {
+            ctx.beginPath();
+            ctx.moveTo(x + r, y);
+            ctx.arcTo(x + w, y, x + w, y + h, r);
+            ctx.arcTo(x + w, y + h, x, y + h, r);
+            ctx.arcTo(x, y + h, x, y, r);
+            ctx.arcTo(x, y, x + w, y, r);
+            ctx.closePath();
+        }
+
+        // ---------- 状态文字（带撇记法） ----------
+        function clipAggregate() {   // 时间窗口内是否存在超临界时段（聚合口径；锯齿回扫熄灭不计入削顶）
+            const win = bufWindow(), N = 240;
+            const res = { x: false, y: false };
+            for (let i = 0; i <= N; i++) {
+                const t = st.t - win + win * i / N;
+                const ix = instU(st.Ux, t), iy = instU(st.Uy, t);
+                if (ix.u !== null && !OSC.sampleValid(ix.u, st.U1)) res.x = true;
+                if (iy.u !== null && !OSC.sampleValid(iy.u, st.U1)) res.y = true;
+            }
+            return res;
+        }
+        function statusInfo() {
+            const ix = instU(st.Ux, st.t), iy = instU(st.Uy, st.t);
+            const offX = ix.u === null, offY = iy.u === null;
+            if (offX || offY) return { text: '回扫阶段：束流熄灭', color: C.bad, kind: 'retrace' };
+            const hitX = Math.abs(ix.u) > OSC.CRIT * st.U1 + 1e-9;
+            const hitY = Math.abs(iy.u) > OSC.CRIT * st.U1 + 1e-9;
+            if (hitX && hitY) return { text: '电子同时打在 XX′、YY′ 偏转极板上，荧光屏无亮点', color: C.bad, kind: 'hit' };
+            if (hitX) return { text: '电子打在 XX′ 极板上，荧光屏无亮点', color: C.bad, kind: 'hit' };
+            if (hitY) return { text: '电子打在 YY′ 极板上，荧光屏无亮点', color: C.bad, kind: 'hit' };
+            const clip = clipAggregate();
+            if (clip.x && clip.y) return { text: '波形局部削顶/截断（部分时段打在 XX′、YY′ 极板）', color: C.warn, kind: 'clip' };
+            if (clip.y) return { text: '波形局部削顶/截断（部分时段打在 YY′ 极板）', color: C.warn, kind: 'clip' };
+            if (clip.x) return { text: '波形局部削顶/截断（部分时段打在 XX′ 极板）', color: C.warn, kind: 'clip' };
+            const X = OSC.offCm(ix.u, st.U1), Y = OSC.offCm(iy.u, st.U1);
+            return { text: '正常成像 X=' + fmtSigned(X, 2) + '、Y=' + fmtSigned(Y, 2) + ' cm', color: C.spot, kind: 'ok' };
+        }
+        function comboDesc() {
+            const tx = st.Ux.type, ty = st.Uy.type;
+            if (tx === 'saw' && (ty === 'sine' || ty === 'cosine' || ty === 'square')) return '锯齿扫描 + ' + WAVE_NAME[ty] + '信号 ⇒ 屏显 2 个完整周期' + WAVE_NAME[ty] + '波形';
+            if (ty === 'saw' && (tx === 'sine' || tx === 'cosine' || tx === 'square')) return WAVE_NAME[tx] + '（竖）+ 锯齿扫描（横）⇒ 李萨如类合成波形';
+            if (tx === 'saw' && ty === 'saw') return '锯齿 × 锯齿（同相同频）⇒ 屏上为往复斜线';
+            if (tx === 'dc' && ty === 'dc') return '直流 × 直流 ⇒ 屏上静止亮点（位置由 U₀ 决定）';
+            if (tx === 'dc') return '直流（横）× ' + WAVE_NAME[ty] + '（纵）⇒ 屏上竖直' + (ty === 'square' ? '线段' : '直线');
+            if (ty === 'dc') return WAVE_NAME[tx] + '（横）× 直流（纵）⇒ 屏上水平' + (tx === 'square' ? '线段' : '直线');
+            return WAVE_NAME[tx] + ' × ' + WAVE_NAME[ty] + '（同频）⇒ 李萨如图形（椭圆/直线）';
+        }
+
+        // ---------- 示波管原理示意图（静态，设计坐标 560×360） ----------
+        function drawTube(c) {
+            const view = views.tube, compact = view.fit < 0.62;
+            const f = (s, b) => font(view, s, b);
+            c.clearRect(-2, -2, 564, 364);
+            c.lineCap = 'butt'; c.lineJoin = 'miter';
+            // 管壳
+            c.strokeStyle = C.shell; c.lineWidth = 1.5;
+            c.beginPath();
+            c.moveTo(20, 120); c.lineTo(330, 120);
+            c.moveTo(20, 230); c.lineTo(330, 230);
+            c.moveTo(20, 120); c.lineTo(20, 230);
+            c.moveTo(330, 120); c.lineTo(470, 97);
+            c.moveTo(330, 230); c.lineTo(470, 253);
+            c.stroke();
+            // 椭圆荧光屏面
+            c.beginPath();
+            c.ellipse(470, 175, 9, 78, 0, 0, Math.PI * 2);
+            c.fillStyle = 'rgba(22,163,74,0.07)'; c.fill();
+            c.strokeStyle = C.shell; c.stroke();
+            if (!compact) {
+                c.fillStyle = C.mut; c.font = f(10); c.textAlign = 'right';
+                c.fillText('荧光屏（侧视）', 458, 88); // 设计宽度仅 480，标题右对齐可避免右侧裁切
+            }
+            // 静态束流示意线：直线 + YY′ 区段静态弯折 + 出区直线
+            // （XX′ 远板先画，使束流呈现在两块竖直极板之间）
+            c.fillStyle = 'rgba(124,58,237,0.08)'; c.strokeStyle = 'rgba(124,58,237,0.45)'; c.lineWidth = 1;
+            c.beginPath();
+            c.moveTo(238, 134); c.lineTo(250, 128); c.lineTo(250, 218); c.lineTo(238, 212); c.closePath();
+            c.fill(); c.stroke();
+            c.strokeStyle = 'rgba(13,148,136,0.85)'; c.lineWidth = 1.6;
+            c.beginPath();
+            c.moveTo(103, 175); c.lineTo(150, 175);
+            for (let i = 1; i <= 12; i++) {
+                const s = i / 12;
+                c.lineTo(150 + 65 * s, 175 - 6 * s * s);
+            }
+            c.lineTo(461, 150);
+            c.stroke();
+            c.fillStyle = C.spot;
+            c.beginPath(); c.arc(461, 150, 3, 0, Math.PI * 2); c.fill();
+            // 灯丝
+            c.strokeStyle = C.accelE; c.lineWidth = 1.8;
+            c.beginPath();
+            c.moveTo(30, 181); c.lineTo(34, 169); c.lineTo(38, 181); c.lineTo(42, 169); c.lineTo(46, 181);
+            c.stroke();
+            // K / A 极板
+            c.fillStyle = C.metal;
+            c.fillRect(56, 151, 6, 48);
+            c.fillRect(100, 151, 6, 16);
+            c.fillRect(100, 183, 6, 16);
+            // 电源符号：K 接 −、A 接 +，与加速电场线 A→K 自洽
+            c.strokeStyle = C.ink; c.lineWidth = 1.2;
+            c.beginPath();
+            c.moveTo(59, 199); c.lineTo(59, 286); c.lineTo(73, 286);
+            c.moveTo(91, 286); c.lineTo(103, 286); c.lineTo(103, 199);
+            c.stroke();
+            c.lineWidth = 2.4;
+            c.beginPath(); c.moveTo(76, 280); c.lineTo(76, 292); c.stroke();
+            c.lineWidth = 1.2;
+            c.beginPath(); c.moveTo(88, 274); c.lineTo(88, 298); c.stroke();
+            c.fillStyle = C.ink; c.font = f(10, true); c.textAlign = 'center';
+            c.fillText('−', 69, 280);
+            c.fillText('+', 95, 280);
+            c.fillStyle = C.accelE; c.font = f(11.5, true);
+            c.fillText('U1 = ' + st.U1 + ' V', 81, 320);
+            // 加速电场线：A(+) → K(−)
+            for (const y of [157, 168, 182, 193]) drawArrow(c, 96, y, 66, y, C.accelE, 1.4, 5);
+            // 极板分件标注底色块（遮住穿过的电源导线）
+            if (!compact) {
+                c.fillStyle = '#ffffff';
+                c.fillRect(30, 235, 40, 12);
+                c.fillRect(42, 235, 40, 12);
+                c.fillRect(86, 235, 40, 12);
+            }
+            c.fillStyle = C.mut; c.font = f(10); c.textAlign = 'center';
+            if (!compact) {
+                c.fillText('灯丝', 38, 245);
+                c.fillText('K 阴极', 59, 245);
+                c.fillText('A 加速', 103, 245);
+            } else {
+                c.fillText('K', 59, 245);
+                c.fillText('A', 103, 245);
+            }
+            // YY′ 极板（前区段）
+            c.fillStyle = 'rgba(234,88,12,0.10)'; c.strokeStyle = C.defE; c.lineWidth = 1.5;
+            c.fillRect(150, 143, 65, 12); c.strokeRect(150, 143, 65, 12);
+            c.fillRect(150, 195, 65, 12); c.strokeRect(150, 195, 65, 12);
+            c.fillStyle = C.defE; c.font = f(10, true); c.textAlign = 'center';
+            c.fillText('Y', 182, 153);
+            c.fillText('Y′', 182, 205);
+            if (!compact) c.fillText('YY′ 竖直偏转', 182, 136);
+            c.fillStyle = C.ink; c.font = f(10.5);
+            c.fillText((st.Uy.type === 'dc' ? 'U₀ = ' : 'Ay = ') + fmtSigned(st.Uy.type === 'dc' ? st.Uy.dc : st.Uy.A, 0) + ' V', 182, 112);
+            // 静态 Ey 箭头（+Uy → 上板正 → 场向下）
+            for (const x of [165, 182, 199]) drawArrow(c, x, 158, x, 168, C.defE, 1.4, 5);
+            // XX′ 极板（后区段）：水平偏转为竖直放置的两块极板（左/右夹住电子束），
+            // 侧视沿极板看去呈前后错位的两根竖直透视平行四边形，束流从两板之间通过
+            c.fillStyle = 'rgba(124,58,237,0.14)'; c.strokeStyle = 'rgba(124,58,237,0.75)'; c.lineWidth = 1.2;
+            c.beginPath();
+            c.moveTo(270, 140); c.lineTo(282, 134); c.lineTo(282, 224); c.lineTo(270, 218); c.closePath();
+            c.fill(); c.stroke();
+            c.fillStyle = C.xx; c.font = f(10, true);
+            c.fillText('X', 276, 130);
+            c.fillText('X′', 244, 228);
+            c.fillStyle = C.xx; c.font = f(10);
+            if (!compact) c.fillText('XX′ 水平偏转（竖直放置）', 262, 248);
+            c.fillStyle = C.ink; c.font = f(10.5);
+            c.fillText((st.Ux.type === 'dc' ? 'U₀ = ' : 'Ax = ') + fmtSigned(st.Ux.type === 'dc' ? st.Ux.dc : st.Ux.A, 0) + ' V', 262, 262);
+            // ⊙ 出纸面标记（静态示意，位于 XX′ 区段）
+            c.strokeStyle = C.xx; c.lineWidth = 1.4;
+            c.beginPath(); c.arc(262, 175, 7, 0, Math.PI * 2); c.stroke();
+            c.fillStyle = C.xx;
+            c.beginPath(); c.arc(262, 175, 2.2, 0, Math.PI * 2); c.fill();
+            // L′ 辅助线（从 XX′ 出口到屏面）
+            if (st.aux) {
+                c.setLineDash([3, 3]);
+                c.strokeStyle = 'rgba(31,41,55,0.3)'; c.lineWidth = 1;
+                c.beginPath(); c.moveTo(295, 300); c.lineTo(461, 300); c.stroke();
+                c.setLineDash([]);
+                c.fillStyle = C.mut; c.font = f(10); c.textAlign = 'center';
+                c.fillText('L′ = 18 cm（示意，未按比例）', 378, 316);
+                if (!compact) {
+                    c.font = f(9.5); c.textAlign = 'left';
+                    c.fillText('两对极板按课本串联绘制，灵敏度按等效模型统一', 20, 340);
+                }
+            }
+            // 整体标注（引线式）
+            if (!compact) {
+                c.strokeStyle = 'rgba(31,41,55,0.35)'; c.lineWidth = 1;
+                c.beginPath(); c.moveTo(75, 101); c.lineTo(75, 147); c.stroke();
+                c.beginPath(); c.moveTo(222, 101); c.lineTo(222, 139); c.stroke();
+                c.fillStyle = C.ink; c.font = f(10.5, true); c.textAlign = 'center';
+                c.fillText('电子枪', 75, 95);
+                c.fillText('偏转电极', 222, 95);
+            }
+            c.textAlign = 'left';
+            c.restore();
+        }
+
+        // ---------- 示波器荧光屏（动态合成，设计坐标 400×360） ----------
+        const GX = 96, GY = 70, GW = 288, GH = 288, PX = 24;    // 480×428 画布居中，网格放大 20%（288=240×1.2）
+        const SCX = GX + GW / 2, SCY = GY + GH / 2;
+        function drawScope(c) {
+            const view = views.scope, compact = view.fit < 0.62;
+            const f = (s, b) => font(view, s, b);
+            c.clearRect(-2, -2, 484, 432);
+            c.lineCap = 'butt'; c.lineJoin = 'miter';
+            c.fillStyle = C.ink; c.font = f(12.5, true); c.textAlign = 'left';
+            c.fillText(compact ? '荧光屏正面' : '荧光屏正面（从右向左看，±6 cm）', GX, GY - 14);
+            // 网格
+            c.fillStyle = 'rgba(22,163,74,0.04)';
+            c.fillRect(GX, GY, GW, GH);
+            c.lineWidth = 1;
+            for (let i = 0; i <= 12; i++) {
+                const major = i % 2 === 0;
+                c.strokeStyle = major ? 'rgba(22,163,74,0.30)' : 'rgba(22,163,74,0.13)';
+                c.beginPath(); c.moveTo(GX + i * PX, GY); c.lineTo(GX + i * PX, GY + GH); c.stroke();
+                c.beginPath(); c.moveTo(GX, GY + i * PX); c.lineTo(GX + GW, GY + i * PX); c.stroke();
+            }
+            c.strokeStyle = 'rgba(22,163,74,0.55)';
+            c.beginPath(); c.moveTo(SCX, GY); c.lineTo(SCX, GY + GH); c.stroke();
+            c.beginPath(); c.moveTo(GX, SCY); c.lineTo(GX + GW, SCY); c.stroke();
+            c.strokeStyle = C.axis; c.lineWidth = 1.5;
+            c.strokeRect(GX, GY, GW, GH);
+            // 刻度
+            c.fillStyle = C.mut; c.font = f(9.5); c.textAlign = 'center';
+            c.fillText('−6', GX, GY + GH + 14);
+            c.fillText('0', SCX, GY + GH + 14);
+            c.fillText('+6', GX + GW, GY + GH + 14);
+            c.fillText('X/cm', SCX, GY + GH + 28);
+            c.textAlign = 'right';
+            c.fillText('+6', GX - 5, GY + 4);
+            c.fillText('0', GX - 5, SCY + 3);
+            c.fillText('−6', GX - 5, GY + GH);
+            c.fillText('Y/cm', GX - 5, GY - 6);
+            c.textAlign = 'left';
+            // 十字四端轴标（屏面内侧，避让 0 刻度）
+            c.fillStyle = '#15803d'; c.font = f(11, true);
+            c.textAlign = 'center';
+            c.fillText('Y', SCX, GY + 14);
+            c.fillText('Y′', SCX, GY + GH - 7);
+            c.textAlign = 'right';
+            c.fillText('X', GX + GW - 7, SCY - 7);
+            c.textAlign = 'left';
+            c.fillText('X′', GX + 7, SCY - 7);
+            if (st.aux) {
+                c.strokeStyle = C.defE; c.lineWidth = 1.2; c.setLineDash([5, 4]);
+                for (const yy of [SCY - 5 * PX, SCY + 5 * PX]) {
+                    c.beginPath(); c.moveTo(GX, yy); c.lineTo(GX + GW, yy); c.stroke();
+                }
+                c.setLineDash([]);
+                c.fillStyle = C.defE; c.font = f(9.5); c.textAlign = 'right';
+                c.fillText('打极板临界 ±5 cm', GX + GW - 4, SCY - 5 * PX - 4);
+                c.textAlign = 'left';
+            }
+            // 轨迹（余辉：保留最近 2 个扫描周期）
+            const pts = st.pts;
+            const toPx = (p) => ({ x: SCX + p.x * PX, y: SCY - p.y * PX });
+            if (pts.length > 1) {
+                c.lineJoin = 'round';
+                c.strokeStyle = 'rgba(22,163,74,0.18)'; c.lineWidth = 5;
+                beginTrace(c, pts, toPx); c.stroke();
+                c.strokeStyle = 'rgba(22,163,74,0.85)'; c.lineWidth = 1.8;
+                beginTrace(c, pts, toPx); c.stroke();
+                c.lineJoin = 'miter';
+            }
+            // 当前亮点
+            const ix = instU(st.Ux, st.t), iy = instU(st.Uy, st.t);
+            if (ix.u !== null && iy.u !== null && OSC.sampleValid(ix.u, st.U1) && OSC.sampleValid(iy.u, st.U1)) {
+                const x = SCX + OSC.offCm(ix.u, st.U1) * PX, y = SCY - OSC.offCm(iy.u, st.U1) * PX;
+                const g = c.createRadialGradient(x, y, 1, x, y, 16);
+                g.addColorStop(0, 'rgba(22,163,74,0.5)');
+                g.addColorStop(1, 'rgba(22,163,74,0)');
+                c.fillStyle = g;
+                c.beginPath(); c.arc(x, y, 16, 0, Math.PI * 2); c.fill();
+                c.fillStyle = C.spot;
+                c.beginPath(); c.arc(x, y, 4.5, 0, Math.PI * 2); c.fill();
+            }
+        }
+        function beginTrace(c, pts, toPx) {
+            c.beginPath();
+            let pen = false;
+            for (const p of pts) {
+                if (!p) { pen = false; continue; }
+                const q = toPx(p);
+                if (!pen) { c.moveTo(q.x, q.y); pen = true; } else c.lineTo(q.x, q.y);
+            }
+        }
+
+        // ---------- 通用图表框 ----------
+        function chartFrame(c, W, H, M, xmin, xmax, ymin, ymax, xticks, yticks, xFmt, yFmt, xTitle, yTitle) {
+            const px = (v) => M.l + (v - xmin) / (xmax - xmin) * (W - M.l - M.r);
+            const py = (v) => H - M.b - (v - ymin) / (ymax - ymin) * (H - M.t - M.b);
+            c.fillStyle = '#ffffff'; c.fillRect(0, 0, W, H);
+            c.strokeStyle = C.line; c.lineWidth = 1;
+            c.font = '10px system-ui, sans-serif';
+            for (const tv of xticks) {
+                c.strokeStyle = C.line;
+                c.beginPath(); c.moveTo(px(tv), M.t); c.lineTo(px(tv), H - M.b); c.stroke();
+                c.fillStyle = C.mut; c.textAlign = 'center';
+                c.fillText(xFmt(tv), px(tv), H - M.b + 13);
+            }
+            for (const tv of yticks) {
+                c.strokeStyle = C.line;
+                c.beginPath(); c.moveTo(M.l, py(tv)); c.lineTo(W - M.r, py(tv)); c.stroke();
+                c.fillStyle = C.mut; c.textAlign = 'right';
+                c.fillText(yFmt(tv), M.l - 5, py(tv) + 3);
+            }
+            c.strokeStyle = C.axis; c.lineWidth = 1.4;
+            c.strokeRect(M.l, M.t, W - M.l - M.r, H - M.t - M.b);
+            c.fillStyle = C.mut; c.font = '10.5px system-ui, sans-serif';
+            c.textAlign = 'right'; c.fillText(xTitle, W - M.r, H - 4);
+            c.textAlign = 'left'; c.fillText(yTitle, M.l, M.t - 3);
+            c.textAlign = 'left';
+            return { px, py };
+        }
+
+        // ---------- Ux–t / Uy–t 波形图（滚动窗口 + 当前游标） ----------
+        function drawWaveChart(c, view, w, yTitle) {
+            const Wd = view.width, Hd = view.height;
+            const M = { l: 44, r: 12, t: 14, b: 26 };
+            const win = bufWindow();
+            const t0 = st.t - win, t1 = st.t;
+            const step = Math.max(OSC.wavePeriod(st.Ux.type), OSC.wavePeriod(st.Uy.type));
+            const xticks = [];
+            for (let k = Math.ceil(t0 / step); k <= Math.floor(t1 / step); k++) xticks.push(k * step);
+            const { px, py } = chartFrame(c, Wd, Hd, M, t0, t1, -105, 105,
+                xticks, [-100, -50, 0, 50, 100], v => v, v => v, 't/s', yTitle);
+            const crit = OSC.CRIT * st.U1;
+            if (st.aux && crit <= 105) {
+                c.strokeStyle = C.defE; c.lineWidth = 1; c.setLineDash([5, 4]);
+                for (const yy of [crit, -crit]) {
+                    c.beginPath(); c.moveTo(M.l, py(yy)); c.lineTo(Wd - M.r, py(yy)); c.stroke();
+                }
+                c.setLineDash([]);
+                c.fillStyle = C.defE; c.font = '9px system-ui, sans-serif'; c.textAlign = 'left';
+                c.fillText('临界 ±' + crit.toFixed(0) + ' V', M.l + 4, py(crit) - 3);
+            }
+            // 波形（解析采样）：电压曲线完整绘制；锯齿回扫段断开并用红色虚线陡降；
+            // 超临界段在曲线上以红色虚线叠加标出（与屏上削顶/截断对应）
+            const T = OSC.wavePeriod(w.type);
+            const N = 360;
+            const samples = [];
+            for (let i = 0; i <= N; i++) {
+                const t = t0 + win * i / N;
+                const wv = OSC.waveAt(w.type, t, w.A, w.dc);
+                samples.push({ t, u: wv.u, ok: OSC.sampleValid(wv.u, st.U1) });
+            }
+            c.strokeStyle = C.ink; c.lineWidth = 1.6;
+            c.beginPath();
+            let pen = false;
+            for (const s of samples) {
+                if (s.u === null) { pen = false; continue; }
+                const x = px(s.t), y = py(clamp(s.u, -105, 105));
+                if (!pen) { c.moveTo(x, y); pen = true; } else c.lineTo(x, y);
+            }
+            c.stroke();
+            // 超临界段红色虚线（叠加在曲线上）
+            c.strokeStyle = C.bad; c.lineWidth = 1.4; c.setLineDash([4, 3]);
+            pen = false;
+            c.beginPath();
+            for (const s of samples) {
+                if (s.u === null || s.ok) { pen = false; continue; }
+                const x = px(s.t), y = py(clamp(s.u, -105, 105));
+                if (!pen) { c.moveTo(x, y); pen = true; } else c.lineTo(x, y);
+            }
+            c.stroke();
+            c.setLineDash([]);
+            // 锯齿回扫红色虚线陡降
+            if (w.type === 'saw') {
+                c.strokeStyle = C.bad; c.lineWidth = 1.4; c.setLineDash([4, 3]);
+                const k0 = Math.ceil((t0 / T) - 1e-9), k1 = Math.floor((t1 - SAW_EPS()) / T);
+                for (let k = k0; k <= k1; k++) {
+                    const ta = (k + (1 - OSC.SAW_RETRACE)) * T, tb = (k + 1) * T;
+                    if (tb < t0 || ta > t1) continue;
+                    const uTop = w.A, uBot = -w.A;
+                    c.beginPath();
+                    c.moveTo(px(ta), py(clamp(uTop, -105, 105)));
+                    c.lineTo(px(tb), py(clamp(uBot, -105, 105)));
+                    c.stroke();
+                }
+                c.setLineDash([]);
+            }
+            // 当前时刻游标（回扫/打极板 → 停显）
+            const now = OSC.waveAt(w.type, st.t, w.A, w.dc);
+            if (now.u !== null && OSC.sampleValid(now.u, st.U1)) {
+                c.fillStyle = C.blue;
+                c.beginPath(); c.arc(px(t1), py(now.u), 3, 0, Math.PI * 2); c.fill();
+            }
+        }
+        function SAW_EPS() { return 1e-9; }
+
+        // ---------- 实时数值 ----------
+        let dataCells = [];
+        function buildDataCells() {
+            const grid = $('dataGrid');
+            grid.innerHTML = '';
+            dataCells = [];
+            const defs = [
+                ['时间 t', () => st.t.toFixed(2) + ' s'],
+                ['加速电压 U1', () => st.U1 + ' V'],
+                ['水平电压 Ux', () => {
+                    const u = instU(st.Ux, st.t).u;
+                    return u === null ? '回扫' : fmtSigned(u, 0) + ' V';
+                }],
+                ['竖直电压 Uy', () => {
+                    const u = instU(st.Uy, st.t).u;
+                    return u === null ? '回扫' : fmtSigned(u, 0) + ' V';
+                }],
+                ['屏上水平偏移 X', () => {
+                    const u = instU(st.Ux, st.t).u;
+                    return u === null || !OSC.sampleValid(u, st.U1) ? '—' : fmtSigned(OSC.offCm(u, st.U1), 2) + ' cm';
+                }],
+                ['屏上竖直偏移 Y', () => {
+                    const u = instU(st.Uy, st.t).u;
+                    return u === null || !OSC.sampleValid(u, st.U1) ? '—' : fmtSigned(OSC.offCm(u, st.U1), 2) + ' cm';
+                }],
+                ['出射速度 v₀', () => (OSC.v0(st.U1) / 1e7).toFixed(2) + '×10⁷ m/s'],
+                ['通过偏转区时间', () => OSC.tNs(st.U1).toFixed(2) + ' ns'],
+            ];
+            for (const [label, fn] of defs) {
+                const div = document.createElement('div');
+                div.className = 'data-item';
+                const sp = document.createElement('span');
+                sp.textContent = label;
+                const b = document.createElement('b');
+                div.appendChild(sp); div.appendChild(b);
+                grid.appendChild(div);
+                dataCells.push({ b, fn });
+            }
+            const div = document.createElement('div');
+            div.className = 'data-item span-full';
+            const sp = document.createElement('span');
+            sp.textContent = '成像状态';
+            const b = document.createElement('b');
+            div.appendChild(sp); div.appendChild(b);
+            grid.appendChild(div);
+            dataCells.push({ b, fn: () => statusInfo(), status: true });
+        }
+        function updateReadouts() {
+            // v2：仅在内容变化时写 DOM，避免 aria-live 每帧重复播报
+            for (const cell of dataCells) {
+                const v = cell.fn();
+                if (cell.status) {
+                    if (cell.b.textContent !== v.text) {
+                        cell.b.textContent = v.text;
+                        cell.b.style.color = v.color;
+                    }
+                } else if (cell.b.textContent !== v) cell.b.textContent = v;
+            }
+            const ds = $('deriveStatus');
+            const html = '当前组合：<b>' + comboDesc() + '</b>　·　成像判断：' + statusInfo().text;
+            if (ds.innerHTML !== html) ds.innerHTML = html;   // 字符串均来自页内常量与数值，无外部输入
+        }
+
+        // ---------- 参数联动 ----------
+        function updateParamUI() {
+            $('vU1').textContent = st.U1 + ' V';
+            rU1.setAttribute('aria-valuetext', '加速电压 ' + st.U1 + ' 伏');
+            for (const [w, r, l, v, name] of [[st.Ux, rX, $('lX'), $('vX'), '水平'], [st.Uy, rY, $('lY'), $('vY'), '竖直']]) {
+                const isDc = w.type === 'dc';
+                l.textContent = isDc ? name + '直流 U₀' : name + '幅度 A';
+                r.min = isDc ? -100 : 0; r.max = 100; r.step = 1;
+                r.value = isDc ? w.dc : w.A;
+                v.textContent = (isDc ? fmtSigned(w.dc, 0) : w.A) + ' V';
+                r.setAttribute('aria-label', (isDc ? name + '直流电压 U₀，-100 到 +100 伏' : name + '幅度 A，0 到 100 伏'));
+                r.setAttribute('aria-valuetext', r.getAttribute('aria-label'));
+            }
+            syncSeg(segX, st.Ux.type);
+            syncSeg(segY, st.Uy.type);
+        }
+        function syncSeg(seg, type) {
+            for (const btn of seg.querySelectorAll('button')) {
+                const on = btn.dataset.t === type;
+                btn.classList.toggle('active', on);
+                btn.setAttribute('aria-pressed', String(on));
+            }
+        }
+        function afterParamChange() {
+            // 用户裁定：切换波形组合或调节参数后，荧光屏清除旧轨迹重新积累
+            st.pts = [];
+            updateParamUI();
+        }
+
+        // ---------- 按钮状态机 ----------
+        function setButtons() {
+            const run = st.phase === 'running';
+            const idle = st.phase === 'idle';
+            btnStart.disabled = run;
+            btnStart.textContent = run ? '运行中…' : (idle ? '开始' : '重新开始');
+            btnPause.disabled = idle;                       // 待机无可暂停
+            btnPause.textContent = run ? '暂停' : '继续';
+            btnReset.disabled = false;                      // 用户裁定：重置随时可用
+            // 用户裁定：波形类型仅待机态可改，演示过程与暂停时锁定
+            for (const btn of document.querySelectorAll('#segX button, #segY button')) {
+                btn.disabled = !idle;
+            }
+            btnStart.setAttribute('aria-label', btnStart.textContent);
+            btnPause.setAttribute('aria-label', btnPause.textContent);
+            btnReset.setAttribute('aria-label', btnReset.textContent);
+        }
+
+        // ---------- 播放控制 ----------
+        function startFresh() {          // 开始/重新开始：清屏回 t=0 并运行
+            st.t = 0; st.pts = []; st.phase = 'running';
+            setButtons();
+        }
+        function togglePause() {
+            if (st.phase === 'idle') { startFresh(); return; }
+            st.phase = st.phase === 'running' ? 'paused' : 'running';
+            setButtons();
+        }
+        function applySpeed(value) {
+            speedSel.value = String(value);
+            st.speed = +speedSel.value;
+        }
+        function resetAll() {            // 重置：恢复默认设置并停止（回到待机态）
+            const d = DEFAULTS();
+            st.U1 = d.U1; st.Ux = d.Ux; st.Uy = d.Uy;
+            applySpeed(d.speed);
+            st.t = 0; st.pts = []; st.phase = 'idle';
+            updateParamUI(); setButtons();
+        }
+
+        // ---------- 主循环 ----------
+        let lastTs = null;
+        function loop(ts) {
+            if (lastTs === null) lastTs = ts;
+            const dt = Math.min((ts - lastTs) / 1000, 0.05);
+            lastTs = ts;
+            if (st.phase === 'running') {
+                const ds = dt * st.speed;
+                const steps = Math.min(40, Math.max(1, Math.ceil(ds / 0.02)));
+                for (let i = 1; i <= steps; i++) pushPoint(st.t + ds * i / steps);
+                st.t += ds;
+            }
+            pruneBuffer();
+            drawTube(tctx);
+            drawScope(sctx);
+            drawWaveChart(ctxX, views.X, st.Ux, 'Ux/V');
+            drawWaveChart(ctxY, views.Y, st.Uy, 'Uy/V');
+            updateReadouts();
+            requestAnimationFrame(loop);
+        }
+        function pushPoint(t) {
+            const ix = instU(st.Ux, t), iy = instU(st.Uy, t);
+            if (ix.u !== null && iy.u !== null && OSC.sampleValid(ix.u, st.U1) && OSC.sampleValid(iy.u, st.U1)) {
+                st.pts.push({ t, x: OSC.offCm(ix.u, st.U1), y: OSC.offCm(iy.u, st.U1) });
+            } else {
+                st.pts.push(null);   // 回扫熄灭或打极板 → 断笔
+            }
+        }
+        function pruneBuffer() {
+            const win = bufWindow();
+            while (st.pts.length && (st.pts[0] === null || st.pts[0].t < st.t - win)) st.pts.shift();
+            if (st.pts.length > 5000) st.pts.splice(0, st.pts.length - 5000);
+        }
+
+        // ---------- 交互 ----------
+        rU1.addEventListener('input', () => { st.U1 = +rU1.value; afterParamChange(); });
+        rX.addEventListener('input', () => {
+            if (st.Ux.type === 'dc') st.Ux.dc = +rX.value; else st.Ux.A = +rX.value;
+            afterParamChange();
+        });
+        rY.addEventListener('input', () => {
+            if (st.Uy.type === 'dc') st.Uy.dc = +rY.value; else st.Uy.A = +rY.value;
+            afterParamChange();
+        });
+        for (const [seg, dir] of [[segX, 'Ux'], [segY, 'Uy']]) {
+            seg.addEventListener('click', (e) => {
+                const btn = e.target.closest('button');
+                if (!btn) return;
+                st[dir].type = btn.dataset.t;   // 直引用 st.Ux/st.Uy，避免 resetAll 换对象后闭包失联
+                afterParamChange();
+            });
+        }
+        speedSel.addEventListener('change', () => { applySpeed(speedSel.value); });
+        auxChk.addEventListener('change', () => { st.aux = auxChk.checked; });
+        btnStart.addEventListener('click', () => { if (st.phase !== 'running') startFresh(); });
+        btnPause.addEventListener('click', togglePause);
+        btnReset.addEventListener('click', resetAll);
+        window.addEventListener('keydown', (e) => {
+            const t = e.target;
+            if (t && (t.tagName === 'INPUT' || t.tagName === 'BUTTON' || t.tagName === 'SELECT' || t.tagName === 'TEXTAREA')) return;
+            if (e.code === 'Space') { e.preventDefault(); togglePause(); }
+            else if (e.key === 'r' || e.key === 'R') resetAll();
+        });
+
+        // ---------- 画布尺寸（DPR + ResizeObserver，系列约定） ----------
+        function setupCanvas(canvas, view, aspect, design) {
+            const cssWidth = canvas.clientWidth || 400;
+            const cssHeight = cssWidth / aspect;
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = Math.round(cssWidth * dpr);
+            canvas.height = Math.round(cssHeight * dpr);
+            if (design) {
+                const fit = cssWidth / design.width;
+                canvas.getContext('2d').setTransform(dpr * fit, 0, 0, dpr * fit, 0, 0);
+                view.fit = fit;
+            } else {
+                canvas.getContext('2d').setTransform(dpr, 0, 0, dpr, 0, 0);
+                view.width = cssWidth;
+                view.height = cssHeight;
+            }
+        }
+        function resizeAll() {
+            setupCanvas(tubeCanvas, views.tube, 480 / 428, { width: 480, height: 428 });
+            setupCanvas(scopeCanvas, views.scope, 480 / 428, { width: 480, height: 428 });
+            setupCanvas(chartX, views.X, 20 / 9);
+            setupCanvas(chartY, views.Y, 20 / 9);
+        }
+        const ro = new ResizeObserver(() => { resizeAll(); });
+        ro.observe(tubeCanvas); ro.observe(scopeCanvas); ro.observe(chartX); ro.observe(chartY);
+
+        // ---------- 初始化 ----------
+        st.aux = window.innerWidth >= 720;
+        auxChk.checked = st.aux;
+        buildDataCells();
+        updateParamUI();
+        setButtons();
+        resizeAll();
+        // v2 验证钩子：只读暴露关键内部状态，仅供本地端到端测试使用（系列约定），
+        // 页面行为不依赖它；如需对外发布可整体移除，不影响任何功能。
+        window.getOscDebug = () => ({
+            phase: st.phase, t: st.t, speed: st.speed, U1: st.U1,
+            uxType: st.Ux.type, uxA: st.Ux.A, uxDC: st.Ux.dc,
+            uyType: st.Uy.type, uyA: st.Uy.A, uyDC: st.Uy.dc,
+            instUx: instU(st.Ux, st.t).u, instUy: instU(st.Uy, st.t).u,
+            status: statusInfo().kind, pts: st.pts.length, win: bufWindow()
+        });
+        requestAnimationFrame(loop);
+    })();
+    </script>
+</body>
+</html>
