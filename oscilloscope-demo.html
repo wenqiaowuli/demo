@@ -965,10 +965,14 @@
             st.phase = st.phase === 'running' ? 'paused' : 'running';
             setButtons();
         }
+        function applySpeed(value) {
+            speedSel.value = String(value);
+            st.speed = +speedSel.value;
+        }
         function resetAll() {            // 重置：恢复默认设置并停止（回到待机态）
             const d = DEFAULTS();
-            st.U1 = d.U1; st.Ux = d.Ux; st.Uy = d.Uy; st.speed = d.speed;
-            speedSel.value = '1';
+            st.U1 = d.U1; st.Ux = d.Ux; st.Uy = d.Uy;
+            applySpeed(d.speed);
             st.t = 0; st.pts = []; st.phase = 'idle';
             updateParamUI(); setButtons();
         }
@@ -1025,7 +1029,7 @@
                 afterParamChange();
             });
         }
-        speedSel.addEventListener('change', () => { st.speed = +speedSel.value; });
+        speedSel.addEventListener('change', () => { applySpeed(speedSel.value); });
         auxChk.addEventListener('change', () => { st.aux = auxChk.checked; });
         btnStart.addEventListener('click', () => { if (st.phase !== 'running') startFresh(); });
         btnPause.addEventListener('click', togglePause);
