@@ -934,8 +934,18 @@
         }
         function afterParamChange() {
             // 用户裁定：切换波形组合或调节参数后，荧光屏清除旧轨迹重新积累
-            st.pts = [];
+            // 暂停态需重建当前时窗静态预览
+            if (st.phase === 'paused') rebuildTraceBuffer(); else st.pts = [];
             updateParamUI();
+        }
+        function rebuildTraceBuffer() {
+            st.pts = [];
+            if (st.phase === 'idle') return;
+            const win = bufWindow();
+            const start = st.t - win;
+            const n = Math.min(5000, Math.max(1, Math.ceil(win / 0.02)));
+            for (let i = 0; i <= n; i++) pushPoint(start + win * i / n);
+            pruneBuffer();
         }
 
         // ---------- 按钮状态机 ----------
@@ -1028,6 +1038,7 @@
         }
         speedSel.addEventListener('change', () => {
             st.speed = +speedSel.value;
+            if (st.phase === 'running' || st.phase === 'paused') rebuildTraceBuffer();
         });
         auxChk.addEventListener('change', () => { st.aux = auxChk.checked; });
         btnStart.addEventListener('click', () => { if (st.phase !== 'running') startFresh(); });
