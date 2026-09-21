@@ -1049,7 +1049,7 @@
             canvas.width = Math.round(cssWidth * dpr);
             canvas.height = Math.round(cssHeight * dpr);
             if (design) {
-                const fit = cssWidth / design.width;
+                const fit = Math.min(cssWidth / design.width, cssHeight / design.height);
                 canvas.getContext('2d').setTransform(dpr * fit, 0, 0, dpr * fit, 0, 0);
                 view.fit = fit;
             } else {
