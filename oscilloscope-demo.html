@@ -1028,6 +1028,7 @@
         }
         speedSel.addEventListener('change', () => {
             st.speed = +speedSel.value;
+            st.t = 0;
             st.pts = [];
         });
         auxChk.addEventListener('change', () => { st.aux = auxChk.checked; });
@@ -1050,7 +1051,9 @@
             canvas.height = Math.round(cssHeight * dpr);
             if (design) {
                 const fit = Math.min(cssWidth / design.width, cssHeight / design.height);
-                canvas.getContext('2d').setTransform(dpr * fit, 0, 0, dpr * fit, 0, 0);
+                const dx = (cssWidth - design.width * fit) / 2;
+                const dy = (cssHeight - design.height * fit) / 2;
+                canvas.getContext('2d').setTransform(dpr * fit, 0, 0, dpr * fit, dpr * dx, dpr * dy);
                 view.fit = fit;
             } else {
                 canvas.getContext('2d').setTransform(dpr, 0, 0, dpr, 0, 0);
