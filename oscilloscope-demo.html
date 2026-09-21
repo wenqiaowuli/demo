@@ -798,7 +798,7 @@
             const samples = [];
             for (let i = 0; i <= N; i++) {
                 const t = t0 + win * i / N;
-                const wv = OSC.waveAt(w.type, ((t % T) + T) % T, w.A, w.dc);
+                const wv = OSC.waveAt(w.type, t, w.A, w.dc);
                 samples.push({ t, u: wv.u, ok: OSC.sampleValid(wv.u, st.U1) });
             }
             c.strokeStyle = C.ink; c.lineWidth = 1.6;
