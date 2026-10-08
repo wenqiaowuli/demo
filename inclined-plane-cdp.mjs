@@ -116,9 +116,10 @@ try {
     ok(await canvasHas('canvas', '(Math.abs(r[0]-226)<12&&Math.abs(r[1]-232)<12&&Math.abs(r[2]-240)<12)||(document.body.classList.contains("dark")&&r[0]<90&&r[0]>0)'), '主画布绘制斜面主体');
     ok(await canvasHas('vtChart', 'r[0]<100&&r[1]<110&&r[2]>180'), 'v-t 图已绘制（蓝色曲线/坐标）');
     ok(await canvasHas('stChart', 'r[0]<60&&r[1]>110&&r[1]<180'), 's-t 图已绘制（青绿曲线）');
-    ok(await canvasHas('enChart', 'r[0]>200&&r[1]>120&&r[2]<80'), '能量柱状图已绘制（Ek 橙柱）');
-    ok(await ev(`document.getElementById('formulaNote').textContent.includes('临界角')`), '公式卡含临界角');
+    ok(await ev(`!document.getElementById('enChart') && document.querySelectorAll('.chart-panel').length===2`), '能量柱状图已移除，图表区仅两图');
+    ok(await ev(`document.getElementById('formulaNote').textContent.includes('临界角') && document.getElementById('formulaNote').textContent.includes('E₀=')`), '公式卡含临界角与 E₀ 能量账目行');
     ok(await ev(`document.getElementById('conclusion').textContent.length > 20`), '结论卡已生成');
+    ok(await ev(`(()=>{const ids=['dT','dS','dV','dEk','dEp','dE','dWf','dWb','dG','dN','dF','dFnet','dR'];return ids.every(id=>document.getElementById(id));})()`), '单列数据面板字段齐全');
 
     console.log('\n== 播放 / 暂停 / 单步 / 进度回放');
     await click('#btnPlay');
@@ -276,27 +277,38 @@ try {
     const s0Expect = Math.round((s0BeforeDrag + dragPx / bp.pxPerM) * 10) / 10;
     ok(Math.abs(s0After - s0Expect) <= 0.1, '拖拽后 s0 ≈ ' + s0Expect + ' m', '实际 s0=' + s0After);
 
-    console.log('\n== 主题切换 / 图表折叠 / 布局自适应');
+    console.log('\n== 主题切换 / 布局自适应（V1.2 单列布局）');
     await click('#btnTheme');
     ok(await ev(`document.body.classList.contains('dark')`), '暗色主题启用');
     ok(await canvasHas('canvas', 'r[0]<70&&r[1]<90&&r[2]<130'), '暗色下画布重绘（深色背景像素）');
     ok(cdp.bag.msgs.length === 0, '暗色切换后仍零错误', cdp.bag.msgs.join(' | '));
-    await click('#btnCollapse');
-    ok(await ev(`document.getElementById('chartsSection').classList.contains('collapsed')`), '图表区折叠');
-    await click('#btnCollapse');
     await ev(`window.dispatchEvent(new Event('resize'));true`);
     await sleep(250);
-    ok(await canvasHas('vtChart', 'r[0]<100&&r[1]<110&&r[2]>180'), '展开并 resize 后图表重绘');
+    ok(await canvasHas('vtChart', 'r[0]<100&&r[1]<110&&r[2]>180'), 'resize 后图表重绘');
+    ok(await ev(`(()=>{const m=document.querySelector('main');const cs=getComputedStyle(m);return parseInt(cs.maxWidth)===880;})()`), '内容容器最大宽度 880px（斜抛风格单列）');
+    ok(await ev(`(()=>{const order=[];const root=document.querySelector('main');
+        for(const el of root.children){if(el.id==='canvas'||el.closest('.canvas-wrap'))order.push('canvas');
+        else if(el.classList.contains('charts-row'))order.push('charts');
+        else if(el.classList.contains('playbar'))order.push('playbar');
+        else if(el.querySelector&&el.querySelector('#dT'))order.push('data');
+        else if(el.classList.contains('params'))order.push('params');
+        else if(el.querySelector&&el.querySelector('#formulaNote'))order.push('formula');
+        else if(el.querySelector&&el.querySelector('#conclusion'))order.push('conclusion');}
+        return order.join(',')==='canvas,charts,playbar,data,params,formula,conclusion';})()`), '板块顺序符合 V1.2 布局规范');
     await cdp.send('Emulation.setDeviceMetricsOverride', { width: 800, height: 900, deviceScaleFactor: 1, mobile: false });
     await sleep(350);
     ok(await ev(`document.documentElement.scrollWidth <= document.documentElement.clientWidth`), '800px 平板/窄桌面无水平溢出');
     const midRatio = await ev(`document.getElementById('canvas').clientHeight/document.getElementById('canvas').clientWidth`);
-    ok(Math.abs(midRatio - 680 / 920) < 0.03, '800px 中间断点画布按 920:680 比例加高', midRatio);
+    ok(Math.abs(midRatio - 560 / 920) < 0.02, '画布保持 920:560 设计比例', midRatio);
+    const chartCols = await ev(`getComputedStyle(document.querySelector('.charts-row')).gridTemplateColumns.split(' ').length`);
+    ok(chartCols === 2, '800px 下 v-t/s-t 两列并排', chartCols);
     await cdp.send('Emulation.setDeviceMetricsOverride', { width: 420, height: 900, deviceScaleFactor: 1, mobile: true });
     await sleep(400);
     ok(cdp.bag.msgs.length === 0, '窄屏 420px 布局无错误', cdp.bag.msgs.join(' | '));
     ok(await ev(`document.getElementById('canvas').clientWidth > 300 && document.getElementById('canvas').clientWidth <= 420`), '窄屏画布自适应宽度', await ev(`document.getElementById('canvas').clientWidth`));
     ok(await ev(`document.documentElement.scrollWidth <= document.documentElement.clientWidth`), '420px 手机布局无水平溢出');
+    const chartColsNarrow = await ev(`getComputedStyle(document.querySelector('.charts-row')).gridTemplateColumns.split(' ').length`);
+    ok(chartColsNarrow === 1, '420px 下图表单列', chartColsNarrow);
     await cdp.send('Emulation.clearDeviceMetricsOverride');
     await sleep(300);
     await shot();
