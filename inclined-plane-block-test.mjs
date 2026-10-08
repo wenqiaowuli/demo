@@ -182,16 +182,37 @@ section('边界处理：底端停止 / 冲出顶端 / 底端静止释放 / s0 �
     ok(tlO.events.some(e => e.type === 'overflow'), '冲出顶端事件', JSON.stringify(tlO.events));
     const stO = INC.stateAt(tlO, tlO.tEnd);
     ok(stO.phase === 'overflow' && near(stO.s, 4, 1e-9) && near(stO.v, 0, 1e-12), '锁定 s=L, v=0', stO.phase);
+    const enO = INC.energies(ov, tlO, stO);
+    ok(near(enO.E + enO.Wf + enO.Wimpact, tlO.E0, 1e-8), '冲顶后 E + Wf + Wb = E₀', `${enO.E}+${enO.Wf}+${enO.Wimpact} vs ${tlO.E0}`);
+    const FO = INC.forces(ov, stO);
+    ok(near(FO.f + FO.R - FO.gAlong, 0, 1e-9), '顶端终止态 f+R=mg·sinθ', `${FO.f}+${FO.R}-${FO.gAlong}`);
     const bt = { theta: 30, L: 10, m: 2, mu_k: 0.2, mu_s: 0.3, s0: 2, v0: -3, g: 9.8 };
     const tlB = INC.buildTimeline(bt);
     const stB = INC.stateAt(tlB, tlB.tEnd);
     ok(stB.phase === 'bottom' && near(stB.s, 0, 1e-12) && near(stB.v, 0, 1e-12), '到底端锁定 s=0, v=0', stB.phase);
+    const enB = INC.energies(bt, tlB, stB);
+    ok(near(enB.E + enB.Wf + enB.Wimpact, tlB.E0, 1e-8), '撞底后 E + Wf + Wb = E₀', `${enB.E}+${enB.Wf}+${enB.Wimpact} vs ${tlB.E0}`);
+    const FB = INC.forces(bt, stB);
+    ok(near(FB.f + FB.R - FB.gAlong, 0, 1e-9), '底端终止态 f+R=mg·sinθ', `${FB.f}+${FB.R}-${FB.gAlong}`);
     const rest = { theta: 30, L: 10, m: 2, mu_k: 0.2, mu_s: 0.3, s0: 4, v0: 0, g: 9.8 };
     const tlR = INC.buildTimeline(rest);
     ok(!tlR.locked, 'tan30°≈0.577 > μs=0.3 → 不自锁，立即下滑');
     ok(INC.stateAt(tlR, tlR.tEnd).phase === 'bottom', '底端释放立即判 bottom', INC.stateAt(tlR, tlR.tEnd).phase);
     const clamp = INC.buildTimeline({ theta: 30, L: 5, m: 2, mu_k: 0, mu_s: 0, s0: 9, v0: 0, g: 9.8 });
     ok(near(INC.stateAt(clamp, 0).s, 5, 1e-12), 's0 > L 被截断为 L', INC.stateAt(clamp, 0).s.toFixed(3));
+}
+
+section('水平无摩擦面匀速上滑：a=0、无摩擦力、直至顶端');
+{
+    const P = { theta: 0, L: 10, m: 2, mu_k: 0, mu_s: 0, s0: 2, v0: 3, g: 9.8 };
+    const tl = INC.buildTimeline(P);
+    const st = INC.stateAt(tl, 0.5);
+    const F = INC.forces(P, st);
+    ok(st.phase === 'up-uni' && near(st.a, 0, 1e-12) && near(st.v, 3, 1e-12), '阶段 up-uni，a=0，速度恒定', JSON.stringify(st));
+    ok(near(F.f, 0, 1e-12) && near(F.Fnet, 0, 1e-12), 'f=0，F合=0');
+    ok(tl.events.some(e => e.type === 'overflow'), '匀速运动最终到达顶端');
+    const final = INC.energies(P, tl, INC.stateAt(tl, tl.tEnd));
+    ok(near(final.E + final.Wf + final.Wimpact, tl.E0, 1e-9), '边界制停能量账目平衡');
 }
 
 // ---------- 回放一致性 ----------

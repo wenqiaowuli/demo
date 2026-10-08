@@ -137,6 +137,19 @@ try {
     ok(sMid.state === 'paused' && Math.abs(sMid.t - s1.tEnd / 2) < 0.01, '进度条拖拽回放生效', 't=' + sMid.t.toFixed(3));
     const stRef = await ev(`(()=>{const I=window.INCLINE,P=window.getSimState().params;const tl=I.buildTimeline(P);return I.stateAt(tl,${sMid.t.toFixed(3)}).s;})()`);
     ok(Math.abs(sMid.st.s - stRef) < 1e-6, '回放位置与物理核解析解一致', sMid.st.s.toFixed(4) + ' vs ' + stRef.toFixed(4));
+    await ev(`document.getElementById('progress').value=${s1.tEnd.toFixed(3)};document.getElementById('progress').dispatchEvent(new Event('input'));true`);
+    await click('#btnPlay');
+    ok((await sim()).state === 'running' && (await sim()).t < s1.tEnd, '结束后拖回再播放，从所选历史时刻继续');
+    await click('#speedGroup button[data-rate="4"]');
+    await wait(`window.getSimState().state==='ended'`, 8000, '播放到结束态');
+    const endedAt = await sim();
+    await ev(`document.getElementById('progress').value=${(endedAt.tEnd / 2).toFixed(3)};document.getElementById('progress').dispatchEvent(new Event('input'));true`);
+    const scrubbedEnded = await sim();
+    await click('#btnPlay');
+    await sleep(100);
+    const resumedFromScrub = await sim();
+    ok(resumedFromScrub.state === 'running' && resumedFromScrub.t > scrubbedEnded.t, 'ended 后拖回历史时刻再播放，从拖动位置继续', `${scrubbedEnded.t.toFixed(3)}→${resumedFromScrub.t.toFixed(3)}`);
+    await click('#btnReset');
 
     console.log('\n== 预设场景 ②静态自锁');
     await setSel('preset', 'lock');
@@ -154,9 +167,28 @@ try {
     ok(s0.badge === '静止于最高点（自锁）', '终态徽章=静止于最高点（自锁）', s0.badge);
     ok(Math.abs(s0.st.s - 1.8947) < 0.01, '停在 s_top ≈ 1.89 m', s0.st.s.toFixed(4));
     ok(!await ev(`window.INCLINE.buildTimeline(window.getSimState().params).events.some(e=>e.type==='bottom')`), '未下滑（无到底端事件）');
+    await ev(`document.getElementById('btnReset').click();true`);
+    const tlLock = await ev(`window.INCLINE.buildTimeline(window.getSimState().params)`);
+    const topT = tlLock.events.find(e => e.type === 'top').t;
+    const stepTowardTop = Math.floor(topT / 0.02) * 0.02;
+    await ev(`document.getElementById('progress').value=${stepTowardTop.toFixed(3)};document.getElementById('progress').dispatchEvent(new Event('input'));true`);
+    let lastStepState = await sim();
+    let stepGuard = 0;
+    while (lastStepState.t < topT - 1e-8 && stepGuard++ < 60) {
+        await click('#btnStep');
+        lastStepState = await sim();
+    }
+    ok(Math.abs(lastStepState.t - topT) < 1e-8 && lastStepState.badge === '瞬时静止 · 最高点', '单步在最高点事件处自动对齐拐点', `${lastStepState.t.toFixed(5)} / ${topT.toFixed(5)} ${lastStepState.badge}`);
+    await ev(`document.getElementById('progress').value=${topT.toFixed(3)};document.getElementById('progress').dispatchEvent(new Event('input'));true`);
+    ok((await sim()).badge === '瞬时静止 · 最高点', '回放至拐点时徽章显示瞬时静止最高点', (await sim()).badge);
+    await click('#btnReset');
 
     console.log('\n== 预设场景 ④上滑后反向下滑（TC-05 全流程）');
     await setSel('preset', 'upDown');
+    const reverseTop = await ev(`window.INCLINE.buildTimeline(window.getSimState().params).events.find(e=>e.type==='top').t`);
+    await ev(`document.getElementById('progress').value=${reverseTop.toFixed(3)};document.getElementById('progress').dispatchEvent(new Event('input'));true`);
+    ok((await sim()).badge === '瞬时静止 · 最高点', '反向下滑场景拐点徽章显示瞬时静止', (await sim()).badge);
+    await click('#btnReset');
     await click('#btnPlay');
     await wait(`window.getSimState().state==='ended'`, 8000, '播放至结束');
     s0 = await sim();
@@ -166,6 +198,8 @@ try {
         return {tu:top.t, td:bot.t-top.t};})()`);
     ok(tlEnd.tu < tlEnd.td, 't_up < t_down（0.481 vs 0.589）', JSON.stringify(tlEnd));
     ok(await ev(`(()=>{const el=document.getElementById('dWf');return parseFloat(el.textContent)>4;})()`), '摩擦生热 Wf > 4 J 已累计');
+    ok(Number(await ev(`document.getElementById('dWb').textContent.replace(' J','')`)) > 0, '到底端的碰撞耗散计入 Wb');
+    ok(await ev(`(()=>{const I=window.INCLINE,P=window.getSimState().params,tl=I.buildTimeline(P),st=I.stateAt(tl,tl.tEnd),e=I.energies(P,tl,st);return Math.abs(e.E+e.Wf+e.Wimpact-tl.E0)<1e-7;})()`), '到底端结束能量账 E+Wf+Wb=E₀');
 
     console.log('\n== 预设场景 ⑤初速度向下 + 冲顶用例');
     await setSel('preset', 'downV');
@@ -180,6 +214,9 @@ try {
     s0 = await sim();
     ok(s0.badge === '冲出斜面顶端', '冲出顶端提示', s0.badge);
     ok(Math.abs(s0.st.s - 10) < 1e-6, '位置锁定 s=L=10', s0.st.s.toFixed(3));
+    ok(Number(await ev(`document.getElementById('dWb').textContent.replace(' J','')`)) > 0, '冲顶动能已计入边界耗散 Wb');
+    ok(await ev(`(()=>{const I=window.INCLINE,P=window.getSimState().params,tl=I.buildTimeline(P),st=I.stateAt(tl,tl.tEnd),e=I.energies(P,tl,st);return Math.abs(e.E+e.Wf+e.Wimpact-tl.E0)<1e-7;})()`), '冲顶结束能量账 E+Wf+Wb=E₀');
+    ok(Number(await ev(`document.getElementById('dR').textContent.replace(/[^0-9.]/g,'')`)) > 0, '冲顶终态显示边界约束力 R');
 
     console.log('\n== 参数防呆与联动');
     await setSel('preset', 'smooth');
@@ -209,9 +246,20 @@ try {
     await click('#btnPlay');
     s0 = await sim();
     ok(s0.state === 'running' && s0.stale === false && s0.t < 0.5, '重新播放以新参数从头开始');
+    await click('#btnReset');
+    await setSel('preset', 'upDown');
+    await click('#btnPlay');
+    await sleep(180);
+    await setSel('preset', 'lock');
+    s0 = await sim();
+    ok(s0.state === 'paused' && s0.stale && s0.params.theta === 45, '播放中切换预设先暂停，沿用当前演示数据等待生效', JSON.stringify({ state: s0.state, stale: s0.stale, theta: s0.params.theta }));
+    await click('#btnReset');
+    s0 = await sim();
+    ok(s0.state === 'idle' && !s0.stale && s0.params.theta === 30 && s0.params.mu_s === 0.6, '重置后应用新预设参数');
 
     console.log('\n== 画布拖拽物块设置 s0');
     await click('#btnReset');
+    const s0BeforeDrag = (await sim()).params.s0;
     const bp = await ev(`window.__blockClientPos()`);
     const dragPx = 80;
     const steps = 8;
@@ -225,7 +273,7 @@ try {
     }
     await cdp.send('Input.dispatchMouseEvent', { type: 'mouseReleased', button: 'left', clickCount: 1, x: bp.x + bp.ux * dragPx, y: bp.y + bp.uy * dragPx });
     const s0After = Number(await ev(`document.getElementById('s0').value`));
-    const s0Expect = Math.round(dragPx / bp.pxPerM * 10) / 10;
+    const s0Expect = Math.round((s0BeforeDrag + dragPx / bp.pxPerM) * 10) / 10;
     ok(Math.abs(s0After - s0Expect) <= 0.1, '拖拽后 s0 ≈ ' + s0Expect + ' m', '实际 s0=' + s0After);
 
     console.log('\n== 主题切换 / 图表折叠 / 布局自适应');
@@ -239,10 +287,16 @@ try {
     await ev(`window.dispatchEvent(new Event('resize'));true`);
     await sleep(250);
     ok(await canvasHas('vtChart', 'r[0]<100&&r[1]<110&&r[2]>180'), '展开并 resize 后图表重绘');
+    await cdp.send('Emulation.setDeviceMetricsOverride', { width: 800, height: 900, deviceScaleFactor: 1, mobile: false });
+    await sleep(350);
+    ok(await ev(`document.documentElement.scrollWidth <= document.documentElement.clientWidth`), '800px 平板/窄桌面无水平溢出');
+    const midRatio = await ev(`document.getElementById('canvas').clientHeight/document.getElementById('canvas').clientWidth`);
+    ok(Math.abs(midRatio - 680 / 920) < 0.03, '800px 中间断点画布按 920:680 比例加高', midRatio);
     await cdp.send('Emulation.setDeviceMetricsOverride', { width: 420, height: 900, deviceScaleFactor: 1, mobile: true });
     await sleep(400);
     ok(cdp.bag.msgs.length === 0, '窄屏 420px 布局无错误', cdp.bag.msgs.join(' | '));
     ok(await ev(`document.getElementById('canvas').clientWidth > 300 && document.getElementById('canvas').clientWidth <= 420`), '窄屏画布自适应宽度', await ev(`document.getElementById('canvas').clientWidth`));
+    ok(await ev(`document.documentElement.scrollWidth <= document.documentElement.clientWidth`), '420px 手机布局无水平溢出');
     await cdp.send('Emulation.clearDeviceMetricsOverride');
     await sleep(300);
     await shot();

@@ -172,6 +172,12 @@
         }
         body.dark .chart-panel canvas { background: #0f172a; }
         .chart-panel .group-title { margin: 0 0 6px; }
+        @media (min-width: 761px) and (max-width: 1080px) {
+            #canvas { aspect-ratio: 920 / 680; }
+        }
+        @media (max-width: 760px) {
+            #canvas { aspect-ratio: 1 / 1.1; }
+        }
         .charts-section.collapsed .charts-grid { display: none; }
         .legend {
             margin-top: 14px; display: flex; flex-wrap: wrap; gap: 7px 16px;
@@ -319,6 +325,7 @@
                     <div class="data-item"><span>势能 Ep</span><b id="dEp">0.00 J</b></div>
                     <div class="data-item"><span>机械能 E</span><b id="dE">0.00 J</b></div>
                     <div class="data-item"><span>摩擦生热 Wf</span><b id="dWf">0.00 J</b></div>
+                    <div class="data-item"><span>边界耗散 Wb</span><b id="dWb">0.00 J</b></div>
                 </div>
             </div>
             <div class="panel">
@@ -330,6 +337,7 @@
                     <div class="data-item"><span>垂直分力 mg·cosθ</span><b id="dGy">0.00</b></div>
                     <div class="data-item"><span>摩擦力 f</span><b id="dF">0.00</b></div>
                     <div class="data-item"><span>合外力 F合</span><b id="dFnet">0.00</b></div>
+                    <div class="data-item"><span>边界约束力 R</span><b id="dR">0.00 N</b></div>
                 </div>
             </div>
             <div class="panel">
@@ -357,7 +365,7 @@
                 <canvas id="stChart"></canvas>
             </div>
             <div class="chart-panel">
-                <div class="group-title">能量柱状图（Ek / Ep / E / Wf）</div>
+                <div class="group-title">能量柱状图（Ek / Ep / E / Wf / Wb）</div>
                 <canvas id="enChart"></canvas>
             </div>
         </div>
@@ -384,7 +392,8 @@
                 <li><b>摩擦因数约束</b>：恒保证 μk ≤ μs，若输入 μs &lt; μk 会自动修正并提示。</li>
                 <li><b>自锁判据</b>：tanθ ≤ μs 时物块静止自锁（静摩擦 f = mg·sinθ）；上滑到最高点 v=0 后同样按此判据决定是否反向下滑。</li>
                 <li><b>边界</b>：物块到达底端（s=0）即停止；冲出顶端（s=L）时提示并锁定在顶端。</li>
-                <li><b>图表区</b>：v-t / s-t 图虚线为全程理论曲线、实线为已播放部分，光标点随动画同步；能量柱状图展示机械能向内能（摩擦生热）的转化。</li>
+                <li><b>能量账目</b>：E₀ = Ek + Ep + Wf + Wb。Wf 为滑动摩擦生热；Wb 为物块撞到斜面端点后被制停所耗散的动能。</li>
+                <li><b>图表区</b>：v-t / s-t 图虚线为全程理论曲线、实线为已播放部分，光标点随动画同步；能量柱状图展示 Ek、Ep、机械能 E、Wf 与端点耗散 Wb。</li>
             </ul>
             <div class="close-row"><button id="btnHelpClose">知道了</button></div>
         </div>
@@ -439,6 +448,7 @@ const INCLINE = (() => {
         let t = 0;
         let s = Math.min(Math.max(P.s0, 0), P.L);
         let v = P.v0;
+        const E0 = 0.5 * P.m * v * v + P.m * P.g * s * Math.sin(rad(P.theta));
         let hasTop = false;
         let guard = 0;
 
@@ -452,20 +462,23 @@ const INCLINE = (() => {
                     break;
                 }
                 if (tS <= tV + 1e-12) {
+                    let impactV = v;
                     if (tS > 1e-9) {
-                        const seg = { t0: t, t1: t + tS, s0: s, v0: v, a: aUp, phase: 'up', note: 'initial' };
+                        const seg = { t0: t, t1: t + tS, s0: s, v0: v, a: aUp, phase: Math.abs(aUp) <= 1e-12 ? 'up-uni' : 'up', note: 'initial' };
                         segs.push(seg);
                         t = seg.t1;
                         s = P.L;
+                        impactV = segVel(seg, tS);
                     } else {
                         s = P.L;
                     }
-                    events.push({ t, type: 'overflow' });
+                    events.push({ t, type: 'overflow', impactSpeed: impactV, energyLoss: 0.5 * P.m * impactV * impactV });
                     segs.push({ t0: t, t1: t, s0: P.L, v0: 0, a: 0, phase: 'overflow' });
                     v = 0;
                     break;
                 }
-                const seg = { t0: t, t1: t + tV, s0: s, v0: v, a: aUp, phase: 'up', note: 'initial' };
+                const phase = Math.abs(aUp) <= 1e-12 ? 'up-uni' : 'up';
+                const seg = { t0: t, t1: t + tV, s0: s, v0: v, a: aUp, phase, note: 'initial' };
                 segs.push(seg);
                 t = seg.t1;
                 s = segPos(seg, tV);
@@ -487,13 +500,15 @@ const INCLINE = (() => {
                     break;
                 }
                 if (tS <= tV + 1e-12) {
+                    let impactV = v;
                     if (tS > 1e-9) {
                         const seg = { t0: t, t1: t + tS, s0: s, v0: v, a: aDown, phase, note: hasTop ? 'reverse' : 'initial' };
                         segs.push(seg);
                         t = seg.t1;
+                        impactV = segVel(seg, tS);
                     }
                     s = 0;
-                    events.push({ t, type: 'bottom' });
+                    events.push({ t, type: 'bottom', impactSpeed: impactV, energyLoss: 0.5 * P.m * impactV * impactV });
                     segs.push({ t0: t, t1: t, s0: 0, v0: 0, a: 0, phase: 'bottom' });
                     v = 0;
                     break;
@@ -517,10 +532,11 @@ const INCLINE = (() => {
                     break;
                 }
                 const tau = Math.sqrt(2 * s / -aDown);
+                const impactV = aDown * tau;
                 segs.push({ t0: t, t1: t + tau, s0: s, v0: 0, a: aDown, phase: 'down-acc', note: hasTop ? 'reverse' : 'initial' });
                 t += tau;
                 s = 0;
-                events.push({ t, type: 'bottom' });
+                events.push({ t, type: 'bottom', impactSpeed: impactV, energyLoss: 0.5 * P.m * impactV * impactV });
                 segs.push({ t0: t, t1: t, s0: 0, v0: 0, a: 0, phase: 'bottom' });
                 v = 0;
                 break;
@@ -532,7 +548,7 @@ const INCLINE = (() => {
             last.t1 = last.t0 + 0.8;
         }
         const tEnd = segs.length ? segs[segs.length - 1].t1 : 0;
-        return { segs, events, tEnd, hasTop, locked, P };
+        return { segs, events, tEnd, hasTop, locked, P, E0 };
     }
 
     function stateAt(tl, time) {
@@ -559,12 +575,15 @@ const INCLINE = (() => {
         const gAlong = G * sin;
         let f = 0, fKind = '静';
         if (st.phase === 'up') { f = -P.mu_k * N; fKind = '滑'; }
+        else if (st.phase === 'up-uni') { f = 0; fKind = '无'; }
         else if (st.phase.indexOf('down') === 0) { f = P.mu_k * N; fKind = '滑'; }
         else if (st.phase === 'locked') { f = gAlong; fKind = '静'; }
         else { f = Math.min(gAlong, P.mu_s * N); fKind = '静'; }
         const restPhase = st.phase === 'locked' || st.phase === 'bottom' || st.phase === 'overflow';
         const Fnet = restPhase ? 0 : P.m * st.a;
-        return { G, N, gAlong, gPerp: G * cos, f, fKind, Fnet };
+        const boundaryPhase = st.phase === 'bottom' || st.phase === 'overflow';
+        const R = boundaryPhase ? Math.max(0, gAlong - f) : 0;
+        return { G, N, gAlong, gPerp: G * cos, f, fKind, Fnet, R };
     }
 
     function pathLength(tl, time) {
@@ -588,7 +607,8 @@ const INCLINE = (() => {
         const Ek = 0.5 * P.m * st.v * st.v;
         const Ep = P.m * P.g * st.s * sin;
         const Wf = P.mu_k * P.m * P.g * cos * pathLength(tl, st.t);
-        return { Ek, Ep, E: Ek + Ep, Wf };
+        const Wimpact = tl.events.reduce((sum, ev) => sum + (ev.t <= st.t + 1e-12 ? (ev.energyLoss || 0) : 0), 0);
+        return { Ek, Ep, E: Ek + Ep, Wf, Wimpact };
     }
 
     return { T_MAX, rad, derive, isLocked, criticalAngleDeg, buildTimeline, stateAt, forces, pathLength, energies };
@@ -627,7 +647,7 @@ const INCLINE = (() => {
     };
     const badgePhase = document.getElementById('badgePhase');
     const els = {};
-    ['dT', 'dS', 'dH', 'dV', 'dA', 'dEk', 'dEp', 'dE', 'dWf', 'dG', 'dN', 'dGx', 'dGy', 'dF', 'dFnet']
+    ['dT', 'dS', 'dH', 'dV', 'dA', 'dEk', 'dEp', 'dE', 'dWf', 'dWb', 'dG', 'dN', 'dGx', 'dGy', 'dF', 'dFnet', 'dR']
         .forEach(id => { els[id] = document.getElementById(id); });
     const formulaNote = document.getElementById('formulaNote');
     const conclusionEl = document.getElementById('conclusion');
@@ -723,7 +743,9 @@ const INCLINE = (() => {
             stale = true;
             showToast('参数已调整，点击重置或重新播放生效');
         } else {
+            if (state === 'ended') state = 'idle';
             rebuild();
+            setPlayBtn();
         }
     }
 
@@ -743,7 +765,7 @@ const INCLINE = (() => {
     function segVelLocal(seg, dt) { return seg.v0 + seg.a * dt; }
     function segPosLocal(seg, dt) { return seg.s0 + seg.v0 * dt + 0.5 * seg.a * dt * dt; }
 
-    function sampleOf(getter, perSeg) {
+    function sampleOf(getter, perSeg, keepDuplicateTimes) {
         perSeg = perSeg || 22;
         const pts = [];
         if (!tl) return pts;
@@ -755,7 +777,7 @@ const INCLINE = (() => {
                 const dt = dur * i / n;
                 const tt = seg.t0 + dt;
                 const val = getter(seg)(dt);
-                if (pts.length && Math.abs(pts[pts.length - 1][0] - tt) < 1e-9) {
+                if (pts.length && Math.abs(pts[pts.length - 1][0] - tt) < 1e-9 && !keepDuplicateTimes) {
                     pts[pts.length - 1][1] = val;
                 } else {
                     pts.push([tt, val]);
@@ -767,10 +789,9 @@ const INCLINE = (() => {
     }
 
     function buildChartSamples() {
-        vSamples = sampleOf(seg => dt => segVelLocal(seg, dt));
+        vSamples = sampleOf(seg => dt => segVelLocal(seg, dt), 22, true);
         sSamples = sampleOf(seg => dt => segPosLocal(seg, dt), 26);
         tl.vMaxRef = Math.max(0, ...vSamples.map(p => Math.abs(p[1])), Math.abs(P.v0));
-        tl.E0 = INCLINE.energies(P, tl, INCLINE.stateAt(tl, 0)).E;
     }
 
     function niceCeil(value) {
@@ -807,7 +828,7 @@ const INCLINE = (() => {
 
     function resizeAll() {
         const cssWidth = canvas.clientWidth || BASE_W;
-        const cssHeight = cssWidth * BASE_H / BASE_W;
+        const cssHeight = canvas.clientHeight || cssWidth * BASE_H / BASE_W;
         const dpr = window.devicePixelRatio || 1;
         canvas.width = Math.round(cssWidth * dpr);
         canvas.height = Math.round(cssHeight * dpr);
@@ -844,7 +865,7 @@ const INCLINE = (() => {
     function computeGeometry() {
         const W = view.width, H = view.height;
         const { sin, cos } = INCLINE.derive(P);
-        const groundY = H - 62;
+        const groundY = H - 100;
         const availW = W - 62 - 96;
         const availH = groundY - 84;
         const slopePx = Math.min(availW / Math.max(cos, 1e-6), availH / Math.max(sin, 1e-6));
@@ -1034,6 +1055,11 @@ const INCLINE = (() => {
                 drawArrow(ctx, C.x, C.y, C.x + vx * nl, C.y + vy * nl, c.Fnet, 3.2);
                 drawLabel('F合', C.x + vx * nl / 2 - nx * 15, C.y + vy * nl / 2 - ny * 15 + 4, c.Fnet);
             }
+            if (F.R > 1e-9) {
+                const rl = F.R * k;
+                drawArrow(ctx, C.x, C.y, C.x + vx * rl, C.y + vy * rl, '#64748B', 3.2);
+                drawLabel('R边界', C.x + vx * (rl + 20), C.y + vy * (rl + 20) + 4, '#64748B', sceneFont(11, true));
+            }
         }
 
         const vMaxRef = Math.max(2, Math.abs(P.v0), tl.vMaxRef || 0);
@@ -1194,6 +1220,11 @@ const INCLINE = (() => {
         if (tt <= pts[0][0]) return pts[0][1];
         for (let i = 1; i < pts.length; i++) {
             if (tt <= pts[i][0] + 1e-12) {
+                if (Math.abs(tt - pts[i][0]) <= 1e-12) {
+                    let j = i;
+                    while (j + 1 < pts.length && Math.abs(pts[j + 1][0] - tt) <= 1e-12) j++;
+                    return pts[j][1];
+                }
                 const t0 = pts[i - 1][0], t1 = pts[i][0];
                 if (t1 - t0 < 1e-12) return pts[i][1];
                 const w = (tt - t0) / (t1 - t0);
@@ -1211,7 +1242,7 @@ const INCLINE = (() => {
         const vw = enView.width, vh = enView.height;
         const padL = 40, padR = 10, padT = 16, padB = 30;
         const plotW = vw - padL - padR, plotH = vh - padT - padB;
-        const scaleMax = niceCeil(Math.max(E0, en.Wf, 1) * 1.08);
+        const scaleMax = niceCeil(Math.max(E0, en.Wf + en.Wimpact, 1) * 1.08);
         c.clearRect(0, 0, vw, vh);
         c.fillStyle = pal.bg;
         c.fillRect(0, 0, vw, vh);
@@ -1257,9 +1288,26 @@ const INCLINE = (() => {
             { label: '动能Ek', val: en.Ek, color: '#F59E0B' },
             { label: '势能Ep', val: en.Ep, color: '#0EA5E9' },
             { label: '机械能E', val: en.E, color: '#10B981' },
-            { label: '摩擦生热Wf', val: en.Wf, color: '#8B5CF6' }
+            { label: '摩擦Wf', val: en.Wf, color: '#8B5CF6' },
+            { label: '边界Wb', val: en.Wimpact, color: '#64748B' }
         ];
         const slot = plotW / bars.length;
+        const currentLoss = en.Wf + en.Wimpact;
+        if (currentLoss > 1e-9) {
+            const lossY = padT + plotH - currentLoss / scaleMax * plotH;
+            c.save();
+            c.strokeStyle = '#8B5CF6';
+            c.setLineDash([4, 3]);
+            c.lineWidth = 1.2;
+            c.beginPath();
+            c.moveTo(padL, lossY);
+            c.lineTo(padL + plotW, lossY);
+            c.stroke();
+            c.restore();
+            c.fillStyle = '#8B5CF6';
+            c.textAlign = 'left';
+            c.fillText('Wf+Wb=' + currentLoss.toFixed(1) + ' J', padL + 4, Math.max(padT + 10, lossY - 3));
+        }
         bars.forEach((b, i) => {
             const bw = slot * 0.5;
             const bx = padL + slot * i + (slot - bw) / 2;
@@ -1277,15 +1325,16 @@ const INCLINE = (() => {
 
     function phaseInfo(st) {
         const topEv = P.theta > 0 ? tl.events.find(e => e.type === 'top') : null;
+        if (topEv && Math.abs(st.t - topEv.t) <= 0.011) return ['瞬时静止 · 最高点', 'b-pause'];
         switch (st.phase) {
             case 'up': return ['上滑匀减速', 'b-up'];
+            case 'up-uni': return ['沿斜面匀速上滑', 'b-up'];
             case 'down-acc': return [st.note === 'reverse' ? '反向匀加速下滑' : '向下匀加速', 'b-down'];
             case 'down-uni': return ['向下匀速', 'b-down'];
             case 'down-dec': return ['向下匀减速', 'b-down'];
             case 'bottom': return ['到达底端 · 停止', 'b-end'];
             case 'overflow': return ['冲出斜面顶端', 'b-end'];
             case 'locked':
-                if (topEv && Math.abs(st.t - topEv.t) <= 0.011) return ['瞬时静止 · 最高点', 'b-pause'];
                 if (st.note === 'top') return ['静止于最高点（自锁）', 'b-lock'];
                 if (st.note === 'down-stop') return ['下滑减速至静止', 'b-lock'];
                 if (st.note === 'flat-stop') return ['减速至静止', 'b-lock'];
@@ -1312,12 +1361,15 @@ const INCLINE = (() => {
         els.dEp.textContent = fmt(en.Ep) + ' J';
         els.dE.textContent = fmt(en.E) + ' J';
         els.dWf.textContent = fmt(en.Wf) + ' J';
+        els.dWb.textContent = fmt(en.Wimpact) + ' J';
         els.dG.textContent = fmt(F.G);
         els.dN.textContent = fmt(F.N);
         els.dGx.textContent = fmt(F.gAlong);
         els.dGy.textContent = fmt(F.gPerp);
-        els.dF.textContent = fmt(Math.abs(F.f)) + '（' + F.fKind + '，' + (F.f >= 0 ? '沿斜面向上' : '沿斜面向下') + '）';
+        els.dF.textContent = Math.abs(F.f) < 1e-9 ? '0.00（无）' : fmt(Math.abs(F.f)) + '（' + F.fKind + '，' + (F.f >= 0 ? '沿斜面向上' : '沿斜面向下') + '）';
         els.dFnet.textContent = fmt(Math.abs(F.Fnet)) + (Math.abs(F.Fnet) > 1e-9 ? (F.Fnet >= 0 ? '（沿斜面向上）' : '（沿斜面向下）') : '（平衡）');
+        els.dR.textContent = fmt(F.R) + ' N' + (F.R > 1e-9 ? '（沿斜面向上）' : '');
+        if (st.phase === 'bottom' || st.phase === 'overflow') els.dFnet.textContent = '0.00（含边界制停）';
         tLabel.textContent = fmt(st.t) + ' / ' + fmt(tl.tEnd) + ' s';
         if (!scrubbing) progress.value = st.t;
 
@@ -1327,6 +1379,8 @@ const INCLINE = (() => {
         lines.push('θ = ' + P.theta + '°，tanθ = ' + fmt(tanTh, 3) + '，μs = ' + fmt(P.mu_s) + '，临界角 θc = arctan(μs) = ' + fmt(thC, 2) + '°');
         if (st.phase === 'up') {
             lines.push('上滑：a = g(sinθ + μk·cosθ) = ' + fmt(-INCLINE.derive(P).aUp) + ' m/s²（沿斜面向下），f = μk·N = ' + fmt(Math.abs(F.f)) + ' N（沿斜面向下）');
+        } else if (st.phase === 'up-uni') {
+            lines.push('水平光滑面：a = 0，μk = 0，物块沿 +s 方向匀速运动');
         } else if (st.phase === 'down-acc') {
             lines.push('下滑：a = g(sinθ − μk·cosθ) = ' + fmt(-st.a) + ' m/s²（沿斜面向下），f = μk·N = ' + fmt(F.f) + ' N（沿斜面向上）');
         } else if (st.phase === 'down-uni') {
@@ -1336,11 +1390,11 @@ const INCLINE = (() => {
         } else if (st.phase === 'locked') {
             lines.push('静止：f静 = mg·sinθ = ' + fmt(F.gAlong) + ' N ≤ fmax = μs·mg·cosθ = ' + fmt(P.mu_s * F.gPerp) + ' N，合力为零');
         } else if (st.phase === 'bottom') {
-            lines.push('已到达底端边界 s=0，运动终止（v=0）');
+            lines.push('已到达底端边界 s=0，运动终止（v=0），边界约束力 R=' + fmt(F.R) + ' N');
         } else if (st.phase === 'overflow') {
-            lines.push('已冲出顶端边界 s=L，运动终止（v=0）');
+            lines.push('已冲出顶端边界 s=L，运动终止（v=0），边界约束力 R=' + fmt(F.R) + ' N');
         }
-        lines.push('N = mg·cosθ = ' + fmt(F.N) + ' N；Ek+Ep+Wf = ' + fmt(en.E + en.Wf) + ' J（能量守恒校验）');
+        lines.push('N = mg·cosθ = ' + fmt(F.N) + ' N；E + Wf + Wb = ' + fmt(en.E + en.Wf + en.Wimpact) + ' J（能量账目，E₀=' + fmt(tl.E0) + ' J）');
         formulaNote.innerHTML = lines.map(l => '<div>' + l + '</div>').join('');
 
         conclusionEl.innerHTML = conclusionText(st, F, en, tanTh, thC);
@@ -1351,9 +1405,13 @@ const INCLINE = (() => {
         if (st.phase === 'up') {
             return '上滑阶段：摩擦力沿斜面<b>向下</b>，a<sub>up</sub> = g(sinθ+μk·cosθ) = <span class="hl">' + fmt(-INCLINE.derive(P).aUp) + ' m/s²</span>，物块做匀减速运动，滑行距离 s<sub>max</sub> = v₀²/(2a<sub>up</sub>)。';
         }
+        if (st.phase === 'up-uni') return '水平光滑面：μk=0、θ=0，合外力为零，物块以 v₀ 做匀速直线运动直至到达顶端边界。';
         if (st.phase === 'down-acc') {
             if (st.note === 'reverse') {
                 return '速度减为零后 ' + tanS + ' &gt; μs，静摩擦不足以自锁，摩擦力突变为沿斜面<b>向上</b>，物块反向下滑；a<sub>down</sub> = ' + fmt(-st.a) + ' m/s² &lt; a<sub>up</sub>，故下滑时间比上滑更长（v-t 图斜率不对称）。';
+            }
+            if (Math.abs(P.v0) < 1e-9) {
+                return '物块由静止释放，' + tanS + ' &gt; μs，最大静摩擦不足以自锁，物块立即沿斜面向下滑动；a = g(sinθ−μk·cosθ) = <span class="hl">' + fmt(-st.a) + ' m/s²</span>。';
             }
             return '初速度沿斜面向下，' + tanS + ' &gt; μk，重力下滑分力大于滑动摩擦力，物块做匀加速下滑，a = g(sinθ−μk·cosθ) = <span class="hl">' + fmt(-st.a) + ' m/s²</span>。';
         }
@@ -1376,10 +1434,10 @@ const INCLINE = (() => {
             return tanS + ' ≤ μs = ' + fmt(P.mu_s) + '：最大静摩擦 fmax = μs·mg·cosθ ≥ mg·sinθ，物块<b>自锁静止</b>（f = mg·sinθ = ' + fmt(F.gAlong) + ' N）。将 θ 增大到临界角 ' + fmt(thC, 2) + '° 以上可破坏自锁。';
         }
         if (st.phase === 'bottom') {
-            return '物块到达斜面底端（s=0），运动停止。全程摩擦生热 Wf = ' + fmt(en.Wf) + ' J，机械能相应减少 ' + fmt(tl.E0 - en.E) + ' J。';
+            return '物块到达斜面底端（s=0），运动停止。摩擦生热 Wf = ' + fmt(en.Wf) + ' J；碰撞边界耗散 Wb = ' + fmt(en.Wimpact) + ' J；E₀−E = Wf+Wb。';
         }
         if (st.phase === 'overflow') {
-            return '物块冲出斜面顶端（s=L）！可减小初速度 v₀、增大 μk 或减小 θ 后重试。';
+            return '物块冲出斜面顶端（s=L）并被边界制停。碰撞损失已计入 Wb=' + fmt(en.Wimpact) + ' J。可减小初速度 v₀、增大 μk 或减小 θ 后重试。';
         }
         return '—';
     }
@@ -1438,7 +1496,11 @@ const INCLINE = (() => {
     function startPlay() {
         if (state === 'running') return;
         if (raf) { cancelAnimationFrame(raf); raf = null; }
-        if (state === 'ended' || stale) {
+        if (state === 'ended' && t < tl.tEnd - 1e-9) {
+            state = 'idle';
+            setPlayBtn();
+        }
+        if (state === 'ended' || stale || (state === 'paused' && t >= tl.tEnd - 1e-9)) {
             rebuild();
         }
         state = 'running';
@@ -1477,7 +1539,9 @@ const INCLINE = (() => {
         if (state === 'running') pauseInternal();
         if (stale || state === 'ended') rebuild();
         state = 'paused';
-        t = Math.min(t + 0.02, tl.tEnd);
+        const nextT = Math.min(t + 0.02, tl.tEnd);
+        const topEvent = tl.events.find(ev => ev.type === 'top' && ev.t > t + 1e-9 && ev.t <= nextT + 1e-9);
+        t = topEvent ? topEvent.t : nextT;
         setPlayBtn();
         renderAll();
     }
@@ -1563,8 +1627,17 @@ const INCLINE = (() => {
     presetSel.addEventListener('change', () => {
         const key = presetSel.value;
         if (key === 'custom') return;
-        applyParams(PRESETS[key]);
+        const wasActive = state === 'running' || state === 'paused';
         if (raf) { cancelAnimationFrame(raf); raf = null; }
+        applyParams(PRESETS[key]);
+        presetSel.value = key;
+        if (wasActive) {
+            state = 'paused';
+            stale = true;
+            showToast('参数已调整，点击重置或重新播放生效');
+            setPlayBtn();
+            return;
+        }
         state = 'idle';
         rebuild();
         setPlayBtn();
@@ -1599,10 +1672,14 @@ const INCLINE = (() => {
 
     progress.addEventListener('pointerdown', () => { scrubbing = true; });
     progress.addEventListener('pointerup', () => { scrubbing = false; });
+    window.addEventListener('pointerup', () => { scrubbing = false; });
     progress.addEventListener('input', () => {
         if (!tl) return;
         if (state === 'running') pauseInternal();
         t = Math.min(Math.max(Number(progress.value), 0), tl.tEnd);
+        if (state === 'ended') state = 'paused';
+        else if (state !== 'running') state = 'paused';
+        setPlayBtn();
         renderAll();
     });
 
