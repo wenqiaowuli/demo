@@ -254,5 +254,63 @@ section('θ=0 水平面（+s / −s 两方向）与 g 预设（月球）');
     ok(near(-INC.derive(moon).aUp, 1.62 * 0.5, 1e-9), '月球 g=1.62 → a = 0.81 m/s²', (-INC.derive(moon).aUp).toFixed(4));
 }
 
+// ---------- TC-07 静摩擦临界角等号与邻域（需求文档 9.1，第 13 节补强） ----------
+section('TC-07 静摩擦临界角等号与邻域：θc=arctan(0.50)≈26.565°，等号/下方自锁、上方下滑');
+{
+    const thC = Math.atan(0.5) * 180 / Math.PI;
+    const mkP = (theta) => ({ theta, L: 10, m: 2, mu_k: 0.2, mu_s: 0.5, s0: 5, v0: 0, g: 9.8 });
+    ok(near(thC, 26.565, 1e-3), 'θc = arctan(0.50) ≈ 26.565°', thC.toFixed(6));
+
+    const pEq = mkP(thC);
+    ok(INC.isLocked(pEq), '等号 θ=θc：isLocked=true（tanθ=μs）', 'tanθ=' + Math.tan(INC.rad(thC)).toPrecision(17));
+    let tlEq = INC.buildTimeline(pEq);
+    ok(INC.stateAt(tlEq, 0.5).phase === 'locked', '等号 θ=θc：静止自锁', INC.stateAt(tlEq, 0.5).phase);
+    ok(near(INC.stateAt(tlEq, 0.5).a, 0, 1e-12), '等号 θ=θc：a=0');
+
+    const pLo = mkP(thC - 0.01);
+    ok(INC.isLocked(pLo), 'θ=θc−0.01°：isLocked=true', 'tanθ=' + Math.tan(INC.rad(pLo.theta)).toPrecision(17));
+    let tlLo = INC.buildTimeline(pLo);
+    ok(INC.stateAt(tlLo, 0.5).phase === 'locked', 'θ=θc−0.01°：静止自锁', INC.stateAt(tlLo, 0.5).phase);
+
+    const pHi = mkP(thC + 0.01);
+    ok(!INC.isLocked(pHi), 'θ=θc+0.01°：isLocked=false', 'tanθ=' + Math.tan(INC.rad(pHi.theta)).toPrecision(17));
+    let tlHi = INC.buildTimeline(pHi);
+    const stHi = INC.stateAt(tlHi, 0.5);
+    ok(stHi.phase === 'down-acc', 'θ=θc+0.01°：开始下滑', stHi.phase);
+    const aTheo = 9.8 * (Math.sin(INC.rad(pHi.theta)) - 0.2 * Math.cos(INC.rad(pHi.theta)));
+    ok(near(-stHi.a, aTheo, 1e-9), 'θ=θc+0.01°：a = g(sinθ−μk·cosθ) = ' + aTheo.toFixed(4) + ' m/s²', (-stHi.a).toFixed(6));
+}
+
+// ---------- TC-08 两端碰撞的能量闭合（需求文档 9.1，第 13 节补强） ----------
+section('TC-08 两端碰撞能量闭合：E0=Ek+Ep+Wf+Wb（归一化残差 ≤ 1e-8），Wb 只计一次');
+{
+    const cases = [
+        { label: '撞底（下滑至底端）', P: { theta: 30, L: 10, m: 2, mu_k: 0.2, mu_s: 0.3, s0: 2, v0: -3, g: 9.8 }, endPhase: 'bottom' },
+        { label: '撞底（初速向下）', P: { theta: 30, L: 10, m: 2, mu_k: 0.2, mu_s: 0.3, s0: 8, v0: -5, g: 9.8 }, endPhase: 'bottom' },
+        { label: '撞底（上滑折返）', P: { theta: 45, L: 10, m: 2, mu_k: 0.2, mu_s: 0.2, s0: 0, v0: 4, g: 9.8 }, endPhase: 'bottom' },
+        { label: '冲顶（短斜面）', P: { theta: 20, L: 4, m: 2, mu_k: 0.05, mu_s: 0.1, s0: 0, v0: 6, g: 9.8 }, endPhase: 'overflow' },
+        { label: '冲顶（长滑行）', P: { theta: 15, L: 8, m: 1.5, mu_k: 0.15, mu_s: 0.2, s0: 1, v0: 9, g: 9.8 }, endPhase: 'overflow' }
+    ];
+    for (const { label, P, endPhase } of cases) {
+        const tl = INC.buildTimeline(P);
+        const st = INC.stateAt(tl, tl.tEnd);
+        ok(st.phase === endPhase, label + '：终态 = ' + endPhase, st.phase);
+        const en = INC.energies(P, tl, st);
+        ok(en.Wf > 0 && en.Wimpact > 0, label + '：Wf 与 Wb 均非零（非零滑动距离与撞击速度）', 'Wf=' + en.Wf.toFixed(3) + ' Wb=' + en.Wimpact.toFixed(3));
+        const resid = Math.abs(tl.E0 - (en.Ek + en.Ep + en.Wf + en.Wimpact)) / Math.max(1, tl.E0);
+        ok(resid <= 1e-8, label + '：|E0−(Ek+Ep+Wf+Wb)|/max(1,E0) ≤ 1e-8', resid.toExponential(2));
+        const impacts = tl.events.filter(ev => (ev.energyLoss || 0) > 0 && ev.t <= tl.tEnd + 1e-12);
+        ok(impacts.length === 1, label + '：端点碰撞 Wb 只累计一次', impacts.length);
+    }
+    // 碰撞动能不得计入 Wf：冲顶场景 Wf = μk·mg·cosθ × 滑动路程（路程 = L − s0，不含撞击后的 0 路程）
+    {
+        const P = { theta: 15, L: 8, m: 1.5, mu_k: 0.15, mu_s: 0.2, s0: 1, v0: 9, g: 9.8 };
+        const tl = INC.buildTimeline(P);
+        const en = INC.energies(P, tl, INC.stateAt(tl, tl.tEnd));
+        const wfTheo = 0.15 * 1.5 * 9.8 * Math.cos(INC.rad(15)) * (8 - 1);
+        ok(near(en.Wf, wfTheo, 1e-9), '冲顶：Wf = μk·mg·cosθ×(L−s0)（撞击动能不计入 Wf）', en.Wf.toFixed(4) + ' vs ' + wfTheo.toFixed(4));
+    }
+}
+
 console.log('\n结果: ' + pass + ' PASS, ' + fail + ' FAIL');
 process.exit(fail ? 1 : 0);
