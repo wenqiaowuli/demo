@@ -1,0 +1,1715 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>斜面物块运动演示｜高中物理</title>
+    <meta name="description" content="斜面上物块运动教学演示：重力正交分解、静摩擦自锁与临界角、上滑下滑不对称性、v-t/s-t 图像与能量转化联动，支持场景预设、单步、回放与拖拽。">
+    <style>
+        :root {
+            --bg: #eef2f6;
+            --panel: #ffffff;
+            --border: #e5e7eb;
+            --text: #1f2937;
+            --text-dim: #6b7280;
+            --accent: #2563eb;
+            --soft: #f8fafc;
+        }
+        body.dark {
+            --bg: #0f172a;
+            --panel: #1e293b;
+            --border: #334155;
+            --text: #e2e8f0;
+            --text-dim: #94a3b8;
+            --accent: #3b82f6;
+            --soft: #0f172a;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: system-ui, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 18px 12px 32px;
+        }
+        main { width: 100%; max-width: 1280px; display: flex; flex-direction: column; }
+        .header { display: flex; align-items: center; justify-content: center; gap: 14px; flex-wrap: wrap; margin-bottom: 14px; }
+        h1 { font-size: 21px; text-align: center; }
+        .header .hbtns { display: flex; gap: 8px; }
+        .header button {
+            font-size: 12px; padding: 5px 12px; border-radius: 8px; cursor: pointer;
+            border: 1px solid var(--border); background: var(--panel); color: var(--text);
+        }
+        .header button:hover { border-color: var(--accent); color: var(--accent); }
+        .layout {
+            display: grid;
+            grid-template-columns: 280px minmax(0, 1fr) 280px;
+            gap: 14px;
+            align-items: start;
+        }
+        @media (max-width: 1080px) {
+            .layout { grid-template-columns: minmax(0, 1fr) 280px; }
+            .layout .panel.params { grid-column: 1 / -1; order: 3; }
+        }
+        @media (max-width: 760px) {
+            .layout { grid-template-columns: minmax(0, 1fr); }
+            .layout .panel.params { grid-column: auto; order: 2; }
+            .layout aside { order: 3; }
+        }
+        .panel {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 13px 15px;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+            margin-bottom: 12px;
+        }
+        .panel:last-child { margin-bottom: 0; }
+        .group-title {
+            font-size: 12px; color: var(--text-dim);
+            margin: 10px 0 8px; letter-spacing: 0.5px;
+        }
+        .group-title:first-child { margin-top: 0; }
+        .param-row { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
+        .param-row label { font-size: 13px; white-space: nowrap; min-width: 86px; color: var(--text); }
+        .param-row input[type=range] { flex: 1; min-width: 0; }
+        .param-row input[type=number] {
+            width: 62px; font-size: 12.5px; padding: 3px 4px; text-align: right;
+            border: 1px solid var(--border); border-radius: 6px;
+            background: var(--soft); color: var(--text);
+            font-variant-numeric: tabular-nums;
+        }
+        .param-row .unit { font-size: 12px; color: var(--text-dim); min-width: 34px; }
+        select {
+            width: 100%; font-size: 13px; padding: 6px 8px; border-radius: 8px;
+            border: 1px solid var(--border); background: var(--soft); color: var(--text);
+        }
+        .radio-row { display: flex; gap: 18px; font-size: 13px; margin: 4px 0 2px; }
+        .radio-row label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+        .radio-row input { accent-color: var(--accent); }
+        .toggle { display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; margin: 7px 0; color: var(--text); }
+        .toggle input { accent-color: var(--accent); }
+        .canvas-wrap { position: relative; width: 100%; }
+        #canvas {
+            display: block; width: 100%; aspect-ratio: 920 / 560;
+            border: 2px solid var(--accent); border-radius: 10px;
+            background: #ffffff; touch-action: none;
+        }
+        body.dark #canvas { background: #0f172a; }
+        #toast {
+            position: absolute; top: 14px; left: 50%; transform: translateX(-50%) translateY(-6px);
+            background: rgba(15, 23, 42, 0.78); color: #fff;
+            font-size: 12.5px; padding: 8px 16px; border-radius: 8px;
+            opacity: 0; pointer-events: none; transition: all 0.25s ease; white-space: nowrap;
+            max-width: 92%; text-overflow: ellipsis; overflow: hidden;
+        }
+        #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+        .playbar {
+            margin-top: 10px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+        }
+        .playbar button {
+            font-size: 13px; padding: 6px 12px; border-radius: 8px; cursor: pointer;
+            border: 1px solid var(--border); background: var(--panel); color: var(--text); white-space: nowrap;
+        }
+        .playbar button:hover { border-color: var(--accent); color: var(--accent); }
+        #btnPlay {
+            background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; min-width: 92px;
+        }
+        #btnPlay:hover { color: #fff; filter: brightness(1.08); }
+        .progress-wrap { flex: 1; min-width: 160px; display: flex; align-items: center; gap: 8px; }
+        .progress-wrap input { flex: 1; min-width: 0; }
+        .progress-wrap .tlabel { font-size: 12px; color: var(--text-dim); font-variant-numeric: tabular-nums; white-space: nowrap; }
+        .speed-group { display: flex; gap: 4px; }
+        .speed-group button {
+            font-size: 12px; padding: 5px 8px; border-radius: 7px; cursor: pointer;
+            border: 1px solid var(--border); background: var(--panel); color: var(--text-dim);
+        }
+        .speed-group button.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+        .badge {
+            display: inline-block; font-size: 12.5px; font-weight: 600;
+            padding: 3px 12px; border-radius: 12px; margin-bottom: 9px;
+        }
+        .b-up { background: rgba(245, 158, 11, 0.16); color: #b45309; }
+        .b-down { background: rgba(37, 99, 235, 0.14); color: #1d4ed8; }
+        .b-lock { background: rgba(16, 185, 129, 0.14); color: #047857; }
+        .b-pause { background: rgba(139, 92, 246, 0.16); color: #6d28d9; }
+        .b-end { background: rgba(100, 116, 139, 0.16); color: #475569; }
+        body.dark .b-up { color: #fbbf24; }
+        body.dark .b-down { color: #93c5fd; }
+        body.dark .b-lock { color: #6ee7b7; }
+        body.dark .b-pause { color: #c4b5fd; }
+        body.dark .b-end { color: #cbd5e1; }
+        .data-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
+        .data-item {
+            background: var(--soft); border: 1px solid var(--border);
+            border-radius: 8px; padding: 6px 8px;
+        }
+        .data-item span { display: block; font-size: 11px; color: var(--text-dim); margin-bottom: 2px; }
+        .data-item b { font-size: 13.5px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text); }
+        .data-item.wide { grid-column: 1 / -1; }
+        .note {
+            font-size: 12.5px; color: var(--text-dim); line-height: 1.75;
+        }
+        .note b { color: var(--text); font-weight: 600; }
+        .note .hl { color: #b45309; font-weight: 600; }
+        body.dark .note .hl { color: #fbbf24; }
+        #conclusion { border-left: 3px solid var(--accent); padding-left: 10px; }
+        .charts-section { margin-top: 14px; }
+        .charts-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+        .charts-head .group-title { margin: 0; }
+        .charts-head button {
+            font-size: 12px; padding: 4px 12px; border-radius: 8px; cursor: pointer;
+            border: 1px solid var(--border); background: var(--panel); color: var(--text);
+        }
+        .charts-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+        @media (max-width: 900px) { .charts-grid { grid-template-columns: 1fr; } }
+        .chart-panel canvas {
+            display: block; width: 100%; aspect-ratio: 20 / 9;
+            border: 2px solid var(--accent); border-radius: 10px; background: #ffffff;
+        }
+        body.dark .chart-panel canvas { background: #0f172a; }
+        .chart-panel .group-title { margin: 0 0 6px; }
+        .charts-section.collapsed .charts-grid { display: none; }
+        .legend {
+            margin-top: 14px; display: flex; flex-wrap: wrap; gap: 7px 16px;
+            font-size: 12px; color: var(--text-dim); justify-content: center;
+        }
+        .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+        #helpModal {
+            position: fixed; inset: 0; background: rgba(15, 23, 42, 0.45);
+            display: none; align-items: center; justify-content: center; z-index: 50; padding: 16px;
+        }
+        #helpModal.open { display: flex; }
+        #helpModal .box {
+            background: var(--panel); color: var(--text);
+            border: 1px solid var(--border); border-radius: 12px;
+            max-width: 560px; width: 100%; max-height: 82vh; overflow: auto;
+            padding: 20px 22px; font-size: 13.5px; line-height: 1.8;
+        }
+        #helpModal h2 { font-size: 16px; margin-bottom: 10px; }
+        #helpModal li { margin-left: 18px; margin-bottom: 4px; }
+        #helpModal .close-row { text-align: right; margin-top: 12px; }
+        #helpModal .close-row button {
+            font-size: 13px; padding: 6px 16px; border-radius: 8px; cursor: pointer;
+            border: 1px solid var(--border); background: var(--accent); color: #fff;
+        }
+        input[type=range]:disabled { opacity: 0.45; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+<main>
+    <div class="header">
+        <h1>斜面上的物块运动 · 物理互动仿真课件</h1>
+        <div class="hbtns">
+            <button id="btnResetAll">重置全部</button>
+            <button id="btnHelp">使用说明</button>
+            <button id="btnTheme">主题切换</button>
+        </div>
+    </div>
+    <div class="layout">
+        <section class="panel params">
+            <div class="group-title">预设场景</div>
+            <select id="preset">
+                <option value="custom">自定义参数</option>
+                <option value="smooth">① 光滑斜面自由下滑（理想无摩擦）</option>
+                <option value="lock">② 斜面自锁与临界滑动（tanθ ≤ μs）</option>
+                <option value="upLock">③ 上滑至最高点静止（最高点自锁）</option>
+                <option value="upDown">④ 上滑后反向下滑（完整上滑-下滑周期）</option>
+                <option value="downV">⑤ 初速度沿斜面向下（加速/匀速/减速）</option>
+            </select>
+            <div class="group-title">斜面参数</div>
+            <div class="param-row">
+                <label for="theta">倾角 θ</label>
+                <input type="range" id="theta" min="0" max="75" step="1" value="30">
+                <input type="number" id="thetaN" min="0" max="75" step="1" value="30">
+                <span class="unit">°</span>
+            </div>
+            <div class="param-row">
+                <label for="len">斜面长度 L</label>
+                <input type="range" id="len" min="2" max="30" step="0.5" value="10">
+                <input type="number" id="lenN" min="2" max="30" step="0.5" value="10">
+                <span class="unit">m</span>
+            </div>
+            <div class="group-title">物块参数</div>
+            <div class="param-row">
+                <label for="mass">质量 m</label>
+                <input type="range" id="mass" min="0.1" max="10" step="0.1" value="2">
+                <input type="number" id="massN" min="0.1" max="10" step="0.1" value="2">
+                <span class="unit">kg</span>
+            </div>
+            <div class="param-row">
+                <label for="muk">动摩擦因数 μk</label>
+                <input type="range" id="muk" min="0" max="1" step="0.01" value="0.2">
+                <input type="number" id="mukN" min="0" max="1" step="0.01" value="0.2">
+                <span class="unit">-</span>
+            </div>
+            <div class="param-row">
+                <label for="mus">静摩擦因数 μs</label>
+                <input type="range" id="mus" min="0" max="1" step="0.01" value="0.3">
+                <input type="number" id="musN" min="0" max="1" step="0.01" value="0.3">
+                <span class="unit">-</span>
+            </div>
+            <div class="group-title">初始状态</div>
+            <div class="param-row">
+                <label for="s0">初始位置 s₀</label>
+                <input type="range" id="s0" min="0" max="10" step="0.1" value="0">
+                <input type="number" id="s0N" min="0" max="10" step="0.1" value="0">
+                <span class="unit">m</span>
+            </div>
+            <div class="param-row">
+                <label for="v0">初速度大小 v₀</label>
+                <input type="range" id="v0" min="0" max="25" step="0.1" value="5">
+                <input type="number" id="v0N" min="0" max="25" step="0.1" value="5">
+                <span class="unit">m/s</span>
+            </div>
+            <div class="radio-row">
+                <label><input type="radio" name="v0dir" value="1" checked>沿斜面向上</label>
+                <label><input type="radio" name="v0dir" value="-1">沿斜面向下</label>
+            </div>
+            <div class="group-title">重力环境 g</div>
+            <select id="gravity">
+                <option value="9.8" selected>地球 g = 9.8 m/s²</option>
+                <option value="10">习题常用 g = 10 m/s²</option>
+                <option value="1.62">月球 g = 1.62 m/s²</option>
+                <option value="3.71">火星 g = 3.71 m/s²</option>
+            </select>
+            <div class="group-title">视图显示开关</div>
+            <label class="toggle"><input type="checkbox" id="showForce" checked>受力分析图（G / N / f / F合）</label>
+            <label class="toggle"><input type="checkbox" id="showDecomp" checked>正交分解图（mg·sinθ / mg·cosθ）</label>
+            <label class="toggle"><input type="checkbox" id="showV" checked>速度矢量 v</label>
+            <label class="toggle"><input type="checkbox" id="showA" checked>加速度矢量 a</label>
+            <label class="toggle"><input type="checkbox" id="showStrobe" checked>频闪轨迹点（每 0.5s）</label>
+        </section>
+        <section class="stage">
+            <div class="canvas-wrap">
+                <canvas id="canvas" aria-label="斜面物块运动演示画布"></canvas>
+                <div id="toast"></div>
+            </div>
+            <div class="playbar">
+                <button id="btnReset" title="回到 t=0">⏮ 重置</button>
+                <button id="btnPlay">▶ 播放</button>
+                <button id="btnStep" title="单步前进 0.02s">⏭ 单步</button>
+                <div class="progress-wrap">
+                    <input type="range" id="progress" min="0" max="1" step="0.01" value="0">
+                    <span class="tlabel" id="tLabel">0.00 / 0.00 s</span>
+                </div>
+                <div class="speed-group" id="speedGroup">
+                    <button data-rate="0.25">0.25×</button>
+                    <button data-rate="0.5">0.5×</button>
+                    <button data-rate="1" class="active">1.0×</button>
+                    <button data-rate="2">2×</button>
+                    <button data-rate="4">4×</button>
+                </div>
+            </div>
+        </section>
+        <aside>
+            <div class="panel">
+                <div class="group-title">实时数据</div>
+                <span class="badge b-up" id="badgePhase">—</span>
+                <div class="data-grid">
+                    <div class="data-item"><span>时间 t</span><b id="dT">0.00 s</b></div>
+                    <div class="data-item"><span>位置 s</span><b id="dS">0.00 m</b></div>
+                    <div class="data-item"><span>高度 h</span><b id="dH">0.00 m</b></div>
+                    <div class="data-item"><span>速度 v</span><b id="dV">0.00 m/s</b></div>
+                    <div class="data-item"><span>加速度 a</span><b id="dA">0.00 m/s²</b></div>
+                    <div class="data-item"><span>动能 Ek</span><b id="dEk">0.00 J</b></div>
+                    <div class="data-item"><span>势能 Ep</span><b id="dEp">0.00 J</b></div>
+                    <div class="data-item"><span>机械能 E</span><b id="dE">0.00 J</b></div>
+                    <div class="data-item"><span>摩擦生热 Wf</span><b id="dWf">0.00 J</b></div>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="group-title">受力分析（N）</div>
+                <div class="data-grid">
+                    <div class="data-item"><span>重力 G = mg</span><b id="dG">0.00</b></div>
+                    <div class="data-item"><span>支持力 N</span><b id="dN">0.00</b></div>
+                    <div class="data-item"><span>下滑分力 mg·sinθ</span><b id="dGx">0.00</b></div>
+                    <div class="data-item"><span>垂直分力 mg·cosθ</span><b id="dGy">0.00</b></div>
+                    <div class="data-item"><span>摩擦力 f</span><b id="dF">0.00</b></div>
+                    <div class="data-item"><span>合外力 F合</span><b id="dFnet">0.00</b></div>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="group-title">实时物理公式</div>
+                <div class="note" id="formulaNote">—</div>
+            </div>
+            <div class="panel">
+                <div class="group-title">物理结论卡</div>
+                <div class="note" id="conclusion">—</div>
+            </div>
+        </aside>
+    </div>
+    <section class="charts-section" id="chartsSection">
+        <div class="charts-head">
+            <div class="group-title">图表分析区（与动画同频同步）</div>
+            <button id="btnCollapse">收起图表</button>
+        </div>
+        <div class="charts-grid">
+            <div class="chart-panel">
+                <div class="group-title">v-t 图（速度-时间）</div>
+                <canvas id="vtChart"></canvas>
+            </div>
+            <div class="chart-panel">
+                <div class="group-title">s-t 图（位移-时间）</div>
+                <canvas id="stChart"></canvas>
+            </div>
+            <div class="chart-panel">
+                <div class="group-title">能量柱状图（Ek / Ep / E / Wf）</div>
+                <canvas id="enChart"></canvas>
+            </div>
+        </div>
+    </section>
+    <div class="legend">
+        <span><i style="background:#EF4444"></i>重力 G</span>
+        <span><i style="background:#FCA5A5"></i>重力分量 mg·sinθ / mg·cosθ</span>
+        <span><i style="background:#0EA5E9"></i>支持力 N</span>
+        <span><i style="background:#8B5CF6"></i>摩擦力 f</span>
+        <span><i style="background:#10B981"></i>合外力 F合</span>
+        <span><i style="background:#F59E0B"></i>速度 v</span>
+        <span><i style="background:#059669"></i>加速度 a</span>
+        <span><i style="background:#F97316"></i>物块（· 质心）</span>
+        <span>s 轴以斜面底端为原点、沿斜面向上为正</span>
+    </div>
+    <div id="helpModal">
+        <div class="box">
+            <h2>使用说明</h2>
+            <ul>
+                <li><b>播放控制</b>：「▶ 播放 / ⏸ 暂停」或按<b>空格键</b>；「⏭ 单步」每次前进 0.02s，可捕捉最高点瞬时状态；拖动进度条可回放到任意历史时刻。</li>
+                <li><b>速率</b>：0.25×～4× 五档倍速，配合单步适合课堂讲解。</li>
+                <li><b>拖拽物块</b>：未播放时，鼠标悬停物块变为抓手，沿斜面拖动可直接设置初始位置 s₀。</li>
+                <li><b>参数联动</b>：播放中修改参数会自动暂停并提示，点击「重置」或「播放」后以新参数生效；未播放时修改参数画布实时联动。</li>
+                <li><b>摩擦因数约束</b>：恒保证 μk ≤ μs，若输入 μs &lt; μk 会自动修正并提示。</li>
+                <li><b>自锁判据</b>：tanθ ≤ μs 时物块静止自锁（静摩擦 f = mg·sinθ）；上滑到最高点 v=0 后同样按此判据决定是否反向下滑。</li>
+                <li><b>边界</b>：物块到达底端（s=0）即停止；冲出顶端（s=L）时提示并锁定在顶端。</li>
+                <li><b>图表区</b>：v-t / s-t 图虚线为全程理论曲线、实线为已播放部分，光标点随动画同步；能量柱状图展示机械能向内能（摩擦生热）的转化。</li>
+            </ul>
+            <div class="close-row"><button id="btnHelpClose">知道了</button></div>
+        </div>
+    </div>
+</main>
+<script id="incline-physics">
+const INCLINE = (() => {
+    const T_MAX = 120;
+
+    function rad(deg) { return deg * Math.PI / 180; }
+
+    function derive(P) {
+        const th = rad(P.theta);
+        const sin = Math.sin(th), cos = Math.cos(th);
+        const aUp = -P.g * (sin + P.mu_k * cos);
+        const aDown = -P.g * (sin - P.mu_k * cos);
+        return { sin, cos, aUp, aDown };
+    }
+
+    function isLocked(P) {
+        const th = rad(P.theta);
+        return Math.sin(th) - P.mu_s * Math.cos(th) <= 1e-12;
+    }
+
+    function criticalAngleDeg(P) {
+        return Math.atan(P.mu_s) * 180 / Math.PI;
+    }
+
+    function timeTo(s, v, a, target) {
+        const d = target - s;
+        if (Math.abs(a) < 1e-12) {
+            return (Math.abs(v) > 1e-12 && v * d > 0) ? d / v : Infinity;
+        }
+        const disc = v * v + 2 * a * d;
+        if (disc < 0) return Infinity;
+        const sq = Math.sqrt(disc);
+        let best = Infinity;
+        for (const r of [(-v + sq) / a, (-v - sq) / a]) {
+            if (r >= -1e-9 && r < best) best = r;
+        }
+        return best === Infinity ? Infinity : Math.max(best, 0);
+    }
+
+    function segPos(seg, dt) { return seg.s0 + seg.v0 * dt + 0.5 * seg.a * dt * dt; }
+    function segVel(seg, dt) { return seg.v0 + seg.a * dt; }
+
+    function buildTimeline(P) {
+        const { aUp, aDown } = derive(P);
+        const locked = isLocked(P);
+        const segs = [];
+        const events = [];
+        let t = 0;
+        let s = Math.min(Math.max(P.s0, 0), P.L);
+        let v = P.v0;
+        let hasTop = false;
+        let guard = 0;
+
+        while (guard++ < 100) {
+            if (v > 1e-9) {
+                const tV = aUp < -1e-12 ? -v / aUp : Infinity;
+                const tS = timeTo(s, v, aUp, P.L);
+                if (!isFinite(tV) && !isFinite(tS)) {
+                    segs.push({ t0: t, t1: t + T_MAX, s0: s, v0: v, a: aUp, phase: 'up', note: 'initial' });
+                    t += T_MAX;
+                    break;
+                }
+                if (tS <= tV + 1e-12) {
+                    if (tS > 1e-9) {
+                        const seg = { t0: t, t1: t + tS, s0: s, v0: v, a: aUp, phase: 'up', note: 'initial' };
+                        segs.push(seg);
+                        t = seg.t1;
+                        s = P.L;
+                    } else {
+                        s = P.L;
+                    }
+                    events.push({ t, type: 'overflow' });
+                    segs.push({ t0: t, t1: t, s0: P.L, v0: 0, a: 0, phase: 'overflow' });
+                    v = 0;
+                    break;
+                }
+                const seg = { t0: t, t1: t + tV, s0: s, v0: v, a: aUp, phase: 'up', note: 'initial' };
+                segs.push(seg);
+                t = seg.t1;
+                s = segPos(seg, tV);
+                v = 0;
+                const isTop = P.theta > 1e-9;
+                events.push({ t, type: isTop ? 'top' : 'stop', s });
+                hasTop = isTop;
+                if (locked) {
+                    segs.push({ t0: t, t1: t, s0: s, v0: 0, a: 0, phase: 'locked', note: isTop ? 'top' : 'flat-stop' });
+                    break;
+                }
+            } else if (v < -1e-9) {
+                const phase = aDown < -1e-9 ? 'down-acc' : (aDown > 1e-9 ? 'down-dec' : 'down-uni');
+                const tV = aDown > 1e-9 ? -v / aDown : Infinity;
+                const tS = timeTo(s, v, aDown, 0);
+                if (!isFinite(tV) && !isFinite(tS)) {
+                    segs.push({ t0: t, t1: t + T_MAX, s0: s, v0: v, a: aDown, phase, note: hasTop ? 'reverse' : 'initial' });
+                    t += T_MAX;
+                    break;
+                }
+                if (tS <= tV + 1e-12) {
+                    if (tS > 1e-9) {
+                        const seg = { t0: t, t1: t + tS, s0: s, v0: v, a: aDown, phase, note: hasTop ? 'reverse' : 'initial' };
+                        segs.push(seg);
+                        t = seg.t1;
+                    }
+                    s = 0;
+                    events.push({ t, type: 'bottom' });
+                    segs.push({ t0: t, t1: t, s0: 0, v0: 0, a: 0, phase: 'bottom' });
+                    v = 0;
+                    break;
+                }
+                const seg = { t0: t, t1: t + tV, s0: s, v0: v, a: aDown, phase, note: hasTop ? 'reverse' : 'initial' };
+                segs.push(seg);
+                t = seg.t1;
+                s = segPos(seg, tV);
+                v = 0;
+                events.push({ t, type: 'stop', s });
+                segs.push({ t0: t, t1: t, s0: s, v0: 0, a: 0, phase: 'locked', note: 'down-stop' });
+                break;
+            } else {
+                if (locked) {
+                    segs.push({ t0: t, t1: t, s0: s, v0: 0, a: 0, phase: 'locked', note: hasTop ? 'top' : 'initial' });
+                    break;
+                }
+                if (s <= 1e-9) {
+                    events.push({ t, type: 'bottom' });
+                    segs.push({ t0: t, t1: t, s0: 0, v0: 0, a: 0, phase: 'bottom' });
+                    break;
+                }
+                const tau = Math.sqrt(2 * s / -aDown);
+                segs.push({ t0: t, t1: t + tau, s0: s, v0: 0, a: aDown, phase: 'down-acc', note: hasTop ? 'reverse' : 'initial' });
+                t += tau;
+                s = 0;
+                events.push({ t, type: 'bottom' });
+                segs.push({ t0: t, t1: t, s0: 0, v0: 0, a: 0, phase: 'bottom' });
+                v = 0;
+                break;
+            }
+        }
+
+        const last = segs[segs.length - 1];
+        if (last && (last.phase === 'locked' || last.phase === 'bottom' || last.phase === 'overflow')) {
+            last.t1 = last.t0 + 0.8;
+        }
+        const tEnd = segs.length ? segs[segs.length - 1].t1 : 0;
+        return { segs, events, tEnd, hasTop, locked, P };
+    }
+
+    function stateAt(tl, time) {
+        const tt = Math.min(Math.max(time, 0), tl.tEnd);
+        let seg = tl.segs[0];
+        for (const sg of tl.segs) {
+            if (tt >= sg.t0 - 1e-12) seg = sg; else break;
+        }
+        const dt = Math.min(Math.max(tt - seg.t0, 0), seg.t1 - seg.t0);
+        return {
+            t: tt,
+            s: segPos(seg, dt),
+            v: segVel(seg, dt),
+            a: seg.a,
+            phase: seg.phase,
+            note: seg.note || ''
+        };
+    }
+
+    function forces(P, st) {
+        const { sin, cos } = derive(P);
+        const G = P.m * P.g;
+        const N = G * cos;
+        const gAlong = G * sin;
+        let f = 0, fKind = '静';
+        if (st.phase === 'up') { f = -P.mu_k * N; fKind = '滑'; }
+        else if (st.phase.indexOf('down') === 0) { f = P.mu_k * N; fKind = '滑'; }
+        else if (st.phase === 'locked') { f = gAlong; fKind = '静'; }
+        else { f = Math.min(gAlong, P.mu_s * N); fKind = '静'; }
+        const restPhase = st.phase === 'locked' || st.phase === 'bottom' || st.phase === 'overflow';
+        const Fnet = restPhase ? 0 : P.m * st.a;
+        return { G, N, gAlong, gPerp: G * cos, f, fKind, Fnet };
+    }
+
+    function pathLength(tl, time) {
+        let len = 0;
+        for (const seg of tl.segs) {
+            if (seg.t0 >= time) break;
+            const dt = Math.min(time, seg.t1) - seg.t0;
+            if (dt <= 0) continue;
+            if (Math.abs(seg.a) < 1e-12) {
+                len += Math.abs(seg.v0) * dt;
+            } else {
+                const v1 = seg.v0 + seg.a * dt;
+                len += Math.abs((v1 * v1 - seg.v0 * seg.v0) / (2 * seg.a));
+            }
+        }
+        return len;
+    }
+
+    function energies(P, tl, st) {
+        const { sin, cos } = derive(P);
+        const Ek = 0.5 * P.m * st.v * st.v;
+        const Ep = P.m * P.g * st.s * sin;
+        const Wf = P.mu_k * P.m * P.g * cos * pathLength(tl, st.t);
+        return { Ek, Ep, E: Ek + Ep, Wf };
+    }
+
+    return { T_MAX, rad, derive, isLocked, criticalAngleDeg, buildTimeline, stateAt, forces, pathLength, energies };
+})();
+(typeof window !== 'undefined' ? window : globalThis).INCLINE = INCLINE;
+</script>
+<script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const vtCanvas = document.getElementById('vtChart');
+    const vtCtx = vtCanvas.getContext('2d');
+    const stCanvas = document.getElementById('stChart');
+    const stCtx = stCanvas.getContext('2d');
+    const enCanvas = document.getElementById('enChart');
+    const enCtx = enCanvas.getContext('2d');
+    const view = { width: 920, height: 560 };
+    const vtView = { width: 400, height: 180 };
+    const stView = { width: 400, height: 180 };
+    const enView = { width: 400, height: 180 };
+    const CHART_ASPECT = 20 / 9;
+    const BASE_W = 920, BASE_H = 560;
+
+    const inputs = {};
+    ['theta', 'len', 'mass', 'muk', 'mus', 's0', 'v0'].forEach(id => {
+        inputs[id] = { range: document.getElementById(id), num: document.getElementById(id + 'N') };
+    });
+    const presetSel = document.getElementById('preset');
+    const gravitySel = document.getElementById('gravity');
+    const dirRadios = () => document.querySelector('input[name=v0dir]:checked');
+    const toggles = {
+        force: document.getElementById('showForce'),
+        decomp: document.getElementById('showDecomp'),
+        v: document.getElementById('showV'),
+        a: document.getElementById('showA'),
+        strobe: document.getElementById('showStrobe')
+    };
+    const badgePhase = document.getElementById('badgePhase');
+    const els = {};
+    ['dT', 'dS', 'dH', 'dV', 'dA', 'dEk', 'dEp', 'dE', 'dWf', 'dG', 'dN', 'dGx', 'dGy', 'dF', 'dFnet']
+        .forEach(id => { els[id] = document.getElementById(id); });
+    const formulaNote = document.getElementById('formulaNote');
+    const conclusionEl = document.getElementById('conclusion');
+    const progress = document.getElementById('progress');
+    const tLabel = document.getElementById('tLabel');
+    const btnPlay = document.getElementById('btnPlay');
+    const btnReset = document.getElementById('btnReset');
+    const btnStep = document.getElementById('btnStep');
+    const btnResetAll = document.getElementById('btnResetAll');
+    const btnHelp = document.getElementById('btnHelp');
+    const btnHelpClose = document.getElementById('btnHelpClose');
+    const btnTheme = document.getElementById('btnTheme');
+    const btnCollapse = document.getElementById('btnCollapse');
+    const chartsSection = document.getElementById('chartsSection');
+    const helpModal = document.getElementById('helpModal');
+    const toastEl = document.getElementById('toast');
+    const speedGroup = document.getElementById('speedGroup');
+
+    const DEFAULTS = { theta: 30, len: 10, mass: 2, muk: 0.2, mus: 0.3, s0: 0, v0: 5, dir: 1, g: 9.8 };
+    const PRESETS = {
+        smooth: { theta: 30, len: 10, mass: 2, muk: 0, mus: 0, s0: 5, v0: 0, dir: 1, g: 9.8 },
+        lock: { theta: 30, len: 10, mass: 2, muk: 0.5, mus: 0.6, s0: 5, v0: 0, dir: 1, g: 9.8 },
+        upLock: { theta: 30, len: 10, mass: 2, muk: 0.2, mus: 0.6, s0: 0, v0: 5, dir: 1, g: 9.8 },
+        upDown: { theta: 45, len: 10, mass: 2, muk: 0.2, mus: 0.2, s0: 0, v0: 4, dir: 1, g: 9.8 },
+        downV: { theta: 30, len: 10, mass: 2, muk: 0.2, mus: 0.3, s0: 10, v0: 5, dir: -1, g: 9.8 }
+    };
+
+    let state = 'idle';
+    let t = 0;
+    let lastTs = null;
+    let raf = null;
+    let rate = 1;
+    let tl = null;
+    let P = null;
+    let stale = false;
+    let scrubbing = false;
+    let toastTimer = null;
+    let dragging = false;
+    let hoverBlock = false;
+    let geo = null;
+
+    const sceneFont = (px, bold) => (bold ? 'bold ' : '') + Math.max(px * ((canvas.clientWidth || BASE_W) / BASE_W), 10) + 'px system-ui, sans-serif';
+
+    function palette() {
+        const dark = document.body.classList.contains('dark');
+        return {
+            bg: dark ? '#0f172a' : '#ffffff',
+            grid: dark ? '#1e293b' : '#eef2f6',
+            axis: dark ? '#64748b' : '#94a3b8',
+            text: dark ? '#e2e8f0' : '#1f2937',
+            dim: dark ? '#94a3b8' : '#6b7280',
+            inclineFill: dark ? '#334155' : '#E2E8F0',
+            inclineStroke: dark ? '#94a3b8' : '#64748B',
+            ground: dark ? '#64748b' : '#94a3b8',
+            block: '#F97316',
+            blockStroke: '#C2410C',
+            com: '#C2410C',
+            G: '#EF4444',
+            comp: '#FCA5A5',
+            N: '#0EA5E9',
+            f: '#8B5CF6',
+            Fnet: '#10B981',
+            v: '#F59E0B',
+            a: '#059669',
+            top: '#0d9488'
+        };
+    }
+
+    function readParams() {
+        return {
+            theta: Number(inputs.theta.range.value),
+            L: Number(inputs.len.range.value),
+            m: Number(inputs.mass.range.value),
+            mu_k: Number(inputs.muk.range.value),
+            mu_s: Number(inputs.mus.range.value),
+            s0: Number(inputs.s0.range.value),
+            v0: Number(inputs.v0.range.value) * Number(dirRadios().value),
+            g: Number(gravitySel.value)
+        };
+    }
+
+    function showToast(msg) {
+        toastEl.textContent = msg;
+        toastEl.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2400);
+    }
+
+    function markParamTouched() {
+        presetSel.value = 'custom';
+        if (state === 'running' || state === 'paused') {
+            if (state === 'running') pauseInternal();
+            stale = true;
+            showToast('参数已调整，点击重置或重新播放生效');
+        } else {
+            rebuild();
+        }
+    }
+
+    function rebuild() {
+        P = readParams();
+        tl = INCLINE.buildTimeline(P);
+        t = 0;
+        stale = false;
+        progress.max = tl.tEnd.toFixed(3);
+        progress.step = '0.001';
+        progress.value = '0';
+        buildChartSamples();
+        renderAll();
+    }
+
+    let vSamples = [], sSamples = [];
+    function segVelLocal(seg, dt) { return seg.v0 + seg.a * dt; }
+    function segPosLocal(seg, dt) { return seg.s0 + seg.v0 * dt + 0.5 * seg.a * dt * dt; }
+
+    function sampleOf(getter, perSeg) {
+        perSeg = perSeg || 22;
+        const pts = [];
+        if (!tl) return pts;
+        for (const seg of tl.segs) {
+            const dur = seg.t1 - seg.t0;
+            if (dur <= 1e-9) continue;
+            const n = Math.max(2, Math.min(perSeg, Math.ceil(dur * 30)));
+            for (let i = 0; i <= n; i++) {
+                const dt = dur * i / n;
+                const tt = seg.t0 + dt;
+                const val = getter(seg)(dt);
+                if (pts.length && Math.abs(pts[pts.length - 1][0] - tt) < 1e-9) {
+                    pts[pts.length - 1][1] = val;
+                } else {
+                    pts.push([tt, val]);
+                }
+            }
+        }
+        if (!pts.length) pts.push([0, getter(tl.segs[0] || { v0: 0, a: 0, s0: 0 })(0)]);
+        return pts;
+    }
+
+    function buildChartSamples() {
+        vSamples = sampleOf(seg => dt => segVelLocal(seg, dt));
+        sSamples = sampleOf(seg => dt => segPosLocal(seg, dt), 26);
+        tl.vMaxRef = Math.max(0, ...vSamples.map(p => Math.abs(p[1])), Math.abs(P.v0));
+        tl.E0 = INCLINE.energies(P, tl, INCLINE.stateAt(tl, 0)).E;
+    }
+
+    function niceCeil(value) {
+        if (!isFinite(value) || value <= 0) return 1;
+        const magnitude = Math.pow(10, Math.floor(Math.log10(value)));
+        const normalized = value / magnitude;
+        const factor = normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10;
+        return factor * magnitude;
+    }
+
+    function niceStep(maxValue) {
+        const rawStep = Math.max(maxValue, 1e-9) / 5;
+        const magnitude = Math.pow(10, Math.floor(Math.log10(rawStep)));
+        const normalized = rawStep / magnitude;
+        const factor = normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10;
+        return factor * magnitude;
+    }
+
+    function tickDecimals(step) {
+        if (step >= 1) return 0;
+        return Math.min(6, Math.ceil(-Math.log10(step) + 1e-9));
+    }
+
+    function setupCanvas(canvasEl, viewObj, aspect) {
+        const cssWidth = canvasEl.clientWidth || 400;
+        const cssHeight = cssWidth / aspect;
+        const dpr = window.devicePixelRatio || 1;
+        canvasEl.width = Math.round(cssWidth * dpr);
+        canvasEl.height = Math.round(cssHeight * dpr);
+        canvasEl.getContext('2d').setTransform(dpr, 0, 0, dpr, 0, 0);
+        viewObj.width = cssWidth;
+        viewObj.height = cssHeight;
+    }
+
+    function resizeAll() {
+        const cssWidth = canvas.clientWidth || BASE_W;
+        const cssHeight = cssWidth * BASE_H / BASE_W;
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = Math.round(cssWidth * dpr);
+        canvas.height = Math.round(cssHeight * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        view.width = cssWidth;
+        view.height = cssHeight;
+        setupCanvas(vtCanvas, vtView, CHART_ASPECT);
+        setupCanvas(stCanvas, stView, CHART_ASPECT);
+        setupCanvas(enCanvas, enView, CHART_ASPECT);
+        renderAll();
+    }
+
+    function drawArrow(c, fromX, fromY, toX, toY, color, width, head) {
+        const dx = toX - fromX, dy = toY - fromY;
+        const length = Math.hypot(dx, dy);
+        if (length < 1.5) return;
+        head = head || 9;
+        const ang = Math.atan2(dy, dx);
+        c.strokeStyle = color;
+        c.fillStyle = color;
+        c.lineWidth = width || 3;
+        c.beginPath();
+        c.moveTo(fromX, fromY);
+        c.lineTo(toX, toY);
+        c.stroke();
+        c.beginPath();
+        c.moveTo(toX, toY);
+        c.lineTo(toX - head * Math.cos(ang - Math.PI / 6.5), toY - head * Math.sin(ang - Math.PI / 6.5));
+        c.lineTo(toX - head * Math.cos(ang + Math.PI / 6.5), toY - head * Math.sin(ang + Math.PI / 6.5));
+        c.closePath();
+        c.fill();
+    }
+
+    function computeGeometry() {
+        const W = view.width, H = view.height;
+        const { sin, cos } = INCLINE.derive(P);
+        const groundY = H - 62;
+        const availW = W - 62 - 96;
+        const availH = groundY - 84;
+        const slopePx = Math.min(availW / Math.max(cos, 1e-6), availH / Math.max(sin, 1e-6));
+        const run = slopePx * cos;
+        const x0 = Math.max(62, (W - run - 96) / 2);
+        const apex = { x: x0 + run, y: groundY - slopePx * sin };
+        return {
+            x0, groundY, slopePx, sin, cos,
+            ux: cos, uy: -sin,
+            nx: -sin, ny: -cos,
+            apex
+        };
+    }
+
+    function slopePoint(d) {
+        return { x: geo.x0 + geo.ux * d, y: geo.groundY + geo.uy * d };
+    }
+
+    function blockCenterAt(d) {
+        const sp = slopePoint(d);
+        const off = 15;
+        return { x: sp.x + geo.nx * off, y: sp.y + geo.ny * off };
+    }
+
+    function drawLabel(text, x, y, color, font) {
+        x = Math.min(Math.max(x, 28), view.width - 28);
+        y = Math.min(Math.max(y, 14), view.height - 6);
+        ctx.font = font || sceneFont(12, true);
+        ctx.textAlign = 'center';
+        ctx.lineWidth = 3.5;
+        ctx.strokeStyle = palette().bg;
+        ctx.strokeText(text, x, y);
+        ctx.fillStyle = color;
+        ctx.fillText(text, x, y);
+    }
+
+    function drawScene(st) {
+        const c = palette();
+        geo = computeGeometry();
+        ctx.clearRect(0, 0, view.width, view.height);
+        ctx.fillStyle = c.bg;
+        ctx.fillRect(0, 0, view.width, view.height);
+
+        ctx.strokeStyle = c.ground;
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(geo.x0 - 42, geo.groundY);
+        ctx.lineTo(geo.apex.x + 46, geo.groundY);
+        ctx.stroke();
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = c.dim;
+        for (let hx = geo.x0 - 42; hx < geo.apex.x + 40; hx += 15) {
+            ctx.beginPath();
+            ctx.moveTo(hx, geo.groundY + 1);
+            ctx.lineTo(hx - 9, geo.groundY + 10);
+            ctx.stroke();
+        }
+
+        ctx.beginPath();
+        ctx.moveTo(geo.x0, geo.groundY);
+        ctx.lineTo(geo.apex.x, geo.groundY);
+        ctx.lineTo(geo.apex.x, geo.apex.y);
+        ctx.closePath();
+        ctx.fillStyle = c.inclineFill;
+        ctx.fill();
+        ctx.strokeStyle = c.inclineStroke;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        const arcR = Math.min(46, geo.slopePx * 0.24);
+        if (P.theta > 0.5) {
+            ctx.strokeStyle = c.dim;
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.arc(geo.x0, geo.groundY, arcR, 0, -Math.asin(geo.sin), true);
+            ctx.stroke();
+            const midAng = -Math.asin(geo.sin) / 2;
+            drawLabel('θ=' + P.theta + '°', geo.x0 + Math.cos(midAng) * (arcR + 30), geo.groundY + Math.sin(midAng) * (arcR + 30) + 4, c.text, sceneFont(13, true));
+        }
+
+        const sStep = niceStep(P.L);
+        const sDec = tickDecimals(sStep);
+        ctx.font = sceneFont(10);
+        ctx.fillStyle = c.dim;
+        ctx.textAlign = 'center';
+        for (let sv = 0; sv <= P.L + 1e-9; sv += sStep) {
+            const d = sv / P.L * geo.slopePx;
+            const sp = slopePoint(d);
+            ctx.beginPath();
+            ctx.moveTo(sp.x - geo.nx * 4, sp.y - geo.ny * 4);
+            ctx.lineTo(sp.x - geo.nx * 11, sp.y - geo.ny * 11);
+            ctx.strokeStyle = c.axis;
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+            ctx.fillText(sv.toFixed(sDec), sp.x - geo.nx * 24, sp.y - geo.ny * 24 + 3);
+        }
+        ctx.textAlign = 'left';
+        ctx.fillStyle = c.dim;
+        ctx.fillText('s=0（底端）', geo.x0 - 18, geo.groundY + 20);
+        ctx.textAlign = 'right';
+        ctx.fillText('s=' + P.L + ' m（顶端）', geo.apex.x + 40, geo.apex.y - 10);
+        const midSp = slopePoint(geo.slopePx / 2);
+        ctx.textAlign = 'center';
+        ctx.fillText('L = ' + P.L + ' m', midSp.x + geo.nx * 30, midSp.y + geo.ny * 30);
+
+        if (toggles.strobe.checked) {
+            ctx.fillStyle = 'rgba(249, 115, 22, 0.4)';
+            for (let tt = 0.5; tt <= st.t + 1e-9; tt += 0.5) {
+                const ss = INCLINE.stateAt(tl, tt);
+                const bp = blockCenterAt(ss.s / P.L * geo.slopePx);
+                ctx.beginPath();
+                ctx.arc(bp.x, bp.y, 3.2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        const topEv = P.theta > 0 ? tl.events.find(e => e.type === 'top') : null;
+        if (topEv) {
+            const tp = slopePoint(topEv.s / P.L * geo.slopePx);
+            ctx.fillStyle = c.top;
+            ctx.beginPath();
+            ctx.arc(tp.x + geo.nx * 18, tp.y + geo.ny * 18, 4, 0, Math.PI * 2);
+            ctx.fill();
+            drawLabel('最高点', tp.x + geo.nx * 36, tp.y + geo.ny * 36 + 4, c.top, sceneFont(11, true));
+        }
+
+        const dNow = st.s / P.L * geo.slopePx;
+        const C = blockCenterAt(dNow);
+        const spNow = slopePoint(dNow);
+
+        ctx.save();
+        ctx.translate(spNow.x, spNow.y);
+        ctx.rotate(-INCLINE.rad(P.theta));
+        ctx.fillStyle = c.block;
+        ctx.strokeStyle = c.blockStroke;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.rect(-15, -30, 30, 30);
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+        ctx.fillStyle = c.com;
+        ctx.beginPath();
+        ctx.arc(C.x, C.y, 3.2, 0, Math.PI * 2);
+        ctx.fill();
+
+        const F = INCLINE.forces(P, st);
+        const k = 78 / (P.m * P.g);
+        const vx = geo.ux, vy = geo.uy;
+        const nx = geo.nx, ny = geo.ny;
+
+        if (toggles.force.checked) {
+            if (toggles.decomp.checked) {
+                const compLen = F.gAlong * k, compPerp = F.gPerp * k;
+                const ax = C.x + vx * (-compLen), ay = C.y + vy * (-compLen);
+                const px = C.x + nx * (-compPerp), py = C.y + ny * (-compPerp);
+                ctx.save();
+                ctx.strokeStyle = c.comp;
+                ctx.fillStyle = c.comp;
+                ctx.lineWidth = 2;
+                ctx.setLineDash([5, 4]);
+                drawArrow(ctx, C.x, C.y, ax, ay, c.comp, 2, 7);
+                drawArrow(ctx, C.x, C.y, px, py, c.comp, 2, 7);
+                ctx.beginPath();
+                ctx.moveTo(ax, ay);
+                ctx.lineTo(C.x, C.y + F.G * k);
+                ctx.moveTo(px, py);
+                ctx.lineTo(C.x, C.y + F.G * k);
+                ctx.stroke();
+                ctx.restore();
+                drawLabel('mg·sinθ', ax + vx * 20 + nx * 20, ay + vy * 20 + ny * 20 + 4, c.comp, sceneFont(11, true));
+                drawLabel('mg·cosθ', px + nx * 18, py + ny * 18 + 4, c.comp, sceneFont(11, true));
+            }
+            drawArrow(ctx, C.x, C.y, C.x, C.y + F.G * k, c.G, 3.2);
+            drawLabel('G', C.x + 12, C.y + F.G * k - 4, c.G);
+
+            drawArrow(ctx, C.x, C.y, C.x + nx * F.N * k, C.y + ny * F.N * k, c.N, 3.2);
+            drawLabel('N', C.x + nx * (F.N * k + 16), C.y + ny * (F.N * k + 16) + 4, c.N);
+
+            if (Math.abs(F.f) > 1e-9) {
+                const fl = F.f * k;
+                drawArrow(ctx, C.x, C.y, C.x + vx * fl, C.y + vy * fl, c.f, 3.2);
+                drawLabel('f', C.x + vx * fl + nx * 17, C.y + vy * fl + ny * 17 + 4, c.f);
+            }
+            if (Math.abs(F.Fnet) > 1e-9) {
+                const nl = F.Fnet * k;
+                drawArrow(ctx, C.x, C.y, C.x + vx * nl, C.y + vy * nl, c.Fnet, 3.2);
+                drawLabel('F合', C.x + vx * nl / 2 - nx * 15, C.y + vy * nl / 2 - ny * 15 + 4, c.Fnet);
+            }
+        }
+
+        const vMaxRef = Math.max(2, Math.abs(P.v0), tl.vMaxRef || 0);
+        const kv = 62 / vMaxRef;
+        if (toggles.v.checked && Math.abs(st.v) > 1e-6) {
+            const fx = C.x + nx * 46, fy = C.y + ny * 46;
+            const vl = st.v * kv;
+            drawArrow(ctx, fx, fy, fx + vx * vl, fy + vy * vl, c.v, 3.2);
+            drawLabel('v=' + st.v.toFixed(2), fx + vx * (vl + (vl >= 0 ? 24 : -24)), fy + vy * (vl + (vl >= 0 ? 24 : -24)) + 4, c.v);
+        }
+        if (toggles.a.checked && Math.abs(st.a) > 1e-6) {
+            const fx = C.x + nx * 24, fy = C.y + ny * 24;
+            const al = st.a * kv;
+            drawArrow(ctx, fx, fy, fx + vx * al, fy + vy * al, c.a, 3.2);
+            drawLabel('a=' + st.a.toFixed(2), fx + vx * (al + (al >= 0 ? 26 : -26)), fy + vy * (al + (al >= 0 ? 26 : -26)) + 4, c.a);
+        }
+
+        const endEv = tl.events.find(e => e.type === 'overflow');
+        if (endEv && st.phase === 'overflow') {
+            ctx.fillStyle = '#EF4444';
+            ctx.font = sceneFont(13, true);
+            ctx.textAlign = 'center';
+            ctx.fillText('冲出斜面顶端！', geo.apex.x - 10, geo.apex.y - 30);
+        }
+        canvas.setAttribute('aria-label', `斜面物块演示：t=${st.t.toFixed(2)}s，s=${st.s.toFixed(2)}m，v=${st.v.toFixed(2)}m/s，阶段=${badgePhase.textContent}`);
+    }
+
+    function drawLineChart(c, vw, vh, opts) {
+        const pal = palette();
+        const padL = 46, padR = 14, padT = 18, padB = 26;
+        const plotW = vw - padL - padR;
+        const plotH = vh - padT - padB;
+        const tEnd = Math.max(opts.tEnd, 0.001);
+        const xOf = tt => padL + tt / tEnd * plotW;
+        const yOf = val => padT + plotH - (val - opts.yMin) / (opts.yMax - opts.yMin) * plotH;
+
+        c.clearRect(0, 0, vw, vh);
+        c.fillStyle = pal.bg;
+        c.fillRect(0, 0, vw, vh);
+
+        c.font = '10px system-ui, sans-serif';
+        const yStep = niceStep(opts.yMax - opts.yMin);
+        const yDec = tickDecimals(yStep);
+        const i0 = Math.ceil(opts.yMin / yStep - 1e-9), i1 = Math.floor(opts.yMax / yStep + 1e-9);
+        for (let i = i0; i <= i1; i++) {
+            const val = i * yStep;
+            const py = yOf(val);
+            c.strokeStyle = pal.grid;
+            c.lineWidth = 1;
+            c.beginPath();
+            c.moveTo(padL, py);
+            c.lineTo(padL + plotW, py);
+            c.stroke();
+            c.fillStyle = pal.dim;
+            c.textAlign = 'right';
+            c.fillText(val.toFixed(yDec), padL - 5, py + 3);
+        }
+        const tStep = niceStep(tEnd);
+        const tDec = tickDecimals(tStep);
+        c.textAlign = 'center';
+        for (let tt = 0; tt <= tEnd + tStep * 1e-4; tt += tStep) {
+            const px = xOf(tt);
+            c.strokeStyle = pal.grid;
+            c.beginPath();
+            c.moveTo(px, padT);
+            c.lineTo(px, padT + plotH);
+            c.stroke();
+            c.fillStyle = pal.dim;
+            c.fillText(tt.toFixed(tDec), px, padT + plotH + 14);
+        }
+        if (opts.yMin < 0 && opts.yMax > 0) {
+            const py0 = yOf(0);
+            c.strokeStyle = pal.axis;
+            c.lineWidth = 1.2;
+            c.beginPath();
+            c.moveTo(padL, py0);
+            c.lineTo(padL + plotW, py0);
+            c.stroke();
+        }
+        c.strokeStyle = pal.axis;
+        c.lineWidth = 2;
+        c.beginPath();
+        c.moveTo(padL, padT);
+        c.lineTo(padL, padT + plotH);
+        c.lineTo(padL + plotW, padT + plotH);
+        c.stroke();
+
+        c.fillStyle = pal.dim;
+        c.textAlign = 'left';
+        c.fillText(opts.yLabel, padL + 6, padT + 11);
+        c.textAlign = 'right';
+        c.fillText(opts.xLabel, padL + plotW, vh - 6);
+
+        opts.series.forEach(sr => {
+            c.save();
+            c.strokeStyle = sr.dashColor;
+            c.lineWidth = 2;
+            c.setLineDash([6, 6]);
+            c.beginPath();
+            sr.pts.forEach((p, i) => {
+                const x = xOf(p[0]), y = yOf(p[1]);
+                if (i === 0) c.moveTo(x, y); else c.lineTo(x, y);
+            });
+            c.stroke();
+            c.restore();
+
+            c.strokeStyle = sr.color;
+            c.lineWidth = 2.4;
+            c.lineJoin = 'round';
+            c.beginPath();
+            let started = false;
+            for (const p of sr.pts) {
+                if (p[0] > opts.tNow + 1e-9) break;
+                const x = xOf(p[0]), y = yOf(p[1]);
+                if (!started) { c.moveTo(x, y); started = true; }
+                else c.lineTo(x, y);
+            }
+            const curVal = valueAt(sr.pts, opts.tNow);
+            if (curVal !== null) c.lineTo(xOf(opts.tNow), yOf(curVal));
+            c.stroke();
+        });
+
+        (opts.markers || []).forEach(mk => {
+            if (mk.t > tEnd) return;
+            c.fillStyle = mk.color;
+            c.beginPath();
+            c.arc(xOf(mk.t), yOf(mk.y), 4, 0, Math.PI * 2);
+            c.fill();
+        });
+
+        const sr0 = opts.series[0];
+        const curVal0 = valueAt(sr0.pts, opts.tNow);
+        if (curVal0 !== null) {
+            c.fillStyle = sr0.color;
+            c.beginPath();
+            c.arc(xOf(opts.tNow), yOf(curVal0), 4.5, 0, Math.PI * 2);
+            c.fill();
+            c.font = '10px system-ui, sans-serif';
+            c.fillStyle = pal.text;
+            c.textAlign = 'left';
+            let lx = xOf(opts.tNow) + 8;
+            if (lx > padL + plotW - 62) lx = xOf(opts.tNow) - 66;
+            if (lx < padL + 52) lx = padL + 52;
+            const lyNow = Math.max(padT + 22, yOf(curVal0) - 8);
+            c.fillText(sr0.label + ' ' + curVal0.toFixed(2) + sr0.unit, lx, lyNow);
+        }
+
+        c.strokeStyle = 'rgba(37, 99, 235, 0.35)';
+        c.lineWidth = 1;
+        c.beginPath();
+        c.moveTo(xOf(opts.tNow), padT);
+        c.lineTo(xOf(opts.tNow), padT + plotH);
+        c.stroke();
+    }
+
+    function valueAt(pts, tt) {
+        if (!pts.length) return null;
+        if (tt <= pts[0][0]) return pts[0][1];
+        for (let i = 1; i < pts.length; i++) {
+            if (tt <= pts[i][0] + 1e-12) {
+                const t0 = pts[i - 1][0], t1 = pts[i][0];
+                if (t1 - t0 < 1e-12) return pts[i][1];
+                const w = (tt - t0) / (t1 - t0);
+                return pts[i - 1][1] + (pts[i][1] - pts[i - 1][1]) * w;
+            }
+        }
+        return pts[pts.length - 1][1];
+    }
+
+    function drawEnergyChart(st) {
+        const pal = palette();
+        const en = INCLINE.energies(P, tl, st);
+        const E0 = tl.E0;
+        const c = enCtx;
+        const vw = enView.width, vh = enView.height;
+        const padL = 40, padR = 10, padT = 16, padB = 30;
+        const plotW = vw - padL - padR, plotH = vh - padT - padB;
+        const scaleMax = niceCeil(Math.max(E0, en.Wf, 1) * 1.08);
+        c.clearRect(0, 0, vw, vh);
+        c.fillStyle = pal.bg;
+        c.fillRect(0, 0, vw, vh);
+
+        c.font = '10px system-ui, sans-serif';
+        const yStep = niceStep(scaleMax);
+        const yDec = tickDecimals(yStep);
+        for (let val = 0; val <= scaleMax + 1e-9; val += yStep) {
+            const py = padT + plotH - val / scaleMax * plotH;
+            c.strokeStyle = pal.grid;
+            c.beginPath();
+            c.moveTo(padL, py);
+            c.lineTo(padL + plotW, py);
+            c.stroke();
+            c.fillStyle = pal.dim;
+            c.textAlign = 'right';
+            c.fillText(val.toFixed(yDec), padL - 5, py + 3);
+        }
+        c.strokeStyle = pal.axis;
+        c.lineWidth = 2;
+        c.beginPath();
+        c.moveTo(padL, padT);
+        c.lineTo(padL, padT + plotH);
+        c.lineTo(padL + plotW, padT + plotH);
+        c.stroke();
+
+        const py0 = padT + plotH - E0 / scaleMax * plotH;
+        c.save();
+        c.strokeStyle = '#EF4444';
+        c.setLineDash([5, 4]);
+        c.lineWidth = 1.4;
+        c.beginPath();
+        c.moveTo(padL, py0);
+        c.lineTo(padL + plotW, py0);
+        c.stroke();
+        c.restore();
+        c.fillStyle = '#EF4444';
+        c.textAlign = 'left';
+        c.font = '10px system-ui, sans-serif';
+        c.fillText('E₀=' + E0.toFixed(1) + ' J', padL + plotW - 64, py0 - 4);
+
+        const bars = [
+            { label: '动能Ek', val: en.Ek, color: '#F59E0B' },
+            { label: '势能Ep', val: en.Ep, color: '#0EA5E9' },
+            { label: '机械能E', val: en.E, color: '#10B981' },
+            { label: '摩擦生热Wf', val: en.Wf, color: '#8B5CF6' }
+        ];
+        const slot = plotW / bars.length;
+        bars.forEach((b, i) => {
+            const bw = slot * 0.5;
+            const bx = padL + slot * i + (slot - bw) / 2;
+            const bh = Math.max(0, Math.min(plotH, b.val / scaleMax * plotH));
+            c.fillStyle = b.color;
+            c.fillRect(bx, padT + plotH - bh, bw, bh);
+            c.fillStyle = pal.text;
+            c.font = '10px system-ui, sans-serif';
+            c.textAlign = 'center';
+            c.fillText(b.val.toFixed(1), bx + bw / 2, padT + plotH - bh - 4);
+            c.fillStyle = pal.dim;
+            c.fillText(b.label, bx + bw / 2, padT + plotH + 14);
+        });
+    }
+
+    function phaseInfo(st) {
+        const topEv = P.theta > 0 ? tl.events.find(e => e.type === 'top') : null;
+        switch (st.phase) {
+            case 'up': return ['上滑匀减速', 'b-up'];
+            case 'down-acc': return [st.note === 'reverse' ? '反向匀加速下滑' : '向下匀加速', 'b-down'];
+            case 'down-uni': return ['向下匀速', 'b-down'];
+            case 'down-dec': return ['向下匀减速', 'b-down'];
+            case 'bottom': return ['到达底端 · 停止', 'b-end'];
+            case 'overflow': return ['冲出斜面顶端', 'b-end'];
+            case 'locked':
+                if (topEv && Math.abs(st.t - topEv.t) <= 0.011) return ['瞬时静止 · 最高点', 'b-pause'];
+                if (st.note === 'top') return ['静止于最高点（自锁）', 'b-lock'];
+                if (st.note === 'down-stop') return ['下滑减速至静止', 'b-lock'];
+                if (st.note === 'flat-stop') return ['减速至静止', 'b-lock'];
+                return ['静止自锁', 'b-lock'];
+        }
+        return ['—', 'b-lock'];
+    }
+
+    function fmt(x, n) { return Number(x).toFixed(n === undefined ? 2 : n); }
+
+    function updateReadouts(st) {
+        const info = phaseInfo(st);
+        badgePhase.textContent = info[0];
+        badgePhase.className = 'badge ' + info[1];
+        const { sin, cos } = INCLINE.derive(P);
+        const F = INCLINE.forces(P, st);
+        const en = INCLINE.energies(P, tl, st);
+        els.dT.textContent = fmt(st.t) + ' s';
+        els.dS.textContent = fmt(st.s) + ' m';
+        els.dH.textContent = fmt(st.s * sin) + ' m';
+        els.dV.textContent = fmt(st.v) + ' m/s';
+        els.dA.textContent = fmt(st.a) + ' m/s²';
+        els.dEk.textContent = fmt(en.Ek) + ' J';
+        els.dEp.textContent = fmt(en.Ep) + ' J';
+        els.dE.textContent = fmt(en.E) + ' J';
+        els.dWf.textContent = fmt(en.Wf) + ' J';
+        els.dG.textContent = fmt(F.G);
+        els.dN.textContent = fmt(F.N);
+        els.dGx.textContent = fmt(F.gAlong);
+        els.dGy.textContent = fmt(F.gPerp);
+        els.dF.textContent = fmt(Math.abs(F.f)) + '（' + F.fKind + '，' + (F.f >= 0 ? '沿斜面向上' : '沿斜面向下') + '）';
+        els.dFnet.textContent = fmt(Math.abs(F.Fnet)) + (Math.abs(F.Fnet) > 1e-9 ? (F.Fnet >= 0 ? '（沿斜面向上）' : '（沿斜面向下）') : '（平衡）');
+        tLabel.textContent = fmt(st.t) + ' / ' + fmt(tl.tEnd) + ' s';
+        if (!scrubbing) progress.value = st.t;
+
+        const thC = INCLINE.criticalAngleDeg(P);
+        const tanTh = Math.tan(INCLINE.rad(P.theta));
+        const lines = [];
+        lines.push('θ = ' + P.theta + '°，tanθ = ' + fmt(tanTh, 3) + '，μs = ' + fmt(P.mu_s) + '，临界角 θc = arctan(μs) = ' + fmt(thC, 2) + '°');
+        if (st.phase === 'up') {
+            lines.push('上滑：a = g(sinθ + μk·cosθ) = ' + fmt(-INCLINE.derive(P).aUp) + ' m/s²（沿斜面向下），f = μk·N = ' + fmt(Math.abs(F.f)) + ' N（沿斜面向下）');
+        } else if (st.phase === 'down-acc') {
+            lines.push('下滑：a = g(sinθ − μk·cosθ) = ' + fmt(-st.a) + ' m/s²（沿斜面向下），f = μk·N = ' + fmt(F.f) + ' N（沿斜面向上）');
+        } else if (st.phase === 'down-uni') {
+            lines.push('tanθ = μk：a = 0，重力下滑分力与滑动摩擦力平衡，匀速下滑');
+        } else if (st.phase === 'down-dec') {
+            lines.push('下滑减速：a = g(μk·cosθ − sinθ) = ' + fmt(st.a) + ' m/s²（沿斜面向上），f = μk·N = ' + fmt(F.f) + ' N');
+        } else if (st.phase === 'locked') {
+            lines.push('静止：f静 = mg·sinθ = ' + fmt(F.gAlong) + ' N ≤ fmax = μs·mg·cosθ = ' + fmt(P.mu_s * F.gPerp) + ' N，合力为零');
+        } else if (st.phase === 'bottom') {
+            lines.push('已到达底端边界 s=0，运动终止（v=0）');
+        } else if (st.phase === 'overflow') {
+            lines.push('已冲出顶端边界 s=L，运动终止（v=0）');
+        }
+        lines.push('N = mg·cosθ = ' + fmt(F.N) + ' N；Ek+Ep+Wf = ' + fmt(en.E + en.Wf) + ' J（能量守恒校验）');
+        formulaNote.innerHTML = lines.map(l => '<div>' + l + '</div>').join('');
+
+        conclusionEl.innerHTML = conclusionText(st, F, en, tanTh, thC);
+    }
+
+    function conclusionText(st, F, en, tanTh, thC) {
+        const tanS = 'tanθ = ' + fmt(tanTh, 3);
+        if (st.phase === 'up') {
+            return '上滑阶段：摩擦力沿斜面<b>向下</b>，a<sub>up</sub> = g(sinθ+μk·cosθ) = <span class="hl">' + fmt(-INCLINE.derive(P).aUp) + ' m/s²</span>，物块做匀减速运动，滑行距离 s<sub>max</sub> = v₀²/(2a<sub>up</sub>)。';
+        }
+        if (st.phase === 'down-acc') {
+            if (st.note === 'reverse') {
+                return '速度减为零后 ' + tanS + ' &gt; μs，静摩擦不足以自锁，摩擦力突变为沿斜面<b>向上</b>，物块反向下滑；a<sub>down</sub> = ' + fmt(-st.a) + ' m/s² &lt; a<sub>up</sub>，故下滑时间比上滑更长（v-t 图斜率不对称）。';
+            }
+            return '初速度沿斜面向下，' + tanS + ' &gt; μk，重力下滑分力大于滑动摩擦力，物块做匀加速下滑，a = g(sinθ−μk·cosθ) = <span class="hl">' + fmt(-st.a) + ' m/s²</span>。';
+        }
+        if (st.phase === 'down-uni') {
+            return tanS + ' = μk：下滑分力与滑动摩擦力恰好平衡，a = 0，物块匀速下滑。';
+        }
+        if (st.phase === 'down-dec') {
+            return tanS + ' &lt; μk：滑动摩擦力大于下滑分力，物块匀减速下滑直至静止，随后 f静 = mg·sinθ 即可自锁，不会再次下滑。';
+        }
+        if (st.phase === 'locked') {
+            if (st.note === 'top' && P.theta > 0) {
+                return '到达最高点 v=0。因 ' + tanS + ' ≤ μs = ' + fmt(P.mu_s) + '（θc = ' + fmt(thC, 2) + '°），最大静摩擦足以平衡下滑分力，物块<b>保持静止于最高点</b>，不会反向下滑。';
+            }
+            if (st.note === 'flat-stop') {
+                return '物块减速至 v=0。水平面上 tanθ = 0 ≤ μs，静摩擦足以平衡一切趋势，物块<b>保持静止</b>。';
+            }
+            if (st.note === 'down-stop') {
+                return '下滑减速至 v=0 后，' + tanS + ' ≤ μs，物块就地静止自锁。';
+            }
+            return tanS + ' ≤ μs = ' + fmt(P.mu_s) + '：最大静摩擦 fmax = μs·mg·cosθ ≥ mg·sinθ，物块<b>自锁静止</b>（f = mg·sinθ = ' + fmt(F.gAlong) + ' N）。将 θ 增大到临界角 ' + fmt(thC, 2) + '° 以上可破坏自锁。';
+        }
+        if (st.phase === 'bottom') {
+            return '物块到达斜面底端（s=0），运动停止。全程摩擦生热 Wf = ' + fmt(en.Wf) + ' J，机械能相应减少 ' + fmt(tl.E0 - en.E) + ' J。';
+        }
+        if (st.phase === 'overflow') {
+            return '物块冲出斜面顶端（s=L）！可减小初速度 v₀、增大 μk 或减小 θ 后重试。';
+        }
+        return '—';
+    }
+
+    function drawCharts(st) {
+        const vAll = vSamples.map(p => p[1]).concat([0]);
+        let vMin = Math.min(...vAll), vMax = Math.max(...vAll);
+        if (vMax - vMin < 1) { vMax += 0.5; vMin -= 0.5; }
+        const pad = (vMax - vMin) * 0.12;
+        const markers = [];
+        tl.events.forEach(ev => {
+            if (ev.type === 'top') markers.push({ t: ev.t, y: 0, color: '#0d9488' });
+            if (ev.type === 'stop') markers.push({ t: ev.t, y: 0, color: '#7c3aed' });
+            if (ev.type === 'bottom') markers.push({ t: ev.t, y: valueAt(vSamples, Math.max(0, ev.t - 1e-6)) || 0, color: '#475569' });
+        });
+        drawLineChart(vtCtx, vtView.width, vtView.height, {
+            tEnd: tl.tEnd, tNow: st.t, yMin: vMin - pad, yMax: vMax + pad,
+            series: [{ pts: vSamples, color: '#2563eb', dashColor: 'rgba(37, 99, 235, 0.45)', label: 'v', unit: ' m/s' }],
+            xLabel: 't/s', yLabel: 'v (m/s)，向上为正',
+            markers
+        });
+        const sMax = Math.max(...sSamples.map(p => p[1]), 0.5);
+        drawLineChart(stCtx, stView.width, stView.height, {
+            tEnd: tl.tEnd, tNow: st.t, yMin: 0, yMax: niceCeil(sMax * 1.06),
+            series: [{ pts: sSamples, color: '#0d9488', dashColor: 'rgba(13, 148, 136, 0.45)', label: 's', unit: ' m' }],
+            xLabel: 't/s', yLabel: 's (m)，沿斜面向上为正',
+            markers: tl.events.filter(e => e.type === 'top').map(ev => ({ t: ev.t, y: ev.s, color: '#0d9488' }))
+        });
+        drawEnergyChart(st);
+    }
+
+    function renderAll() {
+        if (!tl) return;
+        const st = INCLINE.stateAt(tl, t);
+        drawScene(st);
+        drawCharts(st);
+        updateReadouts(st);
+    }
+
+    function currentSt() { return INCLINE.stateAt(tl, t); }
+
+    function setPlayBtn() {
+        if (state === 'running') btnPlay.textContent = '⏸ 暂停';
+        else if (state === 'paused') btnPlay.textContent = '▶ 继续';
+        else if (state === 'ended') btnPlay.textContent = '▶ 重新播放';
+        else btnPlay.textContent = '▶ 播放';
+    }
+
+    function pauseInternal() {
+        if (state !== 'running') return;
+        state = 'paused';
+        if (raf) { cancelAnimationFrame(raf); raf = null; }
+        setPlayBtn();
+    }
+
+    function startPlay() {
+        if (state === 'running') return;
+        if (raf) { cancelAnimationFrame(raf); raf = null; }
+        if (state === 'ended' || stale) {
+            rebuild();
+        }
+        state = 'running';
+        lastTs = null;
+        setPlayBtn();
+        renderAll();
+        raf = requestAnimationFrame(frame);
+    }
+
+    function frame(ts) {
+        if (state !== 'running') return;
+        if (lastTs === null) lastTs = ts;
+        const dt = Math.min((ts - lastTs) / 1000, 0.05) * rate;
+        lastTs = ts;
+        t = Math.min(t + dt, tl.tEnd);
+        if (t >= tl.tEnd - 1e-9) {
+            state = 'ended';
+            renderAll();
+            setPlayBtn();
+            return;
+        }
+        renderAll();
+        raf = requestAnimationFrame(frame);
+    }
+
+    function resetTime() {
+        if (raf) { cancelAnimationFrame(raf); raf = null; }
+        if (stale) { rebuild(); }
+        state = 'idle';
+        t = 0;
+        setPlayBtn();
+        renderAll();
+    }
+
+    function stepForward() {
+        if (state === 'running') pauseInternal();
+        if (stale || state === 'ended') rebuild();
+        state = 'paused';
+        t = Math.min(t + 0.02, tl.tEnd);
+        setPlayBtn();
+        renderAll();
+    }
+
+    function togglePlay() {
+        if (state === 'running') pauseInternal();
+        else startPlay();
+    }
+
+    function applyParams(src) {
+        const set = (id, v, dec) => {
+            const val = Number(v.toFixed(dec));
+            inputs[id].range.value = val;
+            inputs[id].num.value = val;
+        };
+        set('theta', src.theta, 0);
+        set('len', src.len, 1);
+        set('mass', src.mass, 1);
+        set('muk', src.muk, 2);
+        set('mus', src.mus, 2);
+        set('s0', src.s0, 1);
+        set('v0', src.v0, 1);
+        document.querySelector('input[name=v0dir][value="' + (src.dir >= 0 ? '1' : '-1') + '"]').checked = true;
+        gravitySel.value = String(src.g);
+        syncS0Max();
+        presetSel.value = 'custom';
+    }
+
+    function syncS0Max() {
+        const L = Number(inputs.len.range.value);
+        inputs.s0.range.max = String(L);
+        inputs.s0.num.max = String(L);
+        if (Number(inputs.s0.range.value) > L) {
+            inputs.s0.range.value = L;
+            inputs.s0.num.value = L;
+        }
+    }
+
+    function enforceMus() {
+        const muk = Number(inputs.muk.range.value);
+        const mus = Number(inputs.mus.range.value);
+        if (mus < muk - 1e-9) {
+            inputs.mus.range.value = muk;
+            inputs.mus.num.value = muk;
+            showToast('μs 不可小于 μk，已自动修正 μs = ' + muk.toFixed(2));
+        }
+    }
+
+    function bindPair(id, after) {
+        const r = inputs[id].range, n = inputs[id].num;
+        const apply = (val, from) => {
+            let v;
+            if (val === '' || val === null || !isFinite(Number(val))) {
+                v = Number(r.value);
+            } else {
+                v = Number(val);
+            }
+            v = Math.min(Math.max(v, Number(r.min)), Number(r.max));
+            const step = Number(r.step);
+            v = Math.round(v / step) * step;
+            v = Number(v.toFixed(4));
+            r.value = v;
+            n.value = v;
+            if (after) after(v);
+            markParamTouched();
+        };
+        r.addEventListener('input', () => apply(r.value, 'range'));
+        n.addEventListener('change', () => apply(n.value, 'num'));
+    }
+
+    bindPair('theta');
+    bindPair('len', () => { syncS0Max(); });
+    bindPair('mass');
+    bindPair('muk', () => { enforceMus(); });
+    bindPair('mus', () => { enforceMus(); });
+    bindPair('s0');
+    bindPair('v0');
+
+    gravitySel.addEventListener('change', markParamTouched);
+    document.querySelectorAll('input[name=v0dir]').forEach(r => r.addEventListener('change', markParamTouched));
+    Object.values(toggles).forEach(tb => tb.addEventListener('change', renderAll));
+
+    presetSel.addEventListener('change', () => {
+        const key = presetSel.value;
+        if (key === 'custom') return;
+        applyParams(PRESETS[key]);
+        if (raf) { cancelAnimationFrame(raf); raf = null; }
+        state = 'idle';
+        rebuild();
+        setPlayBtn();
+    });
+
+    btnPlay.addEventListener('click', togglePlay);
+    btnReset.addEventListener('click', resetTime);
+    btnStep.addEventListener('click', stepForward);
+    btnResetAll.addEventListener('click', () => {
+        applyParams(DEFAULTS);
+        presetSel.value = 'custom';
+        if (raf) { cancelAnimationFrame(raf); raf = null; }
+        state = 'idle';
+        rebuild();
+        setPlayBtn();
+        showToast('已恢复默认参数');
+    });
+    btnHelp.addEventListener('click', () => helpModal.classList.add('open'));
+    btnHelpClose.addEventListener('click', () => helpModal.classList.remove('open'));
+    helpModal.addEventListener('click', e => {
+        if (e.target === helpModal) helpModal.classList.remove('open');
+    });
+    btnTheme.addEventListener('click', () => {
+        document.body.classList.toggle('dark');
+        renderAll();
+    });
+    btnCollapse.addEventListener('click', () => {
+        const collapsed = chartsSection.classList.toggle('collapsed');
+        btnCollapse.textContent = collapsed ? '展开图表' : '收起图表';
+        if (!collapsed) resizeAll();
+    });
+
+    progress.addEventListener('pointerdown', () => { scrubbing = true; });
+    progress.addEventListener('pointerup', () => { scrubbing = false; });
+    progress.addEventListener('input', () => {
+        if (!tl) return;
+        if (state === 'running') pauseInternal();
+        t = Math.min(Math.max(Number(progress.value), 0), tl.tEnd);
+        renderAll();
+    });
+
+    speedGroup.querySelectorAll('button').forEach(b => {
+        b.addEventListener('click', () => {
+            rate = Number(b.dataset.rate);
+            speedGroup.querySelectorAll('button').forEach(x => x.classList.toggle('active', x === b));
+        });
+    });
+
+    document.addEventListener('keydown', e => {
+        const tag = e.target && e.target.tagName;
+        if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA' || tag === 'BUTTON') return;
+        if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
+        else if (e.code === 'KeyR') { e.preventDefault(); resetTime(); }
+        else if (e.code === 'ArrowRight') { e.preventDefault(); stepForward(); }
+    });
+
+    function canvasPos(ev) {
+        const rect = canvas.getBoundingClientRect();
+        return { x: (ev.clientX - rect.left) * (view.width / rect.width), y: (ev.clientY - rect.top) * (view.height / rect.height) };
+    }
+
+    function hitBlock(pos) {
+        if (!geo) return false;
+        const dNow = currentSt().s / P.L * geo.slopePx;
+        const C = blockCenterAt(dNow);
+        return Math.hypot(pos.x - C.x, pos.y - C.y) < 30;
+    }
+
+    canvas.addEventListener('pointermove', ev => {
+        const pos = canvasPos(ev);
+        if (dragging) {
+            const rel = (pos.x - geo.x0) * geo.ux + (pos.y - geo.groundY) * geo.uy;
+            let sNew = rel / geo.slopePx * P.L;
+            sNew = Math.round(Math.min(Math.max(sNew, 0), P.L) * 10) / 10;
+            if (Math.abs(sNew - Number(inputs.s0.range.value)) >= 0.05) {
+                inputs.s0.range.value = sNew;
+                inputs.s0.num.value = sNew;
+                presetSel.value = 'custom';
+                rebuild();
+            }
+            return;
+        }
+        if (state === 'idle') {
+            hoverBlock = hitBlock(pos);
+            canvas.style.cursor = hoverBlock ? 'grab' : 'default';
+        } else {
+            canvas.style.cursor = 'default';
+        }
+    });
+    canvas.addEventListener('pointerdown', ev => {
+        if (state !== 'idle') return;
+        const pos = canvasPos(ev);
+        if (hitBlock(pos)) {
+            dragging = true;
+            canvas.style.cursor = 'grabbing';
+            canvas.setPointerCapture(ev.pointerId);
+        }
+    });
+    canvas.addEventListener('pointerup', ev => {
+        if (dragging) {
+            dragging = false;
+            canvas.style.cursor = 'grab';
+        }
+    });
+
+    window.getSimState = () => ({
+        state, t, stale,
+        tEnd: tl ? tl.tEnd : 0,
+        st: tl ? (st => ({ s: st.s, v: st.v, a: st.a, phase: st.phase, note: st.note }))(INCLINE.stateAt(tl, t)) : null,
+        badge: badgePhase.textContent,
+        params: P
+    });
+    window.__geo = () => geo ? { x0: geo.x0, groundY: geo.groundY, slopePx: geo.slopePx, ux: geo.ux, uy: geo.uy } : null;
+    window.__blockClientPos = () => {
+        if (!geo || !P) return null;
+        const rect = canvas.getBoundingClientRect();
+        const dNow = currentSt().s / P.L * geo.slopePx;
+        const C = blockCenterAt(dNow);
+        const k = rect.width / view.width;
+        return {
+            x: rect.left + C.x * k,
+            y: rect.top + C.y * k,
+            ux: geo.ux, uy: geo.uy,
+            pxPerM: geo.slopePx / P.L * k
+        };
+    };
+
+    let resizeObserved = false;
+    window.addEventListener('resize', resizeAll);
+    if (typeof ResizeObserver !== 'undefined') {
+        const obs = new ResizeObserver(() => {
+            if (!resizeObserved) { resizeObserved = true; return; }
+            resizeAll();
+        });
+        obs.observe(canvas);
+        obs.observe(vtCanvas);
+        obs.observe(stCanvas);
+        obs.observe(enCanvas);
+    }
+
+    applyParams(DEFAULTS);
+    resizeAll();
+    rebuild();
+    buildChartSamples();
+    setPlayBtn();
+</script>
+</body>
+</html>
