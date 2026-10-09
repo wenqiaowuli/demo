@@ -650,6 +650,19 @@ function boot(){
     }
     ctx.restore();
   }
+  function drawStopBadge(ctx, x, y){
+    ctx.save();
+    ctx.font = sceneFont(11, true);
+    const txt = '已停下';
+    const w = ctx.measureText(txt).width + 12, h = 18;
+    ctx.fillStyle = '#e5e7eb'; ctx.strokeStyle = '#9ca3af'; ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.roundRect ? ctx.roundRect(x - w / 2, y - h / 2, w, h, 9) : ctx.rect(x - w / 2, y - h / 2, w, h);
+    ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#374151'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(txt, x, y + 1);
+    ctx.restore();
+  }
   function drawAnim(){
     const {ctx, W, H} = prep(el('animCanvas'));
     const [wlo, whi] = worldRange();
@@ -715,10 +728,7 @@ function boot(){
       ctx.fillStyle = '#9ca3af'; ctx.textAlign = 'center'; ctx.font = sceneFont(11);
       ctx.fillText('未出发', cx, cy - R - 8);
     }
-    if (sa.s){
-      ctx.fillStyle = '#9ca3af'; ctx.textAlign = 'center'; ctx.font = sceneFont(11);
-      ctx.fillText('已停', cx, cy + R + 12);
-    }
+    if (sa.s) drawStopBadge(ctx, cx, cy + R + 14);
     if (Math.abs(sa.v) > EPS){
       const dir = sa.v > 0 ? 1 : -1;
       const len = Math.min(8 + Math.abs(sa.v) * 1.8, 26);
@@ -728,6 +738,9 @@ function boot(){
     if (overlap){
       const coreR = sep < R ? R * 0.58 : R;
       drawBall(ctx, dx, cy, coreR, 'B', cB, sb.w ? 'w' : sb.s ? 's' : 'r');
+      // 相遇重合：A 的蓝色外环始终可见，与内芯 B 的橙色形成双色同心
+      ctx.strokeStyle = cA; ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.stroke();
       ctx.fillStyle = cA; ctx.textAlign = 'center'; ctx.font = sceneFont(11, true);
       ctx.fillText('A', cx, cy - R - 5);
       ctx.fillStyle = '#fff';
@@ -741,10 +754,7 @@ function boot(){
       ctx.fillStyle = '#9ca3af'; ctx.textAlign = 'center'; ctx.font = sceneFont(11);
       ctx.fillText('未出发', dx, cy - R - 8);
     }
-    if (sb.s){
-      ctx.fillStyle = '#9ca3af'; ctx.textAlign = 'center'; ctx.font = sceneFont(11);
-      ctx.fillText('已停', dx, cy + R + 12);
-    }
+    if (sb.s) drawStopBadge(ctx, dx, cy + R + 14);
     if (Math.abs(sb.v) > EPS){
       const dir = sb.v > 0 ? 1 : -1;
       const len = Math.min(8 + Math.abs(sb.v) * 1.8, 26);
@@ -756,8 +766,15 @@ function boot(){
         const dd = t - m.t;
         if (dd >= 0 && dd <= 0.8){
           const p = dd / 0.8;
-          ctx.strokeStyle = `rgba(220,38,38,${1 - p})`; ctx.lineWidth = 3;
-          ctx.beginPath(); ctx.arc(X(m.x), cy - 6, 16 + 14 * p, 0, Math.PI * 2); ctx.stroke();
+          const rx = X(m.x);
+          // 双层同心涟漪光环（相位错开，颜色分别取 A 蓝、B 橙）
+          [[0, cA], [0.35, cB]].forEach(([off, col]) => {
+            const q = Math.min(Math.max((p - off) / (1 - off), 0), 1);
+            if (q <= 0) return;
+            ctx.strokeStyle = col; ctx.globalAlpha = 1 - q; ctx.lineWidth = 3;
+            ctx.beginPath(); ctx.arc(rx, cy, R + 4 + 22 * q, 0, Math.PI * 2); ctx.stroke();
+            ctx.globalAlpha = 1;
+          });
           ctx.fillStyle = '#dc2626'; ctx.textAlign = 'center'; ctx.font = sceneFont(13, true);
           const word = P.mode === 'same' ? (i === 0 ? '追上了！' : '再次相遇！') : '相遇！';
           ctx.fillText(word, X(m.x), y0 - 74);
@@ -808,14 +825,15 @@ function boot(){
     g.ctx.beginPath(); g.ctx.arc(x, y, 3.5, 0, Math.PI * 2); g.ctx.fill();
     g.ctx.strokeStyle = '#fff'; g.ctx.lineWidth = 1; g.ctx.stroke();
   }
-  function vline(g, tt, label){
+  function vline(g, tt, label, row){
     const x = g.X(tt);
     g.ctx.strokeStyle = '#b0b7c3'; g.ctx.setLineDash([5, 4]); g.ctx.lineWidth = 1;
     g.ctx.beginPath(); g.ctx.moveTo(x, g.mT); g.ctx.lineTo(x, g.H - g.mB); g.ctx.stroke();
     g.ctx.setLineDash([]);
     if (label && ckKey.checked){
       g.ctx.fillStyle = '#92400e'; g.ctx.textAlign = 'center'; g.ctx.font = '10.5px system-ui, sans-serif';
-      g.ctx.fillText(label, x, g.mT + 9);
+      // 同一图内多条标签错行显示，避免文字重叠
+      g.ctx.fillText(label, x, g.mT + 9 + (row || 0) * 12);
     }
   }
   function chartBounds(){
@@ -865,7 +883,7 @@ function boot(){
     if (tStar) vline(g, tStar.t, `v相等(间距极值) t=${f2(tStar.t)}s`);
     sol.meetings.forEach(m => {
       if (tStar && Math.abs(m.t - tStar.t) < 1e-6) return;
-      vline(g, m.t, `${P.mode === 'same' ? '追及' : '相遇'} t=${f2(m.t)}s`);
+      vline(g, m.t, `${P.mode === 'same' ? '追及' : '相遇'} t=${f2(m.t)}s`, 1);
     });
 
     [pts.A, pts.B].forEach((arr, idx) => {
@@ -893,7 +911,7 @@ function boot(){
     if (tStar) vline(g, tStar.t, `v相等(间距极值) t=${f2(tStar.t)}s`);
     sol.meetings.forEach(m => {
       if (tStar && Math.abs(m.t - tStar.t) < 1e-6) return;
-      vline(g, m.t, `${P.mode === 'same' ? '追及' : '相遇'} t=${f2(m.t)}s`);
+      vline(g, m.t, `${P.mode === 'same' ? '追及' : '相遇'} t=${f2(m.t)}s`, 1);
     });
 
     [[OA, cA], [OB, cB]].forEach(([o, col]) => {
