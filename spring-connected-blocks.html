@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>弹簧连接物块模型｜高中物理</title>
+<meta name="description" content="弹簧连接物块动画演示：观察外力作用下弹簧形变量、弹力、物块加速度与运动状态的变化。">
+<style>
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  min-height: 100vh;
+  padding: 22px 14px 36px;
+  background: #eef2f6;
+  color: #1f2937;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+main { width: min(100%, 920px); margin: 0 auto; }
+h1 { margin: 0 0 6px; font-size: 24px; text-align: center; }
+.subtitle { margin: 0 0 16px; color: #64748b; font-size: 13px; text-align: center; line-height: 1.6; }
+.panel { margin-top: 14px; padding: 15px 16px; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 1px 3px #0f172a0a; }
+.scene-wrap { width: 100%; }
+canvas { display: block; width: 100%; background: #fff; border: 2px solid #2563eb; border-radius: 10px; }
+#scene { aspect-ratio: 880 / 430; }
+.charts { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; }
+.chart-title, .section-title { margin: 0 0 10px; color: #64748b; font-size: 12px; letter-spacing: .3px; }
+.chart { aspect-ratio: 20 / 9; }
+.toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 9px; margin-top: 14px; }
+.seek-row { display: grid; grid-template-columns: 78px 1fr 74px; align-items: center; gap: 10px; margin-top: 10px; color: #64748b; font-size: 12px; }
+.seek-row input { width: 100%; accent-color: #2563eb; }
+button, select { min-height: 36px; border: 0; border-radius: 8px; padding: 8px 14px; font: inherit; font-size: 14px; }
+button { color: white; background: #2563eb; cursor: pointer; }
+button:hover:not(:disabled) { background: #1d4ed8; }
+button:disabled { opacity: .45; cursor: not-allowed; }
+select { border: 1px solid #dbe2ea; color: #1f2937; background: #fff; }
+.time-label { margin-left: auto; color: #64748b; font-size: 13px; font-variant-numeric: tabular-nums; }
+.layout { display: grid; grid-template-columns: .9fr 1.1fr; gap: 14px; margin-top: 14px; }
+.param-row { display: grid; grid-template-columns: 142px 1fr 75px; align-items: center; gap: 9px; margin: 12px 0; font-size: 13px; }
+.param-row input { width: 100%; accent-color: #2563eb; }
+.param-row output { text-align: right; color: #334155; font-variant-numeric: tabular-nums; white-space: nowrap; }
+input:disabled, select:disabled { opacity: .5; }
+.data-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.data-item { min-width: 0; padding: 9px 10px; background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 8px; }
+.data-item span { display: block; margin-bottom: 4px; color: #64748b; font-size: 11px; }
+.data-item b { display: block; color: #1f2937; font-size: 14px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.blue { color: #0284c7 !important; }
+.orange { color: #ea580c !important; }
+.cyan { color: #0891b2 !important; }
+.formula { color: #475569; font-size: 13px; line-height: 1.85; }
+.formula b { color: #1f2937; }
+.formula .highlight { color: #b45309; }
+.legend { margin: 12px 0 0; color: #64748b; font-size: 12px; text-align: center; line-height: 1.8; }
+.legend span { margin: 0 7px; }
+.swatch { display: inline-block; width: 10px; height: 3px; margin: 0 4px 3px 0; border-radius: 2px; }
+@media (max-width: 720px) {
+  body { padding: 16px 10px 28px; }
+  h1 { font-size: 21px; }
+  .charts, .layout { grid-template-columns: 1fr; }
+  .data-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .param-row { grid-template-columns: 116px 1fr 67px; gap: 6px; }
+  .time-label { width: 100%; margin-left: 0; }
+  .seek-row { grid-template-columns: 65px 1fr 62px; gap: 6px; }
+}
+</style>
+</head>
+<body>
+<main>
+  <h1>弹簧连接物块模型</h1>
+  <p class="subtitle">水平光滑面上，A、B 两物块由轻弹簧连接；对 B 施加恒力，观察弹簧弹力与物块运动的变化</p>
+
+  <section class="scene-wrap" aria-label="弹簧连接物块动画场景">
+    <canvas id="scene" width="880" height="430" role="img" aria-label="水平面上的两个弹簧连接物块，B受到向右恒力"></canvas>
+  </section>
+
+  <div class="toolbar" aria-label="动画控制">
+    <button id="play">▶ 开始</button>
+    <button id="pause" disabled>⏸ 暂停</button>
+    <button id="reset">⟲ 重置</button>
+    <button id="stepBack" disabled aria-label="后退0.1秒">−0.1 s</button>
+    <button id="stepForward" aria-label="前进0.1秒">+0.1 s</button>
+    <select id="speed" aria-label="播放速度">
+      <option value="0.5">0.5×</option>
+      <option value="1" selected>1×</option>
+      <option value="1.5">1.5×</option>
+      <option value="2">2×</option>
+    </select>
+    <span class="time-label" id="clock">t = 0.00 s</span>
+  </div>
+  <div class="seek-row">
+    <label for="timeSeek">时间定位</label>
+    <input id="timeSeek" type="range" min="0" max="12" step="0.01" value="0" aria-label="定位演示时间">
+    <output id="seekValue">0.00 s</output>
+  </div>
+
+  <div class="charts">
+    <section>
+      <p class="chart-title">弹簧形变量—时间图（Δl-t，虚线为平衡形变）</p>
+      <canvas class="chart" id="extensionChart" width="440" height="198" role="img" aria-label="弹簧形变量随时间变化图，虚线表示平衡形变量"></canvas>
+    </section>
+    <section>
+      <p class="chart-title">加速度—时间图（a-t，虚线为质心加速度）</p>
+      <canvas class="chart" id="accelChart" width="440" height="198" role="img" aria-label="A、B两物块加速度及质心加速度随时间变化图，虚线表示质心加速度"></canvas>
+    </section>
+  </div>
+
+  <div class="layout">
+    <section class="panel" aria-labelledby="paramsTitle">
+      <h2 class="section-title" id="paramsTitle">参数设定</h2>
+      <div class="param-row"><label for="massA">A 物块质量 m<sub>A</sub></label><input id="massA" type="range" min="0.5" max="4" step="0.1" value="1"><output id="massAVal">1.0 kg</output></div>
+      <div class="param-row"><label for="massB">B 物块质量 m<sub>B</sub></label><input id="massB" type="range" min="0.5" max="4" step="0.1" value="1"><output id="massBVal">1.0 kg</output></div>
+      <div class="param-row"><label for="stiffness">弹簧劲度系数 k</label><input id="stiffness" type="range" min="5" max="50" step="1" value="20"><output id="stiffnessVal">20 N/m</output></div>
+      <div class="param-row"><label for="force">外力 F</label><input id="force" type="range" min="0" max="12" step="0.5" value="4"><output id="forceVal">4.0 N</output></div>
+      <div class="param-row"><label for="initial">初始形变量 Δl₀</label><input id="initial" type="range" min="-0.5" max="0.5" step="0.05" value="0"><output id="initialVal">0.00 m</output></div>
+    </section>
+    <section class="panel" aria-labelledby="dataTitle" aria-live="polite">
+      <h2 class="section-title" id="dataTitle">实时物理量</h2>
+      <div class="data-grid">
+        <div class="data-item"><span>时间 t</span><b id="timeData">0.00 s</b></div>
+        <div class="data-item"><span>弹簧形变量 Δl</span><b id="extensionData" class="cyan">0.000 m</b></div>
+        <div class="data-item"><span>弹簧弹力 |F<sub>弹</sub>|</span><b id="springForceData" class="cyan">0.00 N</b></div>
+        <div class="data-item"><span>A 加速度 a<sub>A</sub></span><b id="accelAData" class="blue">0.00 m/s²</b></div>
+        <div class="data-item"><span>B 加速度 a<sub>B</sub></span><b id="accelBData" class="orange">4.00 m/s²</b></div>
+        <div class="data-item"><span>系统质心加速度</span><b id="accelCMData">2.00 m/s²</b></div>
+        <div class="data-item"><span>A 速度 v<sub>A</sub></span><b id="velocityAData" class="blue">0.00 m/s</b></div>
+        <div class="data-item"><span>B 速度 v<sub>B</sub></span><b id="velocityBData" class="orange">0.00 m/s</b></div>
+        <div class="data-item"><span>相对平衡形变 Δl<sub>平</sub></span><b id="equilibriumData">0.100 m</b></div>
+      </div>
+    </section>
+  </div>
+
+  <section class="panel formula" aria-label="模型说明">
+    <h2 class="section-title">模型与规律</h2>
+    取向右为正，弹簧原长为 <b>L₀ = 2.2 m</b>，忽略摩擦与空气阻力。B 受恒力 F 向右，弹簧形变量记为 <b>Δl</b>（伸长为正、压缩为负）。<br>
+    对 A：<b>m<sub>A</sub>a<sub>A</sub> = kΔl</b>；对 B：<b>m<sub>B</sub>a<sub>B</sub> = F − kΔl</b>。因此系统质心以 <b>a<sub>质心</sub> = F/(m<sub>A</sub>+m<sub>B</sub>)</b> 匀加速运动。<br>
+    相对运动围绕平衡形变 <b>Δl<sub>平</sub> = Fm<sub>A</sub>/[k(m<sub>A</sub>+m<sub>B</sub>)]</b> 往复变化；当弹簧处于原长时弹力为零，此时 <b class="highlight">A 的加速度为零，B 的加速度为 F/m<sub>B</sub></b>；若弹簧压缩，弹簧也会向右推 B，故 B 的加速度可以大于 F/m<sub>B</sub>。
+  </section>
+  <p class="legend"><span><i class="swatch" style="background:#0284c7"></i>A 物块</span><span><i class="swatch" style="background:#ea580c"></i>B 物块</span><span><i class="swatch" style="background:#0ea5e9"></i>弹簧</span><span>⌨ 空格：播放/暂停　R：重置</span></p>
+</main>
+
+<script>
+(() => {
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const scene = $('scene'), sceneCtx = scene.getContext('2d');
+  const extChart = $('extensionChart'), extCtx = extChart.getContext('2d');
+  const accChart = $('accelChart'), accCtx = accChart.getContext('2d');
+  const ids = ['massA', 'massB', 'stiffness', 'force', 'initial'];
+  const sliders = Object.fromEntries(ids.map(id => [id, $(id)]));
+  const seek = $('timeSeek');
+  const duration = 12;
+  let p = {}, time = 0, playing = false, lastFrame = 0;
+
+  function fitCanvas(canvas) {
+    const width = canvas.clientWidth, height = canvas.clientHeight;
+    if (!width || !height) return;
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.round(width * dpr);
+    canvas.height = Math.round(height * dpr);
+    canvas.getContext('2d').setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  function fitAll() { [scene, extChart, accChart].forEach(fitCanvas); draw(); }
+  window.addEventListener('resize', fitAll);
+
+  function readParams() {
+    p = {
+      mA: +sliders.massA.value, mB: +sliders.massB.value,
+      k: +sliders.stiffness.value, F: +sliders.force.value,
+      e0: +sliders.initial.value
+    };
+    scene.setAttribute('aria-label', p.F > 0
+      ? `水平光滑面上的弹簧连接物块，B受向右恒力 ${p.F.toFixed(1)} N`
+      : '水平光滑面上的弹簧连接物块，外力为零');
+    $('massAVal').textContent = p.mA.toFixed(1) + ' kg';
+    $('massBVal').textContent = p.mB.toFixed(1) + ' kg';
+    $('stiffnessVal').textContent = p.k.toFixed(0) + ' N/m';
+    $('forceVal').textContent = p.F.toFixed(1) + ' N';
+    $('initialVal').textContent = p.e0.toFixed(2) + ' m';
+  }
+
+  function formatNumber(value, digits = 2) {
+    const roundedZero = Math.abs(value) < 0.5 * Math.pow(10, -digits) ? 0 : value;
+    return roundedZero.toFixed(digits);
+  }
+
+  function stateAt(t) {
+    const total = p.mA + p.mB;
+    const reduced = p.mA * p.mB / total;
+    const omega = Math.sqrt(p.k / reduced);
+    const eq = p.F * p.mA / (p.k * total);
+    const offset = p.e0 - eq;
+    const e = eq + offset * Math.cos(omega * t);
+    const edot = -offset * omega * Math.sin(omega * t);
+    const eddot = -offset * omega * omega * Math.cos(omega * t);
+    const cmA = p.F / total;
+    const vcm = cmA * t;
+    const aA = cmA - p.mB / total * eddot;
+    const aB = cmA + p.mA / total * eddot;
+    const vA = vcm - p.mB / total * edot;
+    const vB = vcm + p.mA / total * edot;
+    return { e, edot, eq, omega, aA, aB, vA, vB, cmA, springForce: p.k * e };
+  }
+
+  function arrow(ctx, x1, y, x2, color, label, labelBelow = false) {
+    const length = Math.abs(x2 - x1);
+    if (length < 0.2) return;
+    const dir = Math.sign(x2 - x1);
+    const tip = Math.min(7, Math.max(1.5, length * 0.45));
+    ctx.save();
+    ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.moveTo(x1, y); ctx.lineTo(x2, y); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x2, y); ctx.lineTo(x2 - dir * tip, y - tip * .7); ctx.lineTo(x2 - dir * tip, y + tip * .7); ctx.closePath(); ctx.fill();
+    ctx.font = '12px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = labelBelow ? 'top' : 'bottom';
+    ctx.fillText(label, (x1 + x2) / 2, labelBelow ? y + 4 : y - 4);
+    ctx.restore();
+  }
+
+  function drawSpring(ctx, x1, x2, y) {
+    const gap = x2 - x1;
+    ctx.save(); ctx.strokeStyle = '#0ea5e9'; ctx.lineWidth = 3; ctx.lineJoin = 'round';
+    ctx.beginPath(); ctx.moveTo(x1, y);
+    if (gap > 12) {
+      const lead = Math.min(8, gap * .12), coils = 9;
+      ctx.lineTo(x1 + lead, y);
+      for (let i = 0; i < coils * 2; i++) {
+        const x = x1 + lead + (gap - 2 * lead) * (i + 1) / (coils * 2 + 1);
+        ctx.lineTo(x, y + (i % 2 ? -9 : 9));
+      }
+      ctx.lineTo(x2 - lead, y); ctx.lineTo(x2, y);
+    } else { ctx.lineTo(x2, y); }
+    ctx.stroke(); ctx.restore();
+  }
+
+  function drawScene() {
+    const w = scene.clientWidth, h = scene.clientHeight;
+    if (!w || !h) return;
+    sceneCtx.clearRect(0, 0, w, h);
+    sceneCtx.fillStyle = '#fbfdff'; sceneCtx.fillRect(0, 0, w, h);
+    sceneCtx.strokeStyle = '#f1f5f9'; sceneCtx.lineWidth = 1;
+    for (let x = 18; x < w; x += 24) { sceneCtx.beginPath(); sceneCtx.moveTo(x, 0); sceneCtx.lineTo(x, h); sceneCtx.stroke(); }
+    const center = w * .5, trackY = h * .72, blockW = Math.min(64, w * .07), blockH = Math.min(58, h * .17);
+    const s = Math.min(42, w * .05), centerGap = Math.max(blockW + 5, (2.2 + stateAt(time).e) * s);
+    const totalMass = p.mA + p.mB;
+    // 屏幕中线代表质心，按质量分配相对质心的位置。
+    const cA = center - p.mB / totalMass * centerGap, cB = center + p.mA / totalMass * centerGap;
+    const leftA = cA - blockW / 2, rightA = cA + blockW / 2;
+    const leftB = cB - blockW / 2, rightB = cB + blockW / 2;
+    const top = trackY - blockH;
+    const st = stateAt(time);
+
+    sceneCtx.fillStyle = '#e2e8f0'; sceneCtx.fillRect(30, trackY + 3, w - 60, 13);
+    sceneCtx.strokeStyle = '#64748b'; sceneCtx.lineWidth = 2;
+    sceneCtx.beginPath(); sceneCtx.moveTo(30, trackY); sceneCtx.lineTo(w - 30, trackY); sceneCtx.stroke();
+    const trackScroll = (0.5 * st.cmA * time * time * 8) % 17;
+    for (let x = 38 - trackScroll; x < w - 35; x += 17) { sceneCtx.beginPath(); sceneCtx.moveTo(x, trackY + 4); sceneCtx.lineTo(x - 7, trackY + 13); sceneCtx.stroke(); }
+
+    drawSpring(sceneCtx, rightA, leftB, trackY - blockH * .48);
+    sceneCtx.fillStyle = '#e0f2fe'; sceneCtx.strokeStyle = '#0284c7'; sceneCtx.lineWidth = 2;
+    sceneCtx.beginPath(); sceneCtx.roundRect(leftA, top, blockW, blockH, 8); sceneCtx.fill(); sceneCtx.stroke();
+    sceneCtx.fillStyle = '#ffedd5'; sceneCtx.strokeStyle = '#ea580c';
+    sceneCtx.beginPath(); sceneCtx.roundRect(leftB, top, blockW, blockH, 8); sceneCtx.fill(); sceneCtx.stroke();
+    sceneCtx.font = 'bold 17px system-ui'; sceneCtx.textAlign = 'center'; sceneCtx.textBaseline = 'middle';
+    sceneCtx.fillStyle = '#0369a1'; sceneCtx.fillText('A', cA, top + blockH / 2);
+    sceneCtx.fillStyle = '#c2410c'; sceneCtx.fillText('B', cB, top + blockH / 2);
+    sceneCtx.font = '11px system-ui'; sceneCtx.fillStyle = '#64748b'; sceneCtx.textBaseline = 'bottom';
+    sceneCtx.fillText(p.mA.toFixed(1) + ' kg', cA, top - 5);
+    sceneCtx.fillText(p.mB.toFixed(1) + ' kg', cB, top - 5);
+
+    const forceMax = Math.max(Math.abs(st.springForce), p.F);
+    const forceScale = forceMax > 0 ? Math.min(2.4, w * .004, 95 / forceMax) : 0;
+    if (p.F > 0) arrow(sceneCtx, rightB - 2, top + 10, rightB + p.F * forceScale, '#dc2626', 'F');
+    if (Math.abs(st.springForce) > 0.05) {
+      // 弹簧伸长时对 A 向右、对 B 向左；压缩时方向相反。
+      arrow(sceneCtx, cA, trackY + 16, cA + st.springForce * forceScale, '#0891b2', 'F弹(A)', true);
+      arrow(sceneCtx, cB, trackY + 35, cB - st.springForce * forceScale, '#0891b2', 'F弹(B)', true);
+    }
+
+    sceneCtx.fillStyle = '#334155'; sceneCtx.font = '13px system-ui'; sceneCtx.textAlign = 'center'; sceneCtx.textBaseline = 'top';
+    sceneCtx.fillText('水平光滑面', w / 2, 18);
+    sceneCtx.fillStyle = '#0f172a'; sceneCtx.font = 'bold 14px system-ui';
+    sceneCtx.fillText(`Δl = ${st.e.toFixed(3)} m　　F弹 = kΔl = ${st.springForce.toFixed(2)} N`, w / 2, 43);
+    sceneCtx.fillStyle = '#64748b'; sceneCtx.font = '12px system-ui';
+    sceneCtx.fillText(`视角随质心　aCM = ${st.cmA.toFixed(2)} m/s²　xCM = ${(0.5 * st.cmA * time * time).toFixed(1)} m`, w / 2, 65);
+    sceneCtx.strokeStyle = '#94a3b8'; sceneCtx.setLineDash([5, 5]); sceneCtx.lineWidth = 1;
+    sceneCtx.beginPath(); sceneCtx.moveTo(center, top - 4); sceneCtx.lineTo(center, trackY + 1); sceneCtx.stroke(); sceneCtx.setLineDash([]);
+  }
+
+  function drawChart(canvas, ctx, config) {
+    const w = canvas.clientWidth, h = canvas.clientHeight;
+    if (!w || !h) return;
+    ctx.clearRect(0, 0, w, h); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, w, h);
+    const pad = { l: 43, r: 12, t: 16, b: 28 }, gw = w - pad.l - pad.r, gh = h - pad.t - pad.b;
+    const xmax = Math.max(2, time), samples = Math.max(40, Math.ceil(xmax * 24));
+    const series = config.series.map(s => ({ ...s, points: [] }));
+    let min = 0, max = 0;
+    for (let i = 0; i <= samples; i++) {
+      const t = xmax * i / samples, values = config.values(t);
+      values.forEach((v, j) => { series[j].points.push([t, v]); min = Math.min(min, v); max = Math.max(max, v); });
+    }
+    if (max - min < .01) { min -= .5; max += .5; }
+    const padY = (max - min) * .12; min -= padY; max += padY;
+    const px = t => pad.l + t / xmax * gw, py = v => pad.t + (max - v) / (max - min) * gh;
+    ctx.fillStyle = '#f8fafc'; ctx.fillRect(pad.l, pad.t, gw, gh);
+    ctx.font = '10px system-ui'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    for (let i = 0; i <= 4; i++) {
+      const v = min + (max - min) * i / 4, y = py(v);
+      ctx.strokeStyle = Math.abs(v) < (max - min) * .03 ? '#94a3b8' : '#e2e8f0'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(pad.l + gw, y); ctx.stroke();
+      ctx.fillStyle = '#64748b'; ctx.fillText(v.toFixed(config.decimals), pad.l - 5, y);
+    }
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    for (let i = 0; i <= 4; i++) {
+      const t = xmax * i / 4, x = px(t);
+      ctx.strokeStyle = '#f1f5f9'; ctx.beginPath(); ctx.moveTo(x, pad.t); ctx.lineTo(x, pad.t + gh); ctx.stroke();
+      ctx.fillStyle = '#64748b'; ctx.fillText(t.toFixed(1), x, pad.t + gh + 5);
+    }
+    ctx.strokeStyle = '#94a3b8'; ctx.strokeRect(pad.l, pad.t, gw, gh);
+    ctx.textAlign = 'left'; ctx.textBaseline = 'top'; ctx.fillStyle = '#64748b'; ctx.fillText(config.ylabel, pad.l + 5, 2);
+    series.forEach((s, index) => {
+      ctx.strokeStyle = s.color; ctx.lineWidth = s.reference ? 1.5 : 2;
+      ctx.setLineDash(s.dash || []);
+      ctx.beginPath(); s.points.forEach(([t, v], i) => i ? ctx.lineTo(px(t), py(v)) : ctx.moveTo(px(t), py(v))); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = s.color; ctx.font = '10px system-ui'; ctx.textAlign = 'right'; ctx.fillText(s.name, pad.l + gw - 4, pad.t + 4 + index * 13);
+      const cur = config.values(time)[index];
+      if (!s.reference) { ctx.beginPath(); ctx.arc(px(time), py(cur), 3.2, 0, Math.PI * 2); ctx.fill(); }
+    });
+    ctx.strokeStyle = '#475569'; ctx.setLineDash([4, 4]); ctx.beginPath(); ctx.moveTo(px(time), pad.t); ctx.lineTo(px(time), pad.t + gh); ctx.stroke(); ctx.setLineDash([]);
+  }
+
+  function updateReadout() {
+    const st = stateAt(time);
+    $('clock').textContent = 't = ' + formatNumber(time) + ' s';
+    $('timeData').textContent = formatNumber(time) + ' s';
+    $('extensionData').textContent = formatNumber(st.e, 3) + ' m';
+    $('springForceData').textContent = formatNumber(Math.abs(st.springForce)) + ' N';
+    $('accelAData').textContent = formatNumber(st.aA) + ' m/s²';
+    $('accelBData').textContent = formatNumber(st.aB) + ' m/s²';
+    $('accelCMData').textContent = formatNumber(st.cmA) + ' m/s²';
+    $('velocityAData').textContent = formatNumber(st.vA) + ' m/s';
+    $('velocityBData').textContent = formatNumber(st.vB) + ' m/s';
+    $('equilibriumData').textContent = formatNumber(st.eq, 3) + ' m';
+    $('play').disabled = playing || time >= duration;
+    $('play').textContent = time >= duration ? '已完成' : time > 0 ? '▶ 继续' : '▶ 开始';
+    $('pause').disabled = !playing;
+    seek.value = time.toFixed(2);
+    $('seekValue').textContent = formatNumber(time) + ' s';
+    $('stepBack').disabled = time <= 0;
+    $('stepForward').disabled = time >= duration;
+  }
+
+  function draw() {
+    drawScene();
+    drawChart(extChart, extCtx, {
+      ylabel: 'Δl/m', decimals: 2,
+      series: [{ name: 'Δl', color: '#0ea5e9' }, { name: 'Δl平', color: '#64748b', dash: [4, 4], reference: true }],
+      values: t => { const s = stateAt(t); return [s.e, s.eq]; }
+    });
+    drawChart(accChart, accCtx, {
+      ylabel: 'a/(m/s²)', decimals: 1,
+      series: [{ name: 'A', color: '#0284c7' }, { name: 'B', color: '#ea580c' }, { name: 'aCM', color: '#64748b', dash: [4, 4], reference: true }],
+      values: t => { const s = stateAt(t); return [s.aA, s.aB, s.cmA]; }
+    });
+    updateReadout();
+  }
+
+  function setPlaying(value) {
+    playing = value;
+    $('play').disabled = value || time >= duration;
+    $('play').textContent = time >= duration ? '已完成' : time > 0 ? '▶ 继续' : '▶ 开始';
+    $('pause').disabled = !value;
+    ids.forEach(id => { sliders[id].disabled = value; });
+    $('speed').disabled = value;
+  }
+  function reset() { time = 0; lastFrame = 0; setPlaying(false); draw(); }
+  function loop(ts) {
+    if (playing) {
+      if (!lastFrame) lastFrame = ts;
+      const dt = Math.min((ts - lastFrame) / 1000, .05);
+      time = Math.min(duration, time + dt * +$('speed').value);
+      if (time >= duration) setPlaying(false);
+      lastFrame = ts;
+      draw();
+    }
+    requestAnimationFrame(loop);
+  }
+
+  ids.forEach(id => sliders[id].addEventListener('input', () => { readParams(); reset(); }));
+  $('play').addEventListener('click', () => { if (time >= duration) return; lastFrame = 0; setPlaying(true); });
+  $('pause').addEventListener('click', () => setPlaying(false));
+  $('reset').addEventListener('click', reset);
+  $('stepBack').addEventListener('click', () => { setPlaying(false); time = Math.max(0, time - 0.1); draw(); });
+  $('stepForward').addEventListener('click', () => { setPlaying(false); time = Math.min(duration, time + 0.1); draw(); });
+  seek.addEventListener('pointerdown', () => setPlaying(false));
+  seek.addEventListener('keydown', () => setPlaying(false));
+  seek.addEventListener('input', () => { setPlaying(false); time = +seek.value; draw(); });
+  $('speed').addEventListener('change', draw);
+  document.addEventListener('keydown', e => {
+    const tag = e.target && e.target.tagName;
+    if (e.code === 'KeyR') { e.preventDefault(); reset(); return; }
+    if (e.code !== 'Space' || ['INPUT', 'SELECT', 'TEXTAREA', 'BUTTON'].includes(tag)) return;
+    e.preventDefault();
+    if (playing) setPlaying(false);
+    else if (time < duration) { lastFrame = 0; setPlaying(true); }
+  });
+
+  readParams(); fitAll(); draw(); requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

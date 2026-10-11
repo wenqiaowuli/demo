@@ -1,0 +1,64 @@
+{
+  "request": {
+    "model": "jev-1.13",
+    "state": "候选页面 spring-connected-blocks.html，教材清单必修第一册第4章模型#27（拓展），单页离线 Canvas 网页。假设：A/B 质量 mA/mB∈[0.5,4]kg，水平光滑面；轻弹簧原长 L0=2.2m、k∈[5,50]N/m；恒力 F∈[0,12]N 向右作用于 B；向右为正；e=xB−xA−L0，e>0伸长；vA(0)=vB(0)=0，e(0)=e0∈[−0.5,0.5]m。M=mA+mB，μ=mAmB/M，ω=√(k/μ)，eEq=FmA/(kM)，e(t)=eEq+(e0−eEq)cos(ωt)。弹簧对A力+ke，对B力−ke；aA=ke/mA，aB=(F−ke)/mB；aCM=F/M，vCM=Ft/M，xCM=Ft²/(2M)。页面计算用解析相对加速度ë=−ω²(e0−eEq)cos(ωt)和质心叠加；屏幕中线为质心，A/B按mB/M和mA/M分配画面距离，地面刻度随xCM反向滚动。页面图示外力、弹簧对物块作用力、形变量、aCM/xCM；同一时刻受力箭头按共同像素/力值比例绘制且最长95px，零力箭头隐藏；双图为e-t及平衡形变eEq虚线、a-t及aCM虚线；参数变化回到t=0，支持播放、暂停、0.1s单步、时间定位和重置。压缩时 e<0，页面已明确指出B的加速度可以高于F/mB。实际测试命令：node spring-connected-blocks.test.mjs，结果 PASS：默认值、四分之一周期、平衡形变、压缩边界、F=0振动、全静止、最大输入与Σmᵢaᵢ=F；播放/锁参/暂停/继续/步进/定位/重置/结束/键盘等交互及参数重算通过；桌面1280×900、窄桌面800×900、手机390×900均无水平溢出，Canvas DPR尺寸通过，浏览器错误0。浏览器 Playwright 1.64.0 / Chromium 156.0.8078.4。截图已存 docs/models/artifacts/spring-connected-blocks/{desktop,tablet,mobile}.png 并人工打开检查。静态验证：Node vm.Script 内联脚本语法通过；Python3 HTMLParser 对页面和两个导航页通过；git diff --check通过。Gemini google/gemini-3.1-pro-preview 独立物理审阅指出的质心绘图和最大值措辞已修复；修订复核通过。GLM opencode-go/glm-5.3独立代码审阅指出的键盘R、零力箭头、DPR边框、播放拖动和窄屏虚线问题已修复并经当前浏览器测试回归。验收目的：只基于这些陈述判断方程/正负号与状态是否自洽、是否有明确未覆盖阻塞、教学表达清晰度和测试覆盖度。",
+    "questions": {
+      "physics_consistent": {
+        "type": "noul",
+        "instructions": "给定状态中，弹簧连接物块的受力约定、解析运动方程、实时加速度公式和质心画面表达是否物理自洽？"
+      },
+      "issue_type": {
+        "type": "choice",
+        "instructions": "若证据仍显示明确缺陷，最主要属于哪一类？",
+        "criteria": {
+          "physics": "受力、公式、符号或边界状态有矛盾",
+          "interaction": "播放、参数、时间定位或数据同步有明确故障",
+          "layout": "截图/响应式描述显示遮挡、裁切或溢出",
+          "none": "给定证据中没有明确的未解决缺陷"
+        }
+      },
+      "teaching_clarity": {
+        "type": "score",
+        "instructions": "页面文字、受力图、实时数据和曲线是否清楚呈现恒力作用下弹簧连接体的教学重点？",
+        "criteria": ["不清楚", "较难理解", "基本清楚", "清楚", "非常清楚"]
+      },
+      "test_coverage": {
+        "type": "score",
+        "instructions": "所述测试是否覆盖默认物理结果、压缩/零力/平衡边界、交互和三个目标视口？",
+        "criteria": ["明显不足", "部分覆盖", "基本充分", "充分"]
+      },
+      "release_blocker": {
+        "type": "noul",
+        "instructions": "仅基于上述证据，是否存在必须修复后才能交付的明确阻塞问题？"
+      }
+    }
+  },
+  "response": {
+    "model": "jev-1.13",
+    "answers": {
+      "physics_consistent": { "type": "noul", "noul": 0.88 },
+      "issue_type": {
+        "type": "choice",
+        "choice": "none",
+        "confidence": 0.99,
+        "probabilities": { "physics": 0.01, "interaction": 0, "layout": 0, "none": 0.99 }
+      },
+      "teaching_clarity": {
+        "type": "score",
+        "score": 3.67,
+        "confidence": 0.75,
+        "legend": { "0": "不清楚", "1": "较难理解", "2": "基本清楚", "3": "清楚", "4": "非常清楚" },
+        "probabilities": { "0": 0, "1": 0, "2": 0.01, "3": 0.28, "4": 0.71 }
+      },
+      "test_coverage": {
+        "type": "score",
+        "score": 2.98,
+        "confidence": 0.98,
+        "legend": { "0": "明显不足", "1": "部分覆盖", "2": "基本充分", "3": "充分" },
+        "probabilities": { "0": 0, "1": 0, "2": 0.02, "3": 0.98 }
+      },
+      "release_blocker": { "type": "noul", "noul": 0.12 }
+    },
+    "usage": { "input_tokens": 1593, "output_tokens": 117 }
+  }
+}
