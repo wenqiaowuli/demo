@@ -58,20 +58,27 @@
 - Gemini `google/gemini-3.1-pro-preview`：已指出原布局下 A 会靠近 B、轻绳将松弛；已据此修正为 B 在左、A 在右、F 向右作用于 A。复核公式正确；建议隔离体图显示重力/支持力，F=0 时力箭头消失，并补充极端质量比、锁参和改参重算测试。
 - Gemini `google/gemini-3.1-pro-preview`（PRD复核）：确认 B 左、A 右、F 向右时绳保持绷紧；指出 x-t 曲线应表述为“纵向间距恒定的同形抛物线”，并补充 F=0 的图像与受力验收。已采纳。
 - GLM `opencode-go/glm-5.3`：建议场景→播放控制→v-t/x-t 双图→参数→实时数据/隔离体受力视图；采纳箭头按力值比例、质量/力数字输入、播放中禁用调参、镜头跟随、移动端图表切换等建议。x-t 图避免称为“平行线”。
+- Gemini `google/gemini-3.1-pro-preview`（实现后独立复核）：复核 A/B 相对位置、F/T 方向、整体/隔离体方程、F=0、运动图像及主场景与自由体视图的一致性；未报告需修复问题。复核限于代码与提供的测试证据，不替代教材原页核对。
+- GLM `opencode-go/glm-5.3`（实现后独立复核）：交互、Canvas、DPR 与响应式布局未发现可复现问题。指出 `stepping` 状态只在同步绘制调用期间短暂存在，随后立即转为暂停/结束、不会被浏览器绘制帧呈现；属非用户可见实现细节，不需修改。
+- GLM 复核时运行的临时 Chromium 探针由 GPT 复跑确认：状态/极端参数探针4/4通过；四画布边缘裁切像素扫描2/2通过；浏览器页面与控制台错误0。探针脚本保存在临时目录，不作为项目测试文件。
 - GPT `opencode-go/gpt-6-luna`：负责逐项裁决并记录处理结果。
 
 ## 6. 测试与 JEV 复核记录
 
 - 物理核测试：已运行 `node light-rope-connected-bodies.test.mjs`；覆盖默认值、常规值、极端质量比、零外力、整体与隔离体方程、共同速度/位移、恒定间距及时间边界，全部通过。
-- 代码/交互检查：已运行 `node light-rope-connected-bodies.ui.test.mjs`；覆盖默认读数、播放锁参、动画时钟、暂停/继续、暂停解锁、改参回到 t=0、零外力状态、单步、进度结束状态和受力视图切换，全部通过。该检查使用模拟 DOM/Canvas，不等同于真实浏览器测试。
+- 代码/交互检查：已运行 `node light-rope-connected-bodies.ui.test.mjs`；覆盖默认读数、播放锁参、动画时钟、暂停/继续、暂停解锁、改参回到 t=0、零外力状态、单步、进度结束状态和受力视图切换，全部通过。
+- 当前候选自动检查：`npm test` 全部通过，包含物理/模拟DOM测试及 Playwright E2E 三视口 3/3；E2E 覆盖播放倍速、滑条与数字框、质量边界、F=0/F最大值、结束进度、重置和受力视图。
+- 附加边缘检查（Chromium 156.0.8078.4）：桌面/手机状态探针4/4通过，检查极端质量比、F=0箭头消失、a=200m/s²末态、结束后重启/单步/调参、越界钳制、播放锁参、倍速、拖动进度及键盘快捷键；四画布边缘像素扫描2/2通过。两组探针的运行输出均无页面/控制台错误。
 - HTML 解析和脚本语法：已通过 Python HTMLParser 解析及 Node `vm.Script` 语法检查；`git diff --check` 通过。
-- 浏览器/真实视口测试、桌面/窄屏截图：未运行。当前环境未检测到 Chromium/Chrome 或 Playwright/Puppeteer，故尚未完成人工视觉验收。
-- JEV `jev-1.13`：待实际浏览器测试后提交页面证据和测试结果；请求/响应归档至 `docs/models/reviews/light-rope-connected-bodies-jev.json`。当前不以模拟 DOM 检查结果替代浏览器证据。
+- 浏览器环境：项目开发依赖 `@playwright/test` 1.64.0；Playwright Chromium 156.0.8078.4 已安装至用户缓存；Debian 13 的 Chromium 系统运行依赖已通过 `playwright install-deps chromium` 安装。
+- 真实浏览器验收：`npm run test:e2e` 使用 Chromium 在桌面 1280×900、平板 800×900、手机 390×844 执行，3/3 通过。检查页面错误/控制台错误为 0、无水平溢出、Canvas DPR 尺寸、播放与锁参、暂停继续、调参重算、单步、结束状态和受力视图切换。
+- 人工截图检查：桌面、整体受力视图及手机截图均已打开核查；据此修正受力图窄屏高度和箭头标签位置，修正后重新运行三种视口测试并全部通过。截图位于 `docs/models/artifacts/light-rope-connected-bodies/desktop.png`、`desktop-system.png`、`mobile.png`。
+- JEV `jev-1.13`：已完成两次结构化评估，完整无密钥请求和响应归档至 `docs/models/reviews/light-rope-connected-bodies-jev.json`。初次评估基于尚缺GLM与边缘测试的证据，coverage结果偏保留；补齐后再次评估，physics_consistent=0.94、issue_type=none（confidence 0.99）、教学清晰度3.84/4（confidence 0.88）、覆盖度2.89/3（confidence 0.89）、release_blocker=0.08。按流程仅作为辅助；人工结合方程、真实测试与截图复核，未发现未解决的页面阻塞项。
 
 ## 7. 变更与交付记录
 
 - 需求冻结：2026-10-11。
 - 页面实现：`light-rope-connected-bodies.html`；物理核与交互检查分别见 `light-rope-connected-bodies.test.mjs`、`light-rope-connected-bodies.ui.test.mjs`。
 - 导航登记：主目录 `index.html` 与 `_repo/index.html` 均已增加页面卡片；`_repo/light-rope-connected-bodies.html` 为源页面同步副本。
-- 测试版本：本地候选文件（当前工作树包含其他既有未提交文件，无单独提交 SHA）；物理核、脚本语法、模拟 DOM 交互、HTML 解析检查已通过。
-- 待完成：实际浏览器桌面/窄屏验收与截图、JEV 复核归档。
+- 测试版本：候选页面 SHA256 `ee64e55789b0e52cb11e9b38564226c0b478f43529376a67c8420c74f6c6efae`，基线 commit `14906cc321b00fb76bb7a3b7f7109e4bb051746c`；包含浏览器验收发现的受力图位置修正。物理、模拟 DOM、三视口 Chromium E2E、附加边缘探针、两位审阅者复核与 JEV 复核均已记录。
+- 尚未提交/推送的本轮浏览器环境、可复用测试与截图文件须在阶段8检查改动范围后按用户授权交付；不相关的现存未跟踪文件不纳入。

@@ -1,0 +1,10 @@
+{
+  "scripts": {
+    "test:physics": "node light-rope-connected-bodies.test.mjs && node light-rope-connected-bodies.ui.test.mjs",
+    "test:e2e": "playwright test",
+    "test": "npm run test:physics && npm run test:e2e"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.0"
+  }
+}

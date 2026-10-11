@@ -10,6 +10,8 @@
 *{box-sizing:border-box}body{margin:0;padding:18px 12px 34px;background:var(--bg);color:var(--ink);font:14px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}main{width:min(100%,880px);margin:auto}h1{font-size:22px;line-height:1.3;text-align:center;margin:2px 0 5px}.subtitle{text-align:center;color:var(--muted);font-size:13px;margin:0 0 14px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:13px 15px;margin-top:12px;box-shadow:0 1px 2px #0f172a08}.section-title{font-size:12px;color:var(--muted);letter-spacing:.35px;margin:0 0 9px}.canvas-wrap{width:100%}canvas{display:block;width:100%;background:#fff;border:1.5px solid #cbd5e1;border-radius:10px}.scene-canvas{aspect-ratio:880/400}.force-canvas{aspect-ratio:880/230}.charts{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}.chart canvas{aspect-ratio:20/9}.chart .section-title{margin:0 0 6px}.toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:12px}.toolbar button,.toolbar select{height:36px;border:1px solid var(--line);border-radius:8px;background:white;color:var(--ink);padding:0 12px;font:inherit;cursor:pointer}.toolbar button.primary{background:var(--blue);border-color:var(--blue);color:white;font-weight:600}.toolbar button:hover:not(:disabled){border-color:var(--blue);color:var(--blue)}.toolbar button.primary:hover:not(:disabled){background:#1d4ed8;color:white}.toolbar button:disabled{opacity:.48;cursor:not-allowed}.toolbar select{height:34px}.progress{display:flex;align-items:center;gap:8px;flex:1;min-width:175px;color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums}.progress input{min-width:50px;flex:1;accent-color:var(--blue)}.data-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.data-item{border:1px solid var(--line);border-radius:8px;background:var(--soft);padding:7px 9px;min-width:0}.data-item span{display:block;color:var(--muted);font-size:11px}.data-item b{display:block;font-size:13px;font-weight:650;font-variant-numeric:tabular-nums;white-space:nowrap}.blue{color:var(--a)}.red{color:var(--b)}.orange{color:var(--force)}.param-row{display:grid;grid-template-columns:116px minmax(60px,1fr) 76px 36px;gap:9px;align-items:center;margin:10px 0}.param-row label{white-space:nowrap}.param-row input[type=range]{width:100%;min-width:0;accent-color:var(--blue)}.param-row input[type=number]{width:76px;border:1px solid var(--line);border-radius:6px;padding:5px;text-align:right;color:var(--ink);background:white;font:inherit;font-variant-numeric:tabular-nums}.unit{color:var(--muted);font-size:12px}.hint,.note{font-size:12.5px;color:var(--muted);line-height:1.7}.hint{margin:7px 0 0}.segmented{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 9px}.segmented button{border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:7px;padding:6px 11px;font:inherit;font-size:12px;cursor:pointer}.segmented button[aria-pressed="true"]{background:#dbeafe;border-color:#93c5fd;color:#1d4ed8;font-weight:650}.formula{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.formula div{background:var(--soft);padding:9px 10px;border-radius:8px;font-size:13px}.formula b{color:#1d4ed8}.status{margin-left:auto;color:var(--muted);font-size:12px}.legend{text-align:center;color:var(--muted);font-size:12px;margin:12px 0 0}.legend span{margin:0 7px;white-space:nowrap}.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px}.a-dot{background:var(--a)}.b-dot{background:var(--b)}.force-dot{background:var(--force)}.rope-dot{background:#334155}
 @media(max-width:720px){.charts{grid-template-columns:1fr;gap:12px}.scene-canvas{aspect-ratio:720/400}.force-canvas{aspect-ratio:720/260}}
 @media(max-width:520px){body{padding:13px 10px 26px}h1{font-size:19px}.panel{padding:11px}.data-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.param-row{grid-template-columns:88px minmax(45px,1fr) 68px 27px;gap:6px;font-size:12.5px}.param-row input[type=number]{width:68px}.toolbar{gap:6px}.toolbar button{padding:0 9px}.progress{order:2;flex-basis:100%}.status{margin-left:0}.formula{grid-template-columns:1fr}.scene-canvas{aspect-ratio:390/350}.force-canvas{aspect-ratio:390/260}}
+@media(max-width:720px){.force-canvas{aspect-ratio:720/300}}
+@media(max-width:520px){.force-canvas{aspect-ratio:390/320}}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
 </style>
 </head>
@@ -158,7 +160,7 @@
     setStatus();
   }
 
-  function arrow(c, x1, y1, x2, y2, color, label, value, labelY) {
+  function arrow(c, x1, y1, x2, y2, color, label, value, labelY, labelX) {
     const dx=x2-x1, dy=y2-y1, len=Math.hypot(dx,dy);
     if (len < 1.5) return;
     const ang=Math.atan2(dy,dx), head=Math.min(10, Math.max(6,len*.24));
@@ -166,8 +168,9 @@
     c.beginPath(); c.moveTo(x1,y1); c.lineTo(x2,y2); c.stroke();
     c.beginPath(); c.moveTo(x2,y2); c.lineTo(x2-head*Math.cos(ang-.48),y2-head*Math.sin(ang-.48)); c.lineTo(x2-head*Math.cos(ang+.48),y2-head*Math.sin(ang+.48)); c.closePath(); c.fill();
     c.font='600 12px system-ui'; c.textAlign='center'; c.textBaseline='middle';
-    c.lineWidth=3.5; c.strokeStyle='#fff'; c.strokeText(`${label} = ${round(value)} N`, (x1+x2)/2, labelY);
-    c.fillStyle=color; c.fillText(`${label} = ${round(value)} N`, (x1+x2)/2, labelY);
+    const textX=Number.isFinite(labelX)?labelX:(x1+x2)/2;
+    c.lineWidth=3.5; c.strokeStyle='#fff'; c.strokeText(`${label} = ${round(value)} N`, textX, labelY);
+    c.fillStyle=color; c.fillText(`${label} = ${round(value)} N`, textX, labelY);
   }
   function drawBlock(c, x, y, w, h, color, label) {
     c.fillStyle=color; c.strokeStyle='#fff'; c.lineWidth=2;
@@ -189,7 +192,7 @@
     for(let world=first;world<centerWorld+(w-centerX+10)/ppm;world+=tickStep){const x=screenX(world);if(x<20||x>w-20)continue;c.strokeStyle='#94a3b8';c.beginPath();c.moveTo(x,groundY);c.lineTo(x,groundY+7);c.stroke();c.fillText(`${round(world,0)} m`,x,groundY+20);}
     const xb=screenX(s.xB), xa=screenX(s.xA), bw=Math.max(48,Math.min(60,w*.075)), bh=42;
     c.strokeStyle=colors.rope;c.lineWidth=3;c.beginPath();c.moveTo(xb+bw/2,blockY);c.lineTo(xa-bw/2,blockY);c.stroke();
-    const mid=(xb+xa)/2;c.font='11px system-ui';c.fillStyle=colors.muted;c.textAlign='center';c.fillText('轻绳（长度不变）',mid,blockY-17);
+    const mid=(xb+xa)/2;c.font='11px system-ui';c.fillStyle=colors.muted;c.textAlign='center';c.fillText('轻绳（长度不变）',mid,blockY-70);
     drawBlock(c,xb,blockY,bw,bh,colors.red,'B');drawBlock(c,xa,blockY,bw,bh,colors.blue,'A');
     const derived=window.ROPE_PHYSICS.derive(params), f=derived.netA+derived.T;
     const forceScale=f>0?Math.min(96,Math.max(32,w*.14))/f:0;
@@ -207,7 +210,7 @@
   function drawForceDiagram() {
     const c=ctx.forces,w=forces.clientWidth,h=forces.clientHeight;
     c.clearRect(0,0,w,h);c.fillStyle='#fff';c.fillRect(0,0,w,h);
-    const d=window.ROPE_PHYSICS.derive(params), baseline=h*.58, cx=w*.5;
+    const d=window.ROPE_PHYSICS.derive(params), baseline=h*.53, cx=w*.5;
     const selected=view;
     c.fillStyle=colors.muted;c.font='12px system-ui';c.textAlign='left';
     const title=selected==='system'?'整体 A+B（系统外力）':`隔离物块 ${selected}`;
@@ -216,11 +219,11 @@
       const x=cx,y=baseline,bw=Math.min(126,w*.2),bh=42;
       c.strokeStyle=colors.rope;c.lineWidth=3;c.beginPath();c.moveTo(x-bw/2+5,y);c.lineTo(x+5,y);c.stroke();
       drawBlock(c,x-bw*.27,y,bw*.44,bh,colors.red,'B');drawBlock(c,x+bw*.27,y,bw*.44,bh,colors.blue,'A');
-      const forceScale=Math.min(76,Math.max(34,w*.1))/Math.max(params.mA*10+params.mB*10,params.F,1);
+      const forceScale=Math.min(44,Math.max(28,w*.07))/Math.max(params.mA*10+params.mB*10,params.F,1);
       const vertical=forceScale*(params.mA+params.mB)*10;
       arrow(c,x,y-bh/2-3,x,y-bh/2-3-vertical,'#0ea5e9','N合',params.mA*10+params.mB*10,y-bh/2-vertical-19);
-      arrow(c,x,y+bh/2+3,x,y+bh/2+3+vertical,'#64748b','G合',params.mA*10+params.mB*10,y+bh/2+vertical+18);
-      if(params.F>1e-9)arrow(c,x+bw/2+10,y,x+bw/2+10+params.F*forceScale,y,colors.orange,'F',params.F,y-17);
+      arrow(c,x,y+bh/2+3,x,y+bh/2+3+vertical,'#64748b','G合',params.mA*10+params.mB*10,y+bh/2+vertical+4);
+      if(params.F>1e-9)arrow(c,x+bw/2+10,y,x+bw/2+10+params.F*forceScale,y,colors.orange,'F',params.F,y-bh/2-13,x+bw/2+params.F*forceScale+42);
       c.font='11px system-ui';c.fillStyle=colors.muted;c.textAlign='left';c.fillText(`F = (mA + mB)a = ${round(params.F)} N`,14,43);
       c.textAlign='center';c.fillText('绳张力 T 为内力，在整体分析中抵消；竖直方向 N合 = G合',cx,h-13);
       return;
@@ -228,17 +231,17 @@
     const mass=selected==='A'?params.mA:params.mB, weight=mass*10, normal=weight;
     const blockX=cx, blockY=baseline, bw=Math.min(94,w*.16), bh=48;
     drawBlock(c,blockX,blockY,bw,bh,selected==='A'?colors.blue:colors.red,selected);
-    const forceScale=Math.min(66,Math.max(38,w*.09))/Math.max(weight,params.F,d.T,1);
+    const forceScale=Math.min(44,Math.max(28,w*.07))/Math.max(weight,params.F,d.T,1);
     const down=weight*forceScale, up=normal*forceScale;
-    arrow(c,blockX,blockY+bh/2+5,blockX,blockY+bh/2+5+down,'#64748b','G',weight,blockY+bh/2+down+25);
-    arrow(c,blockX,blockY-bh/2-5,blockX,blockY-bh/2-5-up,'#0ea5e9','N',normal,blockY-bh/2-up-18);
+    arrow(c,blockX,blockY+bh/2+5,blockX,blockY+bh/2+5+down,'#64748b','G',weight,blockY+bh/2+down+4);
+    arrow(c,blockX,blockY-bh/2-5,blockX,blockY-bh/2-5-up,'#0ea5e9','N',normal,blockY-bh/2-up-13);
     if(selected==='A'){
       const scale=Math.min(72,Math.max(38,w*.1))/Math.max(params.F,d.T,1);
-      if(params.F>1e-9)arrow(c,blockX+bw/2,blockY-5,blockX+bw/2+params.F*scale,blockY-5,colors.orange,'F',params.F,blockY-22);
-      if(d.T>1e-9)arrow(c,blockX-bw/2,blockY+4,blockX-bw/2-d.T*scale,blockY+4,colors.orange,'T',d.T,blockY+25);
+      if(params.F>1e-9)arrow(c,blockX+bw/2,blockY-5,blockX+bw/2+params.F*scale,blockY-5,colors.orange,'F',params.F,blockY-bh/2-13,blockX+bw/2+params.F*scale+38);
+      if(d.T>1e-9)arrow(c,blockX-bw/2,blockY+4,blockX-bw/2-d.T*scale,blockY+4,colors.orange,'T',d.T,blockY+bh/2+12,blockX-bw/2-d.T*scale-38);
       c.textAlign='right';c.fillStyle=colors.muted;c.font='11px system-ui';c.fillText(`水平方程：F − T = mA a = ${round(d.netA)} N`,w-12,18);
     }else{
-      if(d.T>1e-9){const scale=Math.min(72,Math.max(38,w*.1))/Math.max(d.T,1);arrow(c,blockX+bw/2,blockY,blockX+bw/2+d.T*scale,blockY,colors.orange,'T',d.T,blockY-17);}
+      if(d.T>1e-9){const scale=Math.min(72,Math.max(38,w*.1))/Math.max(d.T,1);arrow(c,blockX+bw/2,blockY,blockX+bw/2+d.T*scale,blockY,colors.orange,'T',d.T,blockY-bh/2-13,blockX+bw/2+d.T*scale+38);}
       c.textAlign='right';c.fillStyle=colors.muted;c.font='11px system-ui';c.fillText(`水平方程：T = mB a = ${round(d.T)} N`,w-12,18);
     }
     c.textAlign='center';c.fillStyle=colors.muted;c.font='11px system-ui';c.fillText('竖直方向：N − G = 0',cx,h-13);

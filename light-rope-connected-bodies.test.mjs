@@ -29,6 +29,13 @@ const ordinary = physics.derive({ mA: 2, mB: 1, F: 3 });
 close(ordinary.a, 1, 'ordinary acceleration');
 close(ordinary.T, 1, 'ordinary tension');
 
+const heavierA = physics.derive({ mA: 4, mB: 3, F: 10 });
+assert.ok(heavierA.a < defaultForces.a, 'increasing A mass lowers the system acceleration');
+assert.ok(heavierA.T < defaultForces.T, 'increasing A mass lowers the rope tension');
+const heavierB = physics.derive({ mA: 2, mB: 6, F: 10 });
+assert.ok(heavierB.a < defaultForces.a, 'increasing B mass lowers the system acceleration');
+assert.ok(heavierB.T > defaultForces.T && heavierB.T < 10, 'increasing B mass raises tension but keeps it below F');
+
 const extreme = physics.derive({ mA: .1, mB: 10, F: 10.1 });
 close(extreme.a, 1, 'extreme-ratio acceleration');
 close(extreme.T, 10, 'extreme-ratio tension');
@@ -41,7 +48,7 @@ close(still.T, 0, 'zero-force tension');
 close(still.vA, 0, 'zero-force speed');
 close(still.sB, 0, 'zero-force displacement');
 
-for (const p of [defaults, { mA: .1, mB: 10, F: 40 }, { mA: 10, mB: .1, F: 0 }, { mA: 4.5, mB: 7.2, F: 18.3 }]) {
+for (const p of [defaults, { mA: .1, mB: 10, F: 40 }, { mA: .1, mB: .1, F: 40 }, { mA: 10, mB: .1, F: 0 }, { mA: 4.5, mB: 7.2, F: 18.3 }]) {
   for (const time of [0, .37, 2.5, 8, 20]) {
     const s = physics.stateAt(time, p);
     const d = physics.derive(p);
