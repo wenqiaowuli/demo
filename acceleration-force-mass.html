@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>加速度与力、质量的关系｜控制变量实验</title>
+<meta name="description" content="通过固定质量改变合力、固定合力改变质量的两组控制变量实验，观察加速度规律、物块运动和 a-F、a-m、a-1/m 图像。">
+<style>
+:root{color-scheme:light;--bg:#eef2f6;--panel:#fff;--ink:#1f2937;--muted:#64748b;--line:#e2e8f0;--blue:#2563eb;--a:#0f766e;--force:#d97706;--soft:#f8fafc;--red:#dc2626}
+*{box-sizing:border-box}body{margin:0;padding:18px 12px 34px;background:var(--bg);color:var(--ink);font:14px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}main{width:min(100%,880px);margin:auto}h1{font-size:22px;line-height:1.3;text-align:center;margin:2px 0 5px}.subtitle{text-align:center;color:var(--muted);font-size:13px;margin:0 0 14px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:13px 15px;margin-top:12px;box-shadow:0 1px 2px #0f172a08}.section-title{font-size:12px;color:var(--muted);letter-spacing:.35px;margin:0 0 9px}.scene{display:block;width:100%;aspect-ratio:880/340;background:#fff;border:1.5px solid #cbd5e1;border-radius:10px}.mode-switch{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}.mode-switch button,.axis-switch button{border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:8px;padding:9px 12px;font:inherit;cursor:pointer}.mode-switch button[aria-pressed="true"],.axis-switch button[aria-pressed="true"]{background:#dbeafe;border-color:#93c5fd;color:#1d4ed8;font-weight:650}.mode-switch button:disabled,.axis-switch button:disabled{opacity:.5;cursor:not-allowed}.hold-note{background:#eff6ff;color:#1e40af;border-left:3px solid var(--blue);border-radius:7px;padding:9px 11px;font-size:13px;font-weight:600}.hold-note span{color:#475569;font-weight:400}.toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:12px}.toolbar button,.toolbar select{height:36px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);padding:0 12px;font:inherit;cursor:pointer}.toolbar button.primary{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:600}.toolbar button:hover:not(:disabled){border-color:var(--blue);color:var(--blue)}.toolbar button.primary:hover:not(:disabled){background:#1d4ed8;color:#fff}.toolbar button:disabled{opacity:.48;cursor:not-allowed}.progress{display:flex;align-items:center;gap:8px;flex:1;min-width:175px;color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums}.progress input{min-width:50px;flex:1;accent-color:var(--blue)}.status{margin-left:auto;color:var(--muted);font-size:12px}.data-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}.data-item{border:1px solid var(--line);border-radius:8px;background:var(--soft);padding:7px 9px;min-width:0}.data-item span{display:block;color:var(--muted);font-size:11px}.data-item b{display:block;font-size:13px;font-weight:650;font-variant-numeric:tabular-nums;white-space:nowrap}.blue{color:var(--blue)}.teal{color:var(--a)}.orange{color:var(--force)}.param-row{display:grid;grid-template-columns:145px minmax(55px,1fr) 78px 34px;gap:9px;align-items:center;margin:11px 0}.param-row label{white-space:nowrap}.param-row input[type=range]{width:100%;min-width:0;accent-color:var(--blue)}.param-row input[type=number]{width:78px;border:1px solid var(--line);border-radius:6px;padding:5px;text-align:right;color:var(--ink);background:#fff;font:inherit;font-variant-numeric:tabular-nums}.unit{color:var(--muted);font-size:12px}.subnote,.note{font-size:12.5px;color:var(--muted);line-height:1.7}.subnote{margin:7px 0 0}.chart{display:block;width:100%;aspect-ratio:880/390;background:#fff;border:1.5px solid #cbd5e1;border-radius:10px}.axis-switch{display:flex;gap:7px;margin:0 0 9px}.axis-switch[hidden]{display:none}.axis-switch button{font-size:12px;padding:6px 11px}.trial-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:7px}.trial{background:var(--soft);border:1px solid var(--line);border-radius:8px;padding:7px 8px;min-width:0;text-align:center}.trial span{display:block;color:var(--muted);font-size:11px}.trial b{display:block;font-variant-numeric:tabular-nums;font-size:12px}.formula{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.formula div{background:var(--soft);border-radius:8px;padding:9px 10px;font-size:13px}.formula strong{color:#1d4ed8}.legend{text-align:center;color:var(--muted);font-size:12px;margin:12px 0 0}.legend span{margin:0 7px;white-space:nowrap}.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px}.force-key{background:var(--force)}.acc-key{background:var(--a)}.block-key{background:#2563eb}
+@media(max-width:720px){.data-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.trial-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.scene{aspect-ratio:720/340}.chart{aspect-ratio:720/390}}
+@media(max-width:520px){body{padding:13px 10px 26px}h1{font-size:19px}.panel{padding:11px}.mode-switch{grid-template-columns:1fr}.mode-switch button{min-height:44px}.data-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.param-row{grid-template-columns:100px minmax(40px,1fr) 66px 26px;gap:6px;font-size:12.5px}.param-row input[type=number]{width:66px}.toolbar{gap:6px}.toolbar button{padding:0 9px}.progress{order:2;flex-basis:100%}.status{margin-left:0}.formula{grid-template-columns:1fr}.scene{aspect-ratio:390/310}.chart{aspect-ratio:390/290}.trial-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(min-width:721px){.data-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+</style>
+</head>
+<body>
+<main>
+  <h1>加速度与力、质量的关系</h1>
+  <p class="subtitle">必修第一册 · 第四章　控制变量法探究牛顿第二定律</p>
+
+  <div class="mode-switch" role="group" aria-label="选择控制变量实验">
+    <button type="button" data-mode="force" aria-pressed="true">实验一：固定质量，改变合力</button>
+    <button type="button" data-mode="mass" aria-pressed="false">实验二：固定合力，改变质量</button>
+  </div>
+  <div id="holdNote" class="hold-note" aria-live="polite">保持质量 m = 2.0 kg 不变 <span>· 自变量：合力 F</span></div>
+
+  <canvas id="scene" class="scene" role="img" aria-label="光滑水平面上的物块受向右合力并做匀加速运动，显示力与加速度矢量"></canvas>
+
+  <div class="toolbar" aria-label="运动演示播放控制">
+    <button id="play" class="primary" type="button" aria-label="开始播放">▶ 开始</button>
+    <button id="pause" type="button" disabled aria-label="暂停动画">暂停</button>
+    <button id="step" type="button" aria-label="单步前进0.1秒">单步 +0.1 s</button>
+    <button id="reset" type="button" aria-label="重置动画">重置</button>
+    <label class="progress"><span>进度</span><input id="timeline" type="range" min="0" max="6" step="0.01" value="0" aria-label="动画时间进度"><span id="timeLabel">0.00 / 6.00 s</span></label>
+    <label for="speed" class="unit">速度</label><select id="speed" aria-label="播放速度"><option value="0.25">0.25×</option><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option></select>
+    <span id="status" class="status" aria-live="polite">准备就绪</span>
+  </div>
+
+  <section class="panel" aria-labelledby="dataTitle" aria-live="off">
+    <h2 class="section-title" id="dataTitle">本轮实验的实时测量值</h2>
+    <div class="data-grid">
+      <div class="data-item"><span>时间 t</span><b id="dTime">0.00 s</b></div>
+      <div class="data-item"><span>质量 m</span><b id="dMass">2.00 kg</b></div>
+      <div class="data-item"><span>合力 F</span><b class="orange" id="dForce">4.00 N</b></div>
+      <div class="data-item"><span>加速度 a</span><b class="teal" id="dAcc">2.00 m/s²</b></div>
+      <div class="data-item"><span>速度 v</span><b class="blue" id="dVel">0.00 m/s</b></div>
+      <div class="data-item"><span>位移 s</span><b id="dDisp">0.00 m</b></div>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="paramTitle">
+    <h2 class="section-title" id="paramTitle">本轮实验参数</h2>
+    <div class="param-row"><label id="massLabel" for="mass">保持质量 m</label><input id="massRange" type="range" min="0.5" max="10" step="0.5" value="2" aria-label="质量 m，范围 0.5 到 10 千克"><input id="mass" type="number" min="0.5" max="10" step="0.5" value="2" aria-label="质量 m 数值"><span class="unit">kg</span></div>
+    <div class="param-row"><label id="forceLabel" for="force">实验合力 F</label><input id="forceRange" type="range" min="0" max="20" step="0.5" value="4" aria-label="合力 F，范围 0 到 20 牛顿"><input id="force" type="number" min="0" max="20" step="0.5" value="4" aria-label="合力 F 数值"><span class="unit">N</span></div>
+    <p id="paramHint" class="subnote">实验一：m 固定，拖动 F 观察加速度如何变化。参数范围 m=0.5–10 kg，F=0–20 N。</p>
+  </section>
+
+  <section class="panel" aria-labelledby="graphTitle">
+    <h2 class="section-title" id="graphTitle">实验关系图</h2>
+    <div id="axisSwitch" class="axis-switch" role="group" aria-label="质量实验的横轴变量" hidden>
+      <button type="button" data-axis="mass" aria-pressed="true">横轴：质量 m</button>
+      <button type="button" data-axis="inverse" aria-pressed="false">横轴：倒数 1/m</button>
+    </div>
+    <canvas id="chart" class="chart" role="img" aria-label="加速度和合力关系图"></canvas>
+    <div id="trials" class="trial-grid" aria-label="代表实验组数据"></div>
+    <p id="chartHint" class="subnote">m 不变时，a-F 图像是一条过原点的直线。</p>
+  </section>
+
+  <section class="panel" aria-labelledby="formulaTitle">
+    <h2 class="section-title" id="formulaTitle">从实验到规律</h2>
+    <div class="formula">
+      <div>牛顿第二定律：<strong>F = ma</strong>，所以 <strong>a = F/m</strong></div>
+      <div id="relationText">质量不变：a/F = 1/m = 0.500 kg⁻¹（F&gt;0）</div>
+      <div>运动模型：<strong>v = at</strong>，<strong>s = ½at²</strong>（从静止开始）</div>
+      <div class="note">水平面光滑，竖直方向支持力与重力平衡。图中 F 与 a 的箭头各自按量程缩放，箭长不能跨量比较；加速度不是一种力。</div>
+    </div>
+  </section>
+
+  <div class="legend"><span><i class="block-key"></i>物块</span><span><i class="force-key"></i>合力 F</span><span><i class="acc-key"></i>加速度 a（不是力）</span><span>空格：播放/暂停　R：重置</span></div>
+</main>
+
+<script id="acceleration-physics">
+(() => {
+  'use strict';
+  const DURATION=6, M_MIN=.5, M_MAX=10, F_MIN=0, F_MAX=20, STEP=.5;
+  function derive(p){const a=p.F/p.m;return{a,force:p.F,mass:p.m};}
+  function stateAt(t,p,duration=DURATION){const time=Math.min(Math.max(Number(t)||0,0),duration),{a}=derive(p);return{t:time,a,v:a*time,s:.5*a*time*time};}
+  function trials(mode,p,axis='mass'){
+    if(mode==='force')return[0,4,8,12,16,20].map(F=>({x:F,F,m:p.m,a:F/p.m}));
+    const masses=axis==='inverse'?[10,8,4,2,1,.5]:[.5,1,2,4,8,10];
+    return masses.map(m=>({x:axis==='inverse'?1/m:m,F:p.F,m,a:p.F/m}));
+  }
+  const api=Object.freeze({DURATION,M_MIN,M_MAX,F_MIN,F_MAX,STEP,derive,stateAt,trials});
+  if(typeof window!=='undefined')window.ACCELERATION_PHYSICS=api;
+  if(typeof globalThis!=='undefined')globalThis.ACCELERATION_PHYSICS=api;
+})();
+</script>
+<script>
+(() => {
+  'use strict';
+  const $=id=>document.getElementById(id);
+  const scene=$('scene'),chart=$('chart'),canvasList=[scene,chart];
+  const ctx={scene:scene.getContext('2d'),chart:chart.getContext('2d')};
+  const inputs={m:{range:$('massRange'),number:$('mass'),min:.5,max:10},F:{range:$('forceRange'),number:$('force'),min:0,max:20}};
+  const values={m:2,F:4};
+  const C={ink:'#1f2937',muted:'#64748b',grid:'#e8eef5',axis:'#94a3b8',blue:'#2563eb',teal:'#0f766e',force:'#d97706',block:'#2563eb',ground:'#94a3b8'};
+  let t=0,experiment='force',axisMode='mass',state='idle',speed=1,lastFrame=null,rafId=null;
+  const fmt=(v,n=2)=>Number.isFinite(v)?v.toFixed(n):'0.00';
+
+  function fitCanvas(c){const r=c.getBoundingClientRect();if(r.width<10||r.height<10)return;const dpr=Math.max(1,window.devicePixelRatio||1),w=Math.round(r.width*dpr),h=Math.round(r.height*dpr);if(c.width!==w||c.height!==h){c.width=w;c.height=h;}ctx[c.id].setTransform(dpr,0,0,dpr,0,0);}
+  function fitAll(){canvasList.forEach(fitCanvas);refreshModel();}
+  window.addEventListener('resize',fitAll);
+  if('ResizeObserver'in window){const ro=new ResizeObserver(fitAll);canvasList.forEach(c=>ro.observe(c));}
+  function physicsState(){return window.ACCELERATION_PHYSICS.stateAt(t,values);}
+
+  function setStatus(){
+    $('status').textContent=state==='running'?'演示进行中':state==='paused'?'已暂停':state==='finished'?'演示结束':state==='stepping'?'单步观察':'准备就绪';
+    const play=$('play');play.textContent=state==='running'?'播放中…':state==='finished'?'↻ 重新开始':state==='paused'?'▶ 继续':'▶ 开始';
+    play.setAttribute('aria-label',state==='paused'?'继续播放':state==='finished'?'从头重新播放':state==='running'?'动画正在播放':'开始播放');play.disabled=state==='running';$('pause').disabled=state!=='running';
+    Object.values(inputs).forEach(x=>{x.range.disabled=state==='running';x.number.disabled=state==='running';});
+    document.querySelectorAll('[data-mode]').forEach(b=>b.disabled=state==='running');
+  }
+  function updateLabels(){
+    const fixed=experiment==='force';
+    $('massLabel').textContent=fixed?'保持质量 m':'实验质量 m';$('forceLabel').textContent=fixed?'实验合力 F':'保持合力 F';
+    $('holdNote').innerHTML=fixed?`保持质量 m = ${fmt(values.m,1)} kg 不变 <span>· 自变量：合力 F</span>`:`保持合力 F = ${fmt(values.F,1)} N 不变 <span>· 自变量：质量 m</span>`;
+    $('paramHint').textContent=fixed?'实验一：m 固定，拖动 F 观察加速度如何变化。参数范围 m=0.5–10 kg，F=0–20 N。':'实验二：F 固定，拖动 m 观察加速度如何变化。参数范围 m=0.5–10 kg，F=0–20 N。';
+    $('axisSwitch').hidden=experiment!=='mass';
+    $('chartHint').textContent=experiment==='force'?'m 不变时，a-F 图像是一条过原点的直线。':axisMode==='mass'?'F 不变时，a-m 图像为反比例曲线；增大质量，加速度减小。':'F 不变时，a-1/m 图像是一条过原点的直线，斜率等于 F。';
+    const a=values.F/values.m;
+    $('relationText').innerHTML=fixed?`质量不变：a/F = 1/m = ${fmt(1/values.m,3)} kg⁻¹（F&gt;0）`:`合力不变：a·m = F = ${fmt(values.F,2)} N`;
+    document.querySelectorAll('[data-mode]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mode===experiment)));
+    document.querySelectorAll('[data-axis]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.axis===axisMode)));
+    scene.setAttribute('aria-label',`光滑水平面物块，m=${fmt(values.m,1)}kg，F=${fmt(values.F,1)}N，a=${fmt(a)}m/s²，t=${fmt(t)}s`);
+    chart.setAttribute('aria-label',experiment==='force'?'加速度与合力关系图，质量固定':'加速度与'+(axisMode==='inverse'?'质量倒数':'质量')+'关系图，合力固定');
+  }
+  function arrow(c,x1,y1,x2,y2,color,label,value,labelY){const dx=x2-x1,dy=y2-y1,len=Math.hypot(dx,dy);if(len<1.5)return;const angle=Math.atan2(dy,dx),head=Math.min(10,Math.max(6,len*.22));c.strokeStyle=color;c.fillStyle=color;c.lineWidth=2.8;c.lineCap='round';c.beginPath();c.moveTo(x1,y1);c.lineTo(x2,y2);c.stroke();c.beginPath();c.moveTo(x2,y2);c.lineTo(x2-head*Math.cos(angle-.48),y2-head*Math.sin(angle-.48));c.lineTo(x2-head*Math.cos(angle+.48),y2-head*Math.sin(angle+.48));c.closePath();c.fill();c.font='600 12px system-ui';c.textAlign='center';c.textBaseline='middle';const text=`${label} = ${fmt(value)} ${label==='F'?'N':'m/s²'}`;c.lineWidth=3.5;c.strokeStyle='#fff';c.strokeText(text,(x1+x2)/2,labelY);c.fillStyle=color;c.fillText(text,(x1+x2)/2,labelY);}
+  function block(c,x,y,w,h,label){c.fillStyle=C.block;c.strokeStyle='#fff';c.lineWidth=2;c.beginPath();c.roundRect(x-w/2,y-h/2,w,h,7);c.fill();c.stroke();c.fillStyle='#fff';c.font='650 12px system-ui';c.textAlign='center';c.textBaseline='middle';c.fillText(label,x,y);}
+  function niceStep(range){const raw=Math.max(range/5,1e-6),mag=10**Math.floor(Math.log10(raw)),q=raw/mag;return(q<=1?1:q<=2?2:q<=5?5:10)*mag;}
+  function ceilNice(v){if(v<=0||!Number.isFinite(v))return 1;const m=10**Math.floor(Math.log10(v)),q=v/m;return(q<=1?1:q<=2?2:q<=5?5:10)*m;}
+  function drawScene(){
+    const c=ctx.scene,w=scene.clientWidth,h=scene.clientHeight,s=physicsState();c.clearRect(0,0,w,h);c.fillStyle='#fff';c.fillRect(0,0,w,h);
+    c.fillStyle=C.muted;c.font='12px system-ui';c.textAlign='left';c.fillText('光滑水平面',16,23);c.textAlign='right';c.fillText('从静止开始',w-16,23);
+    const ground=h*.70,by=ground-36,bx=w*.38,visible=Math.max(8,s.v*3,s.a*4.5),ppm=Math.min(42,Math.max(2,(w-150)/visible));
+    c.strokeStyle=C.ground;c.lineWidth=2.5;c.beginPath();c.moveTo(12,ground);c.lineTo(w-12,ground);c.stroke();c.strokeStyle='#cbd5e1';c.lineWidth=1;for(let x=12;x<w-12;x+=15){c.beginPath();c.moveTo(x,ground+2);c.lineTo(x-8,ground+9);c.stroke();}
+    const tick=niceStep(visible),origin=s.s;const first=Math.floor((origin-bx/ppm)/tick)*tick; c.font='10px system-ui';c.fillStyle=C.muted;c.textAlign='center';for(let world=first;world<origin+(w-bx)/ppm;world+=tick){const x=bx+(world-origin)*ppm;if(x<20||x>w-20)continue;c.strokeStyle='#94a3b8';c.beginPath();c.moveTo(x,ground);c.lineTo(x,ground+7);c.stroke();c.fillText(`${fmt(world,0)} m`,x,ground+19);}
+    const bw=Math.max(50,Math.min(66,w*.09)),bh=42;
+    // 每 0.5 s 的位置点：等时间间隔下，相邻位移逐渐增大。
+    for(let ti=.5;ti<t-1e-9;ti+=.5){const past=.5*s.a*ti*ti,x=bx+(past-s.s)*ppm;if(x>20&&x<bx-bw/2-4){c.fillStyle='rgba(15,118,110,.38)';c.beginPath();c.arc(x,ground-3,3.2,0,Math.PI*2);c.fill();}}
+    block(c,bx,by,bw,bh,`m=${fmt(values.m,1)}`);
+    const forceLen=values.F>0?Math.min(94,Math.max(15,values.F/20*94)):0,accLen=s.a>0?Math.min(78,Math.max(15,s.a/40*78)):0;
+    if(values.F>0)arrow(c,bx+bw/2,by-8,bx+bw/2+forceLen,by-8,C.force,'F',values.F,by-23);
+    if(s.a>0)arrow(c,bx+bw/2,by+13,bx+bw/2+accLen,by+13,C.teal,'a',s.a,by+29);
+    c.fillStyle=C.muted;c.font='12px system-ui';c.textAlign='left';c.fillText(`t = ${fmt(t)} s`,14,h-16);c.textAlign='right';c.fillText(`v = ${fmt(s.v)} m/s · s = ${fmt(s.s)} m`,w-14,h-16);
+    c.fillStyle=C.muted;c.textAlign='left';c.font='10px system-ui';c.fillText('每 0.5 s 的位置记录',14,ground-13);
+  }
+  function drawGraph(){
+    const c=ctx.chart,w=chart.clientWidth,h=chart.clientHeight,p={l:54,r:18,t:26,b:44},pw=w-p.l-p.r,ph=h-p.t-p.b;c.clearRect(0,0,w,h);c.fillStyle='#fff';c.fillRect(0,0,w,h);if(pw<50||ph<50)return;
+    const massMode=experiment==='mass',inverse=massMode&&axisMode==='inverse',samples=window.ACCELERATION_PHYSICS.trials(experiment,values,axisMode);
+    const xMin=massMode?(inverse?0:.5):0,xMax=massMode?(inverse?1/.5:10):20;
+    const yPeak=massMode?values.F/.5:20/values.m,yMax=Math.max(1,ceilNice(yPeak));const yStep=niceStep(yMax),xStep=niceStep(xMax-xMin);
+    chart.dataset.xMin=String(xMin);chart.dataset.xMax=String(xMax);chart.dataset.yMax=String(yMax);
+    const X=x=>p.l+(x-xMin)/(xMax-xMin)*pw,Y=y=>p.t+ph-y/yMax*ph;
+    c.fillStyle='#f8fafc';c.fillRect(p.l,p.t,pw,ph);c.font='10px system-ui';c.fillStyle=C.muted;c.textAlign='right';
+    for(let y=0;y<=yMax+yStep*1e-8;y+=yStep){const py=Y(y);c.strokeStyle=y===0?C.axis:C.grid;c.lineWidth=y===0?1.5:1;c.beginPath();c.moveTo(p.l,py);c.lineTo(p.l+pw,py);c.stroke();c.fillText(fmt(y,yStep>=1?0:1),p.l-6,py+3);}
+    c.textAlign='center';const start=Math.ceil(xMin/xStep-1e-9)*xStep;for(let x=start;x<=xMax+xStep*1e-8;x+=xStep){const px=X(x);c.strokeStyle=C.grid;c.beginPath();c.moveTo(px,p.t);c.lineTo(px,p.t+ph);c.stroke();c.fillStyle=C.muted;c.fillText(fmt(x,xStep>=1?0:1),px,p.t+ph+15);}
+    c.strokeStyle=C.axis;c.lineWidth=1;c.beginPath();c.moveTo(p.l,p.t);c.lineTo(p.l,p.t+ph);c.lineTo(p.l+pw,p.t+ph);c.stroke();
+    const xLabel=massMode?(inverse?'1/m (kg⁻¹)':'m/kg'):'F/N';c.font='11px system-ui';c.fillStyle=C.ink;c.textAlign='left';c.fillText('a/(m/s²)',p.l+4,p.t+12);c.textAlign='right';c.fillText(xLabel,p.l+pw,p.t+ph+34);
+    c.save();c.beginPath();c.rect(p.l,p.t,pw,ph);c.clip();c.strokeStyle=C.blue;c.lineWidth=2.5;c.beginPath();
+    for(let i=0;i<=180;i++){const frac=i/180,x=xMin+(xMax-xMin)*frac;let a;if(!massMode)a=x/values.m;else if(inverse)a=values.F*x;else a=values.F/x;const px=X(x),py=Y(a);i===0?c.moveTo(px,py):c.lineTo(px,py);}c.stroke();
+    const currentX=!massMode?values.F:inverse?1/values.m:values.m,currentA=values.F/values.m;c.fillStyle=C.force;c.strokeStyle='#fff';c.lineWidth=2;c.beginPath();c.arc(X(currentX),Y(currentA),5.5,0,Math.PI*2);c.fill();c.stroke();
+    for(const row of samples){c.fillStyle='rgba(37,99,235,.48)';c.beginPath();c.arc(X(row.x),Y(row.a),3.3,0,Math.PI*2);c.fill();}
+    c.restore();
+    const grid=$('trials');grid.replaceChildren();for(const row of samples){const item=document.createElement('div');item.className='trial';const independent=massMode?(inverse?`1/m=${fmt(row.x,2)} kg⁻¹`:`m=${fmt(row.m,1)} kg`):`F=${fmt(row.F,1)} N`;const held=massMode?`F=${fmt(row.F,1)} N`:`m=${fmt(row.m,1)} kg`;item.innerHTML=`<span>${independent}</span><b>a=${fmt(row.a,2)} m/s²</b><span>${held} 固定</span>`;grid.appendChild(item);}
+  }
+  function updateReadout(){const s=physicsState();$('dTime').textContent=fmt(t)+' s';$('dMass').textContent=fmt(values.m)+' kg';$('dForce').textContent=fmt(values.F)+' N';$('dAcc').textContent=fmt(s.a)+' m/s²';$('dVel').textContent=fmt(s.v)+' m/s';$('dDisp').textContent=fmt(s.s)+' m';$('timeLabel').textContent=fmt(t)+' / '+window.ACCELERATION_PHYSICS.DURATION.toFixed(2)+' s';$('timeline').value=String(t);setStatus();}
+  function render(){drawScene();updateReadout();scene.setAttribute('aria-label',`光滑水平面物块，m=${fmt(values.m,1)}kg，F=${fmt(values.F,1)}N，a=${fmt(physicsState().a)}m/s²，t=${fmt(t)}s`);}
+  function refreshModel(){updateLabels();drawGraph();render();}
+  function setTime(next){t=Math.min(Math.max(next,0),window.ACCELERATION_PHYSICS.DURATION);if(t>=window.ACCELERATION_PHYSICS.DURATION-1e-9){t=window.ACCELERATION_PHYSICS.DURATION;state='finished';}render();}
+  function reset(){t=0;state='idle';lastFrame=null;if(rafId!==null){cancelAnimationFrame(rafId);rafId=null;}render();}
+  function start(){if(state==='running')return;if(state==='finished')t=0;state='running';lastFrame=null;render();if(rafId===null)rafId=requestAnimationFrame(loop);}
+  function pause(){if(state!=='running')return;state='paused';lastFrame=null;render();}
+  function loop(ts){rafId=null;if(state!=='running')return;if(lastFrame===null)lastFrame=ts;const dt=Math.min((ts-lastFrame)/1000,.05);lastFrame=ts;setTime(t+dt*speed);if(state==='running')rafId=requestAnimationFrame(loop);}
+  function stepOnce(){if(state==='running')pause();if(state==='finished')t=0;state='stepping';setTime(t+.1);if(state==='stepping')state='paused';render();}
+  function updateValue(key,raw){const input=inputs[key],n=Number(raw);if(!Number.isFinite(n))return;const quant=Math.round(n/window.ACCELERATION_PHYSICS.STEP)*window.ACCELERATION_PHYSICS.STEP;values[key]=Math.min(input.max,Math.max(input.min,quant));input.range.value=String(values[key]);input.number.value=String(values[key]);t=0;state='idle';lastFrame=null;refreshModel();}
+  Object.entries(inputs).forEach(([key,p])=>{p.range.addEventListener('input',()=>updateValue(key,p.range.value));p.number.addEventListener('change',()=>updateValue(key,p.number.value));p.number.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();p.number.blur();}});});
+  document.querySelectorAll('[data-mode]').forEach(button=>button.addEventListener('click',()=>{experiment=button.dataset.mode;t=0;state='idle';lastFrame=null;refreshModel();}));
+  document.querySelectorAll('[data-axis]').forEach(button=>button.addEventListener('click',()=>{axisMode=button.dataset.axis;refreshModel();}));
+  $('play').addEventListener('click',start);$('pause').addEventListener('click',pause);$('step').addEventListener('click',stepOnce);$('reset').addEventListener('click',reset);$('speed').addEventListener('change',e=>{speed=Number(e.target.value)||1;});
+  $('timeline').addEventListener('input',e=>{if(state==='running')pause();setTime(Number(e.target.value));if(state!=='finished')state='paused';render();});
+  document.addEventListener('keydown',e=>{const tag=e.target&&e.target.tagName;if(tag==='INPUT'||tag==='SELECT'||tag==='TEXTAREA'||tag==='BUTTON')return;if(e.code==='Space'){e.preventDefault();state==='running'?pause():start();}else if(e.code==='KeyR'){e.preventDefault();reset();}});
+  fitAll();
+})();
+</script>
+</body>
+</html>

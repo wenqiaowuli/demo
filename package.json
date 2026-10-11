@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "test:physics": "node light-rope-connected-bodies.test.mjs && node light-rope-connected-bodies.ui.test.mjs",
+    "test:physics": "node light-rope-connected-bodies.test.mjs && node acceleration-force-mass.test.mjs && node light-rope-connected-bodies.ui.test.mjs",
     "test:e2e": "playwright test",
     "test": "npm run test:physics && npm run test:e2e"
   },
