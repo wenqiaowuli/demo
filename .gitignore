@@ -1,3 +1,15 @@
 node_modules/
 playwright-report/
 test-results/
+
+# 发布同步副本（独立 git 仓库，禁止用 git add . 吞入主仓库）
+_repo/
+
+# 根目录散落的临时/审计文件（已归档至 docs/models/ 下）
+/old-chasing-tmp.html
+/cdp-test.js
+/transform-momentum-projectile.js
+/mobile-audit-shots/
+
+# 根目录散落截图（历史截图已归档至 docs/models/artifacts/）
+/osc*.png
